@@ -12,7 +12,7 @@ jobs:
     name: Build & Release
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Required for creating Releases
+      contents: write
 
     steps:
       # ==============================
@@ -32,10 +32,8 @@ jobs:
 
       # ==============================
       # 2. ROBUST SDK & LICENSE SETUP
-      # (Strictly preserved from your working file)
       # ==============================
-      
-      - name: First attempt - Install Android SDK components (will fail but create license structure)
+      - name: First attempt - Install Android SDK components
         continue-on-error: true
         uses: android-actions/setup-android@v3
         with:
@@ -47,28 +45,20 @@ jobs:
 
       - name: Accept all licenses using the Flutter method
         run: |
-          # Method 1: Use the proven Flutter doctor approach
           if command -v flutter >/dev/null 2>&1; then
             flutter doctor --android-licenses --verbose || true
           fi
-          
-          # Method 2: Use the yes + sdkmanager approach from Stack Overflow
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --licenses || true
-          
-          # Method 3: Alternative paths for sdkmanager
           if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           fi
-          
           if [ -f "$ANDROID_HOME/tools/bin/sdkmanager" ]; then
             yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
           fi
-          
-          # Method 4: Update SDK after accepting licenses
           sdkmanager --update || true
 
-      - name: Second attempt - Install Android SDK components (should work now)
+      - name: Second attempt - Install Android SDK components
         uses: android-actions/setup-android@v3
         with:
           packages: >-
@@ -96,48 +86,42 @@ jobs:
         run: chmod +x gradlew
 
       # ==============================
-      # 3. CONTINUOUS INTEGRATION (Run on every push)
+      # 3. CONTINUOUS INTEGRATION (ON PUSH)
       # ==============================
       
       - name: Run Lint
         run: ./gradlew lint --stacktrace || echo "Lint failed, continuing..."
 
-      # Always build Debug to ensure code compiles, even if not releasing
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+      # CHANGED: Now builds Release mode instead of Debug
+      - name: Build Release APK (Basic Flavor)
+        run: ./gradlew assembleBasicRelease --stacktrace
 
-      - name: Upload Debug APK
+      - name: Upload Release APK (Unsigned)
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
+          name: app-release-unsigned
+          path: app/build/outputs/apk/basic/release/*.apk
+          if-no-files-found: warn
 
       # ==============================
-      # 4. RELEASE PREPARATION (Tags Only)
+      # 4. RELEASE PREPARATION (TAGS ONLY)
       # ==============================
-
       - name: Save version tag in env
         if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo "VERSION_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+        run: echo "VERSION_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-      # Only inject secrets when building a release (Tag)
       - name: Add secrets to local.properties
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           echo "Injecting secrets into local.properties..."
           echo "breezy.accu.key=$ACCU_WEATHER_KEY" >> local.properties
-          echo "breezy.aemet.key=$AEMET_KEY" >> local.properties
           echo "breezy.openweather.key=$OPEN_WEATHER_KEY" >> local.properties
-          # ... Add the rest of your keys here ...
         env:
           ACCU_WEATHER_KEY: ${{ secrets.ACCU_WEATHER_KEY }}
-          AEMET_KEY: ${{ secrets.AEMET_KEY }}
           OPEN_WEATHER_KEY: ${{ secrets.OPEN_WEATHER_KEY }}
 
       # ==============================
-      # 5. BUILD FLAVORS & SIGNING
+      # 5. BUILD FLAVORS & SIGNING (TAGS ONLY)
       # ==============================
 
       # --- FREENET FLAVOR ---
@@ -155,23 +139,18 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Prepare Freenet Artifacts & Checksums
+      - name: Prepare Freenet Artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set -e
-          # Move signed APK to final name
           find app/build/outputs/apk/freenet/release -name "*-signed.apk" -exec mv {} breezy-weather-${{ env.VERSION_TAG }}_freenet.apk \;
-          
-          # Calculate Checksum
           sha256sum breezy-weather-${{ env.VERSION_TAG }}_freenet.apk | awk '{ print $1 }' > freenet_sha.txt
           echo "APK_FREENET_SHA=$(cat freenet_sha.txt)" >> $GITHUB_ENV
-          
-          # Archive Mapping
           if [ -d "app/build/outputs/mapping/freenetRelease/" ]; then
             tar -czvf mapping-${{ env.VERSION_TAG }}_freenet.tar.gz -C app/build/outputs/mapping/freenetRelease mapping.txt
           fi
 
-      # --- BASIC (STANDARD) FLAVOR ---
+      # --- BASIC FLAVOR ---
       - name: Assemble Basic Flavor
         if: startsWith(github.ref, 'refs/tags/')
         run: ./gradlew assembleBasicRelease
@@ -186,24 +165,19 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Prepare Basic Artifacts & Checksums
+      - name: Prepare Basic Artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set -e
-          # Move Universal Signed APK
           find app/build/outputs/apk/basic/release -name "*-universal-*-signed.apk" -exec mv {} breezy-weather-${{ env.VERSION_TAG }}_standard.apk \; 2>/dev/null || find app/build/outputs/apk/basic/release -name "*-signed.apk" -exec mv {} breezy-weather-${{ env.VERSION_TAG }}_standard.apk \;
-          
-          # Calculate Checksum
           sha256sum breezy-weather-${{ env.VERSION_TAG }}_standard.apk | awk '{ print $1 }' > standard_sha.txt
           echo "APK_STANDARD_SHA=$(cat standard_sha.txt)" >> $GITHUB_ENV
-
-          # Archive Mapping
           if [ -d "app/build/outputs/mapping/basicRelease/" ]; then
             tar -czvf mapping-${{ env.VERSION_TAG }}_standard.tar.gz -C app/build/outputs/mapping/basicRelease mapping.txt
           fi
 
       # ==============================
-      # 6. PUBLISH RELEASE
+      # 6. PUBLISH
       # ==============================
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -216,21 +190,12 @@ jobs:
             mapping-*.tar.gz
           body: |
             **If you don’t know what to do, download and install `breezy-weather-${{ env.VERSION_TAG }}_standard.apk`**
-            
-            ---
-            
             ### Checksums (SHA-256)
             | Flavor | SHA-256 |
             | :--- | :--- |
-            | Standard (Universal) | ${{ env.APK_STANDARD_SHA }} |
+            | Standard | ${{ env.APK_STANDARD_SHA }} |
             | Freenet | ${{ env.APK_FREENET_SHA }} |
-            
-          draft: false
-          prerelease: false
 
-      # ==============================
-      # 7. CLEANUP
-      # ==============================
       - name: Delete local.properties
         if: always()
         run: rm -f local.properties
