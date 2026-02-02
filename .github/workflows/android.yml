@@ -31,19 +31,15 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       # ==============================
-      # 2. ROBUST SDK & LICENSE SETUP
+      # 2. ROBUST SDK SETUP (2-Step Method)
       # ==============================
-      - name: First attempt - Install Android SDK components
+      - name: First attempt - Install SDK (Expect Failure)
         continue-on-error: true
         uses: android-actions/setup-android@v3
         with:
-          packages: >-
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
-            cmdline-tools;latest
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 cmdline-tools;latest'
 
-      - name: Accept all licenses using the Flutter method
+      - name: Accept Licenses (Flutter + SDKManager Method)
         run: |
           if command -v flutter >/dev/null 2>&1; then
             flutter doctor --android-licenses --verbose || true
@@ -53,83 +49,54 @@ jobs:
           if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           fi
-          if [ -f "$ANDROID_HOME/tools/bin/sdkmanager" ]; then
-            yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
-          fi
           sdkmanager --update || true
 
-      - name: Second attempt - Install Android SDK components
+      - name: Second attempt - Install SDK (Success)
         uses: android-actions/setup-android@v3
         with:
-          packages: >-
-            platform-tools
-            platforms;android-34
-            build-tools;34.0.0
-            cmdline-tools;latest
-
-      - name: Verify Android SDK setup
-        run: |
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          ls -la $ANDROID_HOME/licenses/ || echo "No licenses directory found"
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 cmdline-tools;latest'
 
       - name: Make gradlew executable
         run: chmod +x gradlew
 
       # ==============================
-      # 3. CONTINUOUS INTEGRATION (ON PUSH)
+      # 3. FAST BUILD (NO LINTING)
       # ==============================
       
-      - name: Run Lint
-        run: ./gradlew lint --stacktrace || echo "Lint failed, continuing..."
-
-      # CHANGED: Now builds Release mode instead of Debug
-      - name: Build Release APK (Basic Flavor)
+      # On normal pushes, just verify we can build a release APK (Unsigned)
+      - name: Build Release APK (Basic - Unsigned)
+        if: startsWith(github.ref, 'refs/tags/') != true
         run: ./gradlew assembleBasicRelease --stacktrace
 
-      - name: Upload Release APK (Unsigned)
+      - name: Upload Unsigned Artifact
+        if: startsWith(github.ref, 'refs/tags/') != true
         uses: actions/upload-artifact@v4
         with:
           name: app-release-unsigned
           path: app/build/outputs/apk/basic/release/*.apk
-          if-no-files-found: warn
 
       # ==============================
-      # 4. RELEASE PREPARATION (TAGS ONLY)
+      # 4. RELEASE & SIGNING (TAGS ONLY)
       # ==============================
-      - name: Save version tag in env
+      - name: Save version tag
         if: startsWith(github.ref, 'refs/tags/')
         run: echo "VERSION_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
 
-      - name: Add secrets to local.properties
+      - name: Inject Secrets
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          echo "Injecting secrets into local.properties..."
           echo "breezy.accu.key=$ACCU_WEATHER_KEY" >> local.properties
           echo "breezy.openweather.key=$OPEN_WEATHER_KEY" >> local.properties
         env:
           ACCU_WEATHER_KEY: ${{ secrets.ACCU_WEATHER_KEY }}
           OPEN_WEATHER_KEY: ${{ secrets.OPEN_WEATHER_KEY }}
 
-      # ==============================
-      # 5. BUILD FLAVORS & SIGNING (TAGS ONLY)
-      # ==============================
-
       # --- FREENET FLAVOR ---
-      - name: Assemble Freenet Flavor
+      - name: Build & Sign Freenet
         if: startsWith(github.ref, 'refs/tags/')
         run: ./gradlew assembleFreenetRelease
-
-      - name: Sign APK (Freenet)
+        
+      - name: Sign Freenet
         if: startsWith(github.ref, 'refs/tags/')
         uses: r0adkll/sign-android-release@v1
         with:
@@ -139,23 +106,20 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Prepare Freenet Artifacts
+      - name: Process Freenet Artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set -e
           find app/build/outputs/apk/freenet/release -name "*-signed.apk" -exec mv {} breezy-weather-${{ env.VERSION_TAG }}_freenet.apk \;
           sha256sum breezy-weather-${{ env.VERSION_TAG }}_freenet.apk | awk '{ print $1 }' > freenet_sha.txt
           echo "APK_FREENET_SHA=$(cat freenet_sha.txt)" >> $GITHUB_ENV
-          if [ -d "app/build/outputs/mapping/freenetRelease/" ]; then
-            tar -czvf mapping-${{ env.VERSION_TAG }}_freenet.tar.gz -C app/build/outputs/mapping/freenetRelease mapping.txt
-          fi
 
       # --- BASIC FLAVOR ---
-      - name: Assemble Basic Flavor
+      - name: Build & Sign Basic
         if: startsWith(github.ref, 'refs/tags/')
         run: ./gradlew assembleBasicRelease
 
-      - name: Sign APK (Basic)
+      - name: Sign Basic
         if: startsWith(github.ref, 'refs/tags/')
         uses: r0adkll/sign-android-release@v1
         with:
@@ -165,11 +129,11 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Prepare Basic Artifacts
+      - name: Process Basic Artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set -e
-          find app/build/outputs/apk/basic/release -name "*-universal-*-signed.apk" -exec mv {} breezy-weather-${{ env.VERSION_TAG }}_standard.apk \; 2>/dev/null || find app/build/outputs/apk/basic/release -name "*-signed.apk" -exec mv {} breezy-weather-${{ env.VERSION_TAG }}_standard.apk \;
+          find app/build/outputs/apk/basic/release -name "*-signed.apk" -exec mv {} breezy-weather-${{ env.VERSION_TAG }}_standard.apk \;
           sha256sum breezy-weather-${{ env.VERSION_TAG }}_standard.apk | awk '{ print $1 }' > standard_sha.txt
           echo "APK_STANDARD_SHA=$(cat standard_sha.txt)" >> $GITHUB_ENV
           if [ -d "app/build/outputs/mapping/basicRelease/" ]; then
@@ -177,7 +141,7 @@ jobs:
           fi
 
       # ==============================
-      # 6. PUBLISH
+      # 5. PUBLISH TO GITHUB
       # ==============================
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -189,13 +153,14 @@ jobs:
             breezy-weather-*.apk
             mapping-*.tar.gz
           body: |
-            **If you don’t know what to do, download and install `breezy-weather-${{ env.VERSION_TAG }}_standard.apk`**
+            **Installation:** Download `breezy-weather-${{ env.VERSION_TAG }}_standard.apk`
+            
             ### Checksums (SHA-256)
             | Flavor | SHA-256 |
             | :--- | :--- |
             | Standard | ${{ env.APK_STANDARD_SHA }} |
             | Freenet | ${{ env.APK_FREENET_SHA }} |
 
-      - name: Delete local.properties
+      - name: Cleanup
         if: always()
         run: rm -f local.properties
