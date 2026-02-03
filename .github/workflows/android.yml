@@ -9,15 +9,11 @@ on:
 
 jobs:
   build:
-    name: Build & Release
+    name: Build (No Sign)
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      # ==============================
       # 1. SETUP
-      # ==============================
       - name: Checkout Source
         uses: actions/checkout@v4
 
@@ -30,10 +26,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # ==============================
-      # 2. ROBUST SDK SETUP
-      # ==============================
-      - name: First attempt - Install SDK (Expect Failure)
+      # 2. INSTALL SDK
+      - name: Install SDK
         continue-on-error: true
         uses: android-actions/setup-android@v3
         with:
@@ -41,106 +35,19 @@ jobs:
 
       - name: Accept Licenses
         run: |
-          if command -v flutter >/dev/null 2>&1; then
-            flutter doctor --android-licenses --verbose || true
-          fi
-          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --licenses || true
-          if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
-            yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          fi
           sdkmanager --update || true
-
-      - name: Second attempt - Install SDK (Success)
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 cmdline-tools;latest'
 
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      # ==============================
-      # 3. BUILD & SIGN (TAGS ONLY)
-      # ==============================
-      - name: Save version tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: echo "VERSION_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-
-      - name: Inject Secrets
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo "breezy.accu.key=$ACCU_WEATHER_KEY" >> local.properties
-          echo "breezy.openweather.key=$OPEN_WEATHER_KEY" >> local.properties
-        env:
-          ACCU_WEATHER_KEY: ${{ secrets.ACCU_WEATHER_KEY }}
-          OPEN_WEATHER_KEY: ${{ secrets.OPEN_WEATHER_KEY }}
-
-      # --- BUILD STANDARD FLAVOR ---
+      # 3. BUILD RELEASE (UNSIGNED)
       - name: Build Standard Release
-        if: startsWith(github.ref, 'refs/tags/')
         run: ./gradlew assembleBasicRelease --stacktrace
 
-      # --- MANUAL SIGNING (SAFE MODE) ---
-      - name: Sign APK Manually
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          # LOAD SECRETS INTO ENV VARIABLES (Safe for special chars)
-          KEY_STORE_PASS: ${{ secrets.KEY_STORE_PASSWORD }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
-          ALIAS: ${{ secrets.ALIAS }}
-        run: |
-          # 1. Decode Key
-          echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > release.keystore
-          
-          # 2. Find APK
-          APK_PATH=$(find app/build/outputs/apk/basic/release -name "*-unsigned.apk" | head -n 1)
-          echo "Found APK: $APK_PATH"
-          
-          # 3. Align (Quiet mode to prevent log spam)
-          echo "Runing ZipAlign..."
-          $ANDROID_HOME/build-tools/34.0.0/zipalign -f -p 4 "$APK_PATH" aligned.apk
-          
-          # 4. Sign (Using env: prefix to read variables safely)
-          echo "Signing..."
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
-            --ks release.keystore \
-            --ks-pass env:KEY_STORE_PASS \
-            --ks-key-alias "$ALIAS" \
-            --key-pass env:KEY_PASS \
-            --out app-standard-signed.apk \
-            aligned.apk
-
-      - name: Process Artifacts
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          set -e
-          mv app-standard-signed.apk breezy-weather-${{ env.VERSION_TAG }}_standard.apk
-          sha256sum breezy-weather-${{ env.VERSION_TAG }}_standard.apk | awk '{ print $1 }' > standard_sha.txt
-          echo "APK_SHA=$(cat standard_sha.txt)" >> $GITHUB_ENV
-          
-          if [ -d "app/build/outputs/mapping/basicRelease/" ]; then
-            tar -czvf mapping-${{ env.VERSION_TAG }}_standard.tar.gz -C app/build/outputs/mapping/basicRelease mapping.txt
-          fi
-
-      # ==============================
-      # 4. PUBLISH
-      # ==============================
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+      # 4. UPLOAD ARTIFACT (Download this to your PC)
+      - name: Upload Unsigned APK
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ env.VERSION_TAG }}
-          name: Breezy Weather ${{ env.VERSION_TAG }}
-          files: |
-            breezy-weather-*.apk
-            mapping-*.tar.gz
-          body: |
-            **Installation:** Download `breezy-weather-${{ env.VERSION_TAG }}_standard.apk`
-            
-            **SHA-256 Checksum:** `${{ env.APK_SHA }}`
-
-      - name: Cleanup
-        if: always()
-        run: |
-          rm -f local.properties
-          rm -f release.keystore
+          name: breezy-weather-unsigned
+          path: app/build/outputs/apk/basic/release/*.apk
