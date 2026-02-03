@@ -16,7 +16,7 @@ jobs:
 
     steps:
       # ==============================
-      # 1. SETUP & CONFIGURATION
+      # 1. SETUP
       # ==============================
       - name: Checkout Source
         uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       # ==============================
-      # 2. ROBUST SDK SETUP (The "Trust Me" Method)
+      # 2. ROBUST SDK SETUP
       # ==============================
       - name: First attempt - Install SDK (Expect Failure)
         continue-on-error: true
@@ -39,23 +39,16 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-34 build-tools;34.0.0 cmdline-tools;latest'
 
-      - name: Accept Licenses (The Kitchen Sink Method)
+      - name: Accept Licenses
         run: |
-          # 1. Flutter Method (Very reliable)
           if command -v flutter >/dev/null 2>&1; then
             flutter doctor --android-licenses --verbose || true
           fi
-          
-          # 2. Manual SDK Manager Method
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --licenses || true
-          
-          # 3. Fallback locations
           if [ -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           fi
-          
-          # 4. Update
           sdkmanager --update || true
 
       - name: Second attempt - Install SDK (Success)
@@ -67,21 +60,7 @@ jobs:
         run: chmod +x gradlew
 
       # ==============================
-      # 3. FAST BUILD (PUSHS)
-      # ==============================
-      - name: Build Release APK (Basic - Unsigned)
-        if: startsWith(github.ref, 'refs/tags/') != true
-        run: ./gradlew assembleBasicRelease --stacktrace
-
-      - name: Upload Unsigned Artifact
-        if: startsWith(github.ref, 'refs/tags/') != true
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-unsigned
-          path: app/build/outputs/apk/basic/release/*.apk
-
-      # ==============================
-      # 4. RELEASE & SIGNING (TAGS ONLY)
+      # 3. BUILD & SIGN (TAGS ONLY)
       # ==============================
       - name: Save version tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -96,65 +75,52 @@ jobs:
           ACCU_WEATHER_KEY: ${{ secrets.ACCU_WEATHER_KEY }}
           OPEN_WEATHER_KEY: ${{ secrets.OPEN_WEATHER_KEY }}
 
-      # --- FREENET FLAVOR ---
-      - name: Build Freenet
+      # --- BUILD STANDARD FLAVOR ---
+      - name: Build Standard Release
         if: startsWith(github.ref, 'refs/tags/')
-        run: ./gradlew assembleFreenetRelease
-        
-      - name: Sign Freenet (Manual Method)
+        run: ./gradlew assembleBasicRelease --stacktrace
+
+      # --- MANUAL SIGNING (No Plugins) ---
+      - name: Sign APK Manually
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          # 1. Decode Key
+          # 1. Decode Key from GitHub Secrets
           echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > release.keystore
           
-          # 2. Find Unsigned APK
-          APK_PATH=$(find app/build/outputs/apk/freenet/release -name "*-unsigned.apk" | head -n 1)
-          echo "Found APK: $APK_PATH"
-          
-          # 3. Align & Sign
-          $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 "$APK_PATH" aligned.apk
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.keystore --ks-pass pass:${{ secrets.KEY_STORE_PASSWORD }} --ks-key-alias ${{ secrets.ALIAS }} --key-pass pass:${{ secrets.KEY_PASSWORD }} --out app-freenet-signed.apk aligned.apk
-
-      - name: Process Freenet Artifacts
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          set -e
-          mv app-freenet-signed.apk breezy-weather-${{ env.VERSION_TAG }}_freenet.apk
-          sha256sum breezy-weather-${{ env.VERSION_TAG }}_freenet.apk | awk '{ print $1 }' > freenet_sha.txt
-          echo "APK_FREENET_SHA=$(cat freenet_sha.txt)" >> $GITHUB_ENV
-
-      # --- BASIC FLAVOR ---
-      - name: Build Basic
-        if: startsWith(github.ref, 'refs/tags/')
-        run: ./gradlew assembleBasicRelease
-
-      - name: Sign Basic (Manual Method)
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          # 1. Key is already decoded (release.keystore exists from previous step)
-          
-          # 2. Find Unsigned APK
+          # 2. Find the Unsigned APK
           APK_PATH=$(find app/build/outputs/apk/basic/release -name "*-unsigned.apk" | head -n 1)
           echo "Found APK: $APK_PATH"
           
-          # 3. Align & Sign
+          # 3. Align the APK
           $ANDROID_HOME/build-tools/34.0.0/zipalign -v -p 4 "$APK_PATH" aligned.apk
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.keystore --ks-pass pass:${{ secrets.KEY_STORE_PASSWORD }} --ks-key-alias ${{ secrets.ALIAS }} --key-pass pass:${{ secrets.KEY_PASSWORD }} --out app-basic-signed.apk aligned.apk
+          
+          # 4. Sign the APK
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+            --ks release.keystore \
+            --ks-pass pass:${{ secrets.KEY_STORE_PASSWORD }} \
+            --ks-key-alias ${{ secrets.ALIAS }} \
+            --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+            --out app-standard-signed.apk \
+            aligned.apk
 
-      - name: Process Basic Artifacts
+      - name: Process Artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set -e
-          mv app-basic-signed.apk breezy-weather-${{ env.VERSION_TAG }}_standard.apk
-          sha256sum breezy-weather-${{ env.VERSION_TAG }}_standard.apk | awk '{ print $1 }' > standard_sha.txt
-          echo "APK_STANDARD_SHA=$(cat standard_sha.txt)" >> $GITHUB_ENV
+          # Rename to final version
+          mv app-standard-signed.apk breezy-weather-${{ env.VERSION_TAG }}_standard.apk
           
+          # Calculate Checksum
+          sha256sum breezy-weather-${{ env.VERSION_TAG }}_standard.apk | awk '{ print $1 }' > standard_sha.txt
+          echo "APK_SHA=$(cat standard_sha.txt)" >> $GITHUB_ENV
+          
+          # Archive Mapping file (if exists)
           if [ -d "app/build/outputs/mapping/basicRelease/" ]; then
             tar -czvf mapping-${{ env.VERSION_TAG }}_standard.tar.gz -C app/build/outputs/mapping/basicRelease mapping.txt
           fi
 
       # ==============================
-      # 5. PUBLISH TO GITHUB
+      # 4. PUBLISH
       # ==============================
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -168,11 +134,7 @@ jobs:
           body: |
             **Installation:** Download `breezy-weather-${{ env.VERSION_TAG }}_standard.apk`
             
-            ### Checksums (SHA-256)
-            | Flavor | SHA-256 |
-            | :--- | :--- |
-            | Standard | ${{ env.APK_STANDARD_SHA }} |
-            | Freenet | ${{ env.APK_FREENET_SHA }} |
+            **SHA-256 Checksum:** `${{ env.APK_SHA }}`
 
       - name: Cleanup
         if: always()
