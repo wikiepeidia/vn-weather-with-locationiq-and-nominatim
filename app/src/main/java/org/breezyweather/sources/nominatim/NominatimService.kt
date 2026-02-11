@@ -17,7 +17,6 @@
 package org.breezyweather.sources.nominatim
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.ui.text.input.KeyboardType
 import breezyweather.domain.location.model.LocationAddressInfo
 import breezyweather.domain.source.SourceContinent
@@ -50,7 +49,7 @@ import javax.inject.Named
  */
 class NominatimService @Inject constructor(
     @ApplicationContext context: Context,
-    @Named("JsonClient") client: Retrofit.Builder,
+    @Named("JsonClient") private val client: Retrofit.Builder,
 ) : HttpSource(), LocationSearchSource, ReverseGeocodingSource, ConfigurableSource {
 
     override val id = "nominatim"
@@ -71,19 +70,17 @@ class NominatimService @Inject constructor(
 
     // Regex for Vietnam Display Name parsing
     // Finds specific administrative prefixes: Xã, Phường, Đặc Khu (case-insensitive, with/without accents)
-    private val vnSubProvinceRegex = Pattern.compile("(?iu)(?:^|,\\s*)([^,]*?(?:xã|phường|đặc\\s*khu|xa|phuong|dac\\s*khu)[^,]*)(?:,|$)")
+    // Matches if the component strictly STARTS with the prefix to avoid garbage like "Ủy ban nhân dân..."
+    private val vnSubProvinceRegex = Pattern.compile("(?iu)^(?:xã|phường|đặc\\s*khu|xa|phuong|dac\\s*khu)\\s+.*")
 
     private val mApi by lazy {
         val isLocationIQ = isLocationIqKey(instance)
         val url = if (isLocationIQ) LOCATIONIQ_BASE_URL else (instance ?: NOMINATIM_BASE_URL)
-        Log.d("NominatimService", "Initializing API. URL: $url (LocationIQ: $isLocationIQ)")
         client
             .baseUrl(url)
             .build()
             .create(NominatimApi::class.java)
     }
-    private val userAgent =
-        "${context.getString(R.string.brand_name)}/${BuildConfig.VERSION_NAME} ${BuildConfig.REPORT_ISSUE}"
 
     private fun isLocationIqKey(value: String?): Boolean {
         return value?.startsWith("pk.") == true
@@ -97,7 +94,7 @@ class NominatimService @Inject constructor(
         
         return mApi.searchLocations(
             acceptLanguage = context.currentLocale.toLanguageTag(),
-            userAgent = userAgent,
+            userAgent = USER_AGENT,
             q = query,
             limit = 20,
             key = key
@@ -115,34 +112,91 @@ class NominatimService @Inject constructor(
     ): Observable<List<LocationAddressInfo>> {
         val key = if (isLocationIqKey(instance)) instance else null
         
-        // LocationIQ specific parameter tuning
-        val zoom = if (key != null) 18 else 13
-        val format = if (key != null) "json" else "jsonv2"
+        if (key != null) {
+            // Concurrent strategy: Call both LocationIQ and Nominatim
+            val locationIQClient = client
+                .baseUrl(LOCATIONIQ_BASE_URL)
+                .build()
+                .create(NominatimApi::class.java)
 
-        return mApi.getReverseLocation(
-            acceptLanguage = context.currentLocale.toLanguageTag(),
-            userAgent = userAgent,
-            lat = latitude,
-            lon = longitude,
-            zoom = zoom,
-            format = format,
-            key = key
-        ).map {
-            Log.d("NominatimService", "Reverse Response: $it")
-            if (it.address?.countryCode == null || it.address.countryCode.isEmpty()) {
-                Log.e("NominatimService", "Invalid Location: Address or CountryCode missing. Raw: $it")
-                throw InvalidLocationException()
+            val nominatimClient = client
+                .baseUrl(NOMINATIM_BASE_URL)
+                .build()
+                .create(NominatimApi::class.java)
+
+            val locationIQObs = locationIQClient.getReverseLocation(
+                acceptLanguage = context.currentLocale.toLanguageTag(),
+                userAgent = USER_AGENT,
+                lat = latitude,
+                lon = longitude,
+                zoom = 18,
+                format = "json",
+                key = key
+            ).map<List<LocationAddressInfo>> { result ->
+                convertLocation(result, isLocationIQSource = true)?.let { listOf(it) } ?: emptyList()
+            }.onErrorReturn { emptyList() }
+
+            val nominatimObs = nominatimClient.getReverseLocation(
+                acceptLanguage = context.currentLocale.toLanguageTag(),
+                userAgent = USER_AGENT,
+                lat = latitude,
+                lon = longitude,
+                zoom = 13,
+                format = "jsonv2",
+                key = null
+            ).map<List<LocationAddressInfo>> { result ->
+                convertLocation(result, isLocationIQSource = false)?.let { listOf(it) } ?: emptyList()
+            }.onErrorReturn { emptyList() }
+
+            // Helper to check if name matches the clean regex
+            fun isClean(info: LocationAddressInfo): Boolean {
+                if (info.countryCode.equals("VN", ignoreCase = true)) {
+                    return info.city != null && vnSubProvinceRegex.matcher(info.city!!).matches()
+                }
+                return true
             }
 
-            listOf(convertLocation(it)!!)
+            return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
+                val liqInfo = liqList.firstOrNull()
+                val nomInfo = nomList.firstOrNull()
+
+                if (liqInfo != null && isClean(liqInfo)) {
+                    liqList
+                } else if (nomInfo != null && isClean(nomInfo)) {
+                    nomList
+                } else {
+                    // Fallback prioritization
+                    if (liqInfo != null) liqList
+                    else if (nomInfo != null) nomList
+                    else throw InvalidLocationException()
+                }
+            }
+        } else {
+            val url = instance ?: NOMINATIM_BASE_URL
+            // Build client freshly to ensure correct url if instance changed, or use mApi approach if guaranteed valid
+            val api = client.baseUrl(url).build().create(NominatimApi::class.java)
+
+            return api.getReverseLocation(
+                acceptLanguage = context.currentLocale.toLanguageTag(),
+                userAgent = USER_AGENT,
+                lat = latitude,
+                lon = longitude,
+                zoom = 13,
+                format = "jsonv2",
+                key = null
+            ).map { result ->
+                if (result.address?.countryCode == null || result.address.countryCode.isEmpty()) {
+                    throw InvalidLocationException()
+                }
+                
+                // key is null here, so isLocationIQSource is false
+                listOf(convertLocation(result, isLocationIQSource = false)!!)
+            }
         }
     }
 
-    private fun convertLocation(locationResult: NominatimLocationResult): LocationAddressInfo? {
-        Log.d("NominatimService", "convertLocation input: $locationResult")
-        
+    private fun convertLocation(locationResult: NominatimLocationResult, isLocationIQSource: Boolean = isLocationIqKey(instance)): LocationAddressInfo? {
         return if (locationResult.address?.countryCode == null || locationResult.address.countryCode.isEmpty()) {
-            Log.d("NominatimService", "Dropped result due to missing countryCode")
             null
         } else {
             val countryCode = getNonAmbiguousCountryCode(locationResult.address)
@@ -150,35 +204,30 @@ class NominatimService @Inject constructor(
             // Vietnam Special Parsing
             var city = locationResult.address.town ?: locationResult.name
             var district = locationResult.address.village
-            val isLocationIQ = isLocationIqKey(instance)
 
             if (countryCode.equals("vn", ignoreCase = true)) {
                 // Try to extract Xa/Phuong/Dac Khu from display_name
                 val displayName = locationResult.displayName
-                Log.d("NominatimService", "Parsing VN Address - Provider: ${if(isLocationIQ) "LocationIQ" else "Nominatim"}")
-                Log.d("NominatimService", "Raw DisplayName: $displayName")
-                Log.d("NominatimService", "Initial City: $city, District: $district")
 
                 if (!displayName.isNullOrEmpty()) {
-                    val matcher = vnSubProvinceRegex.matcher(displayName)
-                    if (matcher.find()) {
-                        val matched = matcher.group(1).trim()
-                        Log.d("NominatimService", "Regex Matched: $matched")
-                        city = matched
+                    // Split matching strategy to find clean "Phường/Xã" name
+                    val parts = displayName.split(",")
+                    val cleanPart = parts.map { it.trim() }.firstOrNull { part ->
+                        vnSubProvinceRegex.matcher(part).matches()
+                    }
+
+                    if (cleanPart != null) {
+                        city = cleanPart
                         district = null // Hide district if we found a better name
-                    } else if (isLocationIQ) {
+                    } else if (isLocationIQSource) {
                         // Fallback logic for LocationIQ if regex fails: use first part of display_name
-                        val fallback = displayName.split(",").firstOrNull()?.trim()
-                        Log.d("NominatimService", "Regex Failed. LocationIQ Fallback: $fallback")
+                        val fallback = parts.firstOrNull()?.trim()
                         if (fallback != null) {
                             city = fallback
                             district = null
                         }
-                    } else {
-                        Log.d("NominatimService", "Regex Failed. No fallback applied.")
-                    }
+                    } 
                 }
-                Log.d("NominatimService", "Final City: $city")
             }
 
             LocationAddressInfo(
@@ -313,12 +362,8 @@ class NominatimService @Inject constructor(
 
     // CONFIG
     private val config = SourceConfigStore(context, id)
-
-    // This source needs to know how to contact the app maintainers
-    // Make sure the app was compiled with the matching property in gradle.properties if failing here
-    override val isConfigured = BuildConfig.REPORT_ISSUE.isNotEmpty()
+    override val isConfigured = true
     override val isRestricted = false
-
     private var instance: String?
         set(value) {
             value?.let {

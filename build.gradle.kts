@@ -13,6 +13,19 @@ plugins {
     alias(libs.plugins.sqldelight) apply false
 }
 
+val kotlinVersion = "2.3.0"
+allprojects {
+    configurations.configureEach {
+        resolutionStrategy.force(
+            "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion",
+            "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlinVersion",
+            "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion",
+            "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion",
+            "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion",
+        )
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
     delete("app/src/main/res/values-in/")

@@ -39,8 +39,6 @@ import org.breezyweather.domain.settings.SettingsManager
 import org.breezyweather.remoteviews.Notifications
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
 
 @HiltWorker
 class TodayForecastNotificationJob @AssistedInject constructor(
@@ -138,9 +136,11 @@ class TodayForecastNotificationJob @AssistedInject constructor(
                 time.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[0].toInt(),
                 time.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1].toInt()
             )
-            var delay = (setTimes[0] - realTimes[0]).hours.inWholeMinutes + (setTimes[1] - realTimes[1])
+            val hourDeltaMinutes = (setTimes[0] - realTimes[0]) * 60L
+            val minuteDelta = (setTimes[1] - realTimes[1]).toLong()
+            var delay = hourDeltaMinutes + minuteDelta
             if (delay <= 0 || nextDay) {
-                delay += 1.days.inWholeMinutes
+                delay += 24L * 60L
             }
             return delay
         }
