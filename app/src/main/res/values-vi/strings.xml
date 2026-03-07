@@ -93,7 +93,8 @@
     <string name="settings_main_section_animations">Hình động</string>
     <string name="hourly_forecast">Dự báo hàng giờ</string>
     <string name="air_quality">Chất lượng không khí</string>
-    <string name="app_name">Thời tiết</string>
+    <string name="brand_name">Thời Tiết Breezy</string>
+    <string name="app_name">Thời Tiết Breezy</string>
     <string name="uv_alert_level">Mức độ cảnh báo</string>
     <string name="air_quality_level_1">Tuyệt vời</string>
     <string name="air_quality_level_1_description">Chất lượng không khí này là lý tưởng cho hầu hết cá nhân; hãy tận hưởng các hoạt động bình thường ngoài trời.</string>

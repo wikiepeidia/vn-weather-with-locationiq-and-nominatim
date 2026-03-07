@@ -6,6 +6,7 @@ build/
 !**/src/test/**/build/
 .py
 ### IntelliJ IDEA ###
+signature/
 .idea/*
 !.idea/icon.png
 *.iws
