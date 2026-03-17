@@ -84,6 +84,17 @@
 
             </LinearLayout>
 
+                <ImageView
+                    android:id="@+id/widget_material_you_forecast_refresh"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="4dp"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_sync"
+                    android:contentDescription="@string/action_refresh"
+                    android:tint="?android:attr/textColorPrimary" />
+
+
         </LinearLayout>
 
         <ImageView

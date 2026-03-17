@@ -19,7 +19,9 @@ package org.breezyweather.background.receiver.widget
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import breezyweather.data.location.LocationRepository
 import breezyweather.data.weather.WeatherRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,6 +29,8 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.breezyweather.R
+import org.breezyweather.background.weather.WeatherUpdateJob
 import org.breezyweather.remoteviews.presenters.MaterialYouCurrentWidgetIMP
 import javax.inject.Inject
 
@@ -38,6 +42,14 @@ class WidgetMaterialYouCurrentProvider : AppWidgetProvider() {
 
     @Inject
     lateinit var weatherRepository: WeatherRepository
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        if (intent.action == "org.breezyweather.widget.ACTION_REFRESH_WEATHER") {
+            WeatherUpdateJob.startNow(context)
+            Toast.makeText(context, R.string.widget_refreshing, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onUpdate(

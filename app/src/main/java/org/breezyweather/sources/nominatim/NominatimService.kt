@@ -149,28 +149,16 @@ class NominatimService @Inject constructor(
                 convertLocation(result, isLocationIQSource = false)?.let { listOf(it) } ?: emptyList()
             }.onErrorReturn { emptyList() }
 
-            // Helper to check if name matches the clean regex
-            fun isClean(info: LocationAddressInfo): Boolean {
-                if (info.countryCode.equals("VN", ignoreCase = true)) {
-                    return info.city != null && vnSubProvinceRegex.matcher(info.city!!).matches()
-                }
-                return true
-            }
-
             return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
                 val liqInfo = liqList.firstOrNull()
                 val nomInfo = nomList.firstOrNull()
 
-                if (liqInfo != null && isClean(liqInfo)) {
-                    liqList
-                } else if (nomInfo != null && isClean(nomInfo)) {
-                    nomList
-                } else {
-                    // Fallback prioritization
-                    if (liqInfo != null) liqList
-                    else if (nomInfo != null) nomList
-                    else throw InvalidLocationException()
-                }
+                // Strict source priority:
+                // 1) LocationIQ if available
+                // 2) Nominatim when LocationIQ is absent/failed
+                if (liqInfo != null) liqList
+                else if (nomInfo != null) nomList
+                else throw InvalidLocationException()
             }
         } else {
             val url = instance ?: NOMINATIM_BASE_URL
@@ -211,11 +199,9 @@ class NominatimService @Inject constructor(
                 val displayName = locationResult.displayName
 
                 if (!displayName.isNullOrEmpty()) {
-                    // Split matching strategy to find clean "Phường/Xã" name
-                    val parts = displayName.split(",")
-                    val cleanPart = parts.map { it.trim() }.firstOrNull { part ->
-                        vnSubProvinceRegex.matcher(part).matches()
-                    }
+                    // Split display_name by standard/full-width comma and pick the last valid VN component.
+                    val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
+                    val cleanPart = pickBestVietnamSubProvincePart(parts)
 
                     if (cleanPart != null) {
                         city = cleanPart
@@ -245,6 +231,12 @@ class NominatimService @Inject constructor(
                 cityCode = locationResult.placeId?.toString(),
                 district = district
             )
+        }
+    }
+
+    private fun pickBestVietnamSubProvincePart(parts: List<String>): String? {
+        return parts.lastOrNull { part ->
+            vnSubProvinceRegex.matcher(part).matches()
         }
     }
 
@@ -407,6 +399,7 @@ class NominatimService @Inject constructor(
     )
 
     companion object {
+        private val COMMA_SPLIT_REGEX = Regex("[,，]")
         private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/"
         private const val LOCATIONIQ_BASE_URL = "https://us1.locationiq.com/v1/"
         private const val USER_AGENT =

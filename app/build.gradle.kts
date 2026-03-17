@@ -229,7 +229,7 @@ android {
         it.buildConfigField(
             "String",
             "DEFAULT_GEOCODING_SOURCE",
-            "\"${localProperties.getProperty("breezy.source.default_geocoding") ?: "naturalearth"}\""
+            "\"${localProperties.getProperty("breezy.source.default_geocoding") ?: "nominatim"}\""
         )
         it.buildConfigField(
             "String",

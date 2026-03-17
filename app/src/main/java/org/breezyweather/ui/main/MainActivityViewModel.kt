@@ -531,8 +531,10 @@ class MainActivityViewModel @Inject constructor(
             viewModelScope.launchIO {
                 _locationListLoading.value = true
                 try {
+                    val reverseGeocodingSource = sourceManager.getReverseGeocodingSource("nominatim")
+                        ?: sourceManager.getReverseGeocodingSource(BuildConfig.DEFAULT_GEOCODING_SOURCE)!!
                     val locationWithInfo = refreshHelper.requestReverseGeocoding(
-                        sourceManager.getReverseGeocodingSource(BuildConfig.DEFAULT_GEOCODING_SOURCE)!!,
+                        reverseGeocodingSource,
                         location,
                         context
                     )
