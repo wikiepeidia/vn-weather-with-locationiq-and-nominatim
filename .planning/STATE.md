@@ -1,4 +1,4 @@
-# STATE.md — Breezy Weather VN
+# STATE.md — VN Weather
 
 ## Project Reference
 
@@ -20,6 +20,7 @@ Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
 ```
 
 ### Phase Checklist
+
 - [ ] Phase 1: Data Model Foundation
 - [ ] Phase 2: Token Extraction & Cross-Validation
 - [ ] Phase 3: Performance & Reliability

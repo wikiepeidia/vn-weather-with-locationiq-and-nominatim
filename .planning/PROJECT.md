@@ -1,8 +1,8 @@
-# Breezy Weather VN — Vietnamese Address Quality Fork
+# VN Weather — Vietnamese Address Quality Fork
 
 ## What This Is
 
-A fork of the Breezy Weather Android app optimized for Vietnamese administrative addresses (wards, communes, special zones). It uses LocationIQ and Nominatim APIs in tandem to deliver clean, accurate sub-province address names (e.g. "Phường Phú Lương" instead of "Ủy ban nhân dân Phường Phú Lương") for Vietnamese users, with smart cross-validation, lazy fallback, and "giggles" — delightful feedback when the fallback saves a bad result.
+A fork of a popular open-source Android weather app optimized for Vietnamese administrative addresses (wards, communes, special zones). It uses LocationIQ and Nominatim APIs in tandem to deliver clean, accurate sub-province address names (e.g. "Phường Phú Lương" instead of "Ủy ban nhân dân Phường Phú Lương") for Vietnamese users, with smart cross-validation, lazy fallback, and "giggles" — delightful feedback when the fallback saves a bad result.
 
 ## Core Value
 
@@ -71,4 +71,4 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 | Skip RxJava migration | High-risk refactor; independent of address quality goal | ✓ Accepted |
 
 ---
-*Last updated: 2026-03-23 after initialization*
+*Last updated: 2026-03-23 after rename to VN Weather (license compliance)*

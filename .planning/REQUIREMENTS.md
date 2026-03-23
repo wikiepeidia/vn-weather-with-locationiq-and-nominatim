@@ -1,4 +1,4 @@
-# Requirements: Breezy Weather VN — Vietnamese Address Quality
+# Requirements: VN Weather — Vietnamese Address Quality
 
 **Defined:** 2026-03-23
 **Core Value:** Vietnamese users see a clean ward/commune name — never a POI or government-office prefix — even when LocationIQ or Nominatim individually return garbage.
@@ -94,6 +94,7 @@
 | TEST-04 | Phase 5 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 19 total
 - Mapped to phases: 19 ✓
 - Unmapped: 0 ✓
