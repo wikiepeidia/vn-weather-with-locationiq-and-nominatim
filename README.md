@@ -1,7 +1,7 @@
 
-<h1 align="center">Weather VN (Thời Tiết VN)</h1>
+<h1 align="center">Weather VN (Thời Tiết VN)source code</h1>
 
-<h4 align="center">Weather VN is a fork of Breezy Weather, optimized for Vietnamese addresses with LocationIQ and Nominatim integration. Feature-rich, free and open source Material 3 Expressive weather app with support for forecast, observations, nowcasting, air quality, pollen, and alerts from more than 50 weather sources.</h4>
+<h4 align="center">Weather VN is a fork of Breezy Weather, optimized for Vietnamese addresses with LocationIQ and Nominatim integration.These both help each other in finding the addresses, making them 90% accurate, up to date after the July 2025 Merge!</h4>
 
 ## ✉️ Contact us
 
@@ -13,16 +13,14 @@
 - This License does not grant any rights in the trademarks, service marks, or logos of any Contributor.
 - Misrepresentation of the origin of that material is prohibited, and modified versions of such material must be marked in reasonable ways as different from the original version.
 
-This project is a compliant fork:
+- The upstream project (Breezy Weather) is available at <https://github.com/breezy-weather/breezy-weather> and is licensed under LGPL-3.0.
 
-- App name changed to **Weather VN** (all languages)
-- Application ID changed to `io.github.wikiepeidia.vnweather`
-- The `breezy` flag is not set in distributed builds
-- Custom icons used in place of Breezy Weather icons
-
-The upstream project (Breezy Weather) is available at <https://github.com/breezy-weather/breezy-weather> and is licensed under LGPL-3.0.
-
-## BUGS
+## BUGS 
 
 - USER_AGENT issue,NominatimService   #2 <https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues/2>
 - will be fixed soon, right now it is breaking the app completely
+
+## Urgent
+- Reclarify to the devs: Hobby project for fun, powered ® by Claude
+- remove Releases to incoperate with LICENSE and reduce my stress and giggles
+- continue to improve the app to get higher accurancy on Regex!
