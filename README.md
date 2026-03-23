@@ -3,7 +3,7 @@
 <img src="app/src/res_breezy/mipmap-xxxhdpi/ic_launcher_round.webp" alt="Logo" />
 </div>
 
-<h1 align="center">Breezy Weather</h1>
+<h1 align="center">Weather VN (Thời Tiết VN)</h1>
 
 <br />
 
@@ -35,7 +35,7 @@
   </a>
 </div>
 
-<h4 align="center">Breezy Weather is a feature-rich free and open source Material 3 Expressive weather app with well-though-out visualizations, supporting forecast, observations, nowcasting, air quality, pollen, alerts, from more than 50 weather sources.</h4>
+<h4 align="center">Weather VN is a fork of Breezy Weather, optimized for Vietnamese addresses with LocationIQ and Nominatim integration. Feature-rich, free and open source Material 3 Expressive weather app with support for forecast, observations, nowcasting, air quality, pollen, and alerts from more than 50 weather sources.</h4>
 
 <div align="center">
 
@@ -182,7 +182,7 @@ For unit formatting, we use [Unicode data](https://www.unicode.org/cldr/charts/4
 
 # ✉️ Contact us
 
-- If you'd like to report a bug or suggest a new feature, please open an issue on the [GitHub repository](https://github.com/wikiepeidia/breezy-weather-VN/issues).
+- If you'd like to report a bug or suggest a new feature, please open an issue on the [GitHub repository](https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues).
 
 # 📜 License
 
