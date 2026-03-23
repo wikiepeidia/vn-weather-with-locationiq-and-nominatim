@@ -22,7 +22,7 @@ android {
     namespace = "org.breezyweather"
 
     defaultConfig {
-        applicationId = "org.breezyweather"
+        applicationId = "io.github.wikiepeidia.vnweather"
         versionCode = 60104
         versionName = "6.1.4"
 
