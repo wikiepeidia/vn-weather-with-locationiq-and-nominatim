@@ -218,7 +218,7 @@ class NominatimService @Inject constructor(
                     if (!displayName.isNullOrEmpty()) {
                         // Split display_name by standard/full-width comma and pick the last valid VN component.
                         val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
-                        val cleanPart = pickBestVietnamSubProvincePart(parts, isLocationIQSource)
+                        val cleanPart = pickBestVietnamSubProvincePart(parts)
 
                         if (cleanPart != null) {
                             city = cleanPart
@@ -247,8 +247,8 @@ class NominatimService @Inject constructor(
         }
     }
 
-    private fun pickBestVietnamSubProvincePart(parts: List<String>, isLocationIQSource: Boolean): String? =
-        Companion.pickBestVietnamSubProvincePart(parts, isLocationIQSource)
+    private fun pickBestVietnamSubProvincePart(parts: List<String>): String? =
+        Companion.pickBestVietnamSubProvincePart(parts)
 
     private fun isCleanVnCity(city: String?): Boolean =
         Companion.isCleanVnCity(city)
@@ -428,17 +428,13 @@ class NominatimService @Inject constructor(
 
         /**
          * Returns the best VN sub-province name from a list of display_name parts.
-         * LIQ zoom=18: ward appears FIRST — use firstOrNull.
-         * Nominatim zoom=13: ward appears LAST — use lastOrNull.
+         * Always picks the LAST matching Phường/Xã/Đặc khu token so that when multiple
+         * administrative-level terms appear (e.g. "Đặc khu B, Phường A") the most
+         * specific innermost ward wins regardless of API source.
          */
         internal fun pickBestVietnamSubProvincePart(
             parts: List<String>,
-            isLocationIQSource: Boolean,
-        ): String? = if (isLocationIQSource) {
-            parts.firstOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
-        } else {
-            parts.lastOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
-        }
+        ): String? = parts.lastOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
 
         /**
          * Returns true if [city] strictly starts with a Phường/Xã/Đặc khu prefix.

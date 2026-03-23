@@ -48,7 +48,7 @@ class NominatimServiceTest {
     // ─── TEST-01: pickBestVietnamSubProvincePart ──────────────────────────────────
 
     @Test
-    fun `pickBestVietnamSubProvincePart - POI prefix is skipped, clean Phuong matched for LIQ`() {
+    fun `pickBestVietnamSubProvincePart - POI prefix is skipped, clean Phuong matched`() {
         // LIQ display_name where first part is a POI/institution, second is the real ward
         val parts = listOf(
             "Ủy ban nhân dân Phường Phú Lương",
@@ -57,53 +57,85 @@ class NominatimServiceTest {
             "Hà Nội",
             "Việt Nam",
         )
-        // ADDR-02 / XVAL-01: POI prefix does NOT start with the required prefix word
-        // → skipped; next clean "Phường Phú Lương" is returned
-        NominatimService.pickBestVietnamSubProvincePart(parts, isLocationIQSource = true) shouldBe
+        // POI prefix does NOT start with the required prefix word → skipped;
+        // only one clean token → lastOrNull returns it
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe
             "Phường Phú Lương"
     }
 
     @Test
-    fun `pickBestVietnamSubProvincePart - dirty-only list returns null for LIQ`() {
+    fun `pickBestVietnamSubProvincePart - dirty-only list returns null`() {
         val parts = listOf(
             "Ủy ban nhân dân Phường Hà Đông",
             "Quận Hà Đông",
             "Hà Nội",
         )
-        NominatimService.pickBestVietnamSubProvincePart(parts, isLocationIQSource = true) shouldBe null
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe null
     }
 
     @Test
-    fun `pickBestVietnamSubProvincePart - clean Phuong is first element for LIQ`() {
+    fun `pickBestVietnamSubProvincePart - single matching token returned regardless of position`() {
         val parts = listOf("Phường Hoàn Kiếm", "Quận Hoàn Kiếm", "Hà Nội", "Việt Nam")
-        NominatimService.pickBestVietnamSubProvincePart(parts, isLocationIQSource = true) shouldBe
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe
             "Phường Hoàn Kiếm"
     }
 
     @Test
-    fun `pickBestVietnamSubProvincePart - Nominatim uses lastOrNull to find ward at end`() {
-        // Nominatim zoom=13 puts ward/commune LAST in display_name
-        val parts = listOf("Việt Nam", "Hà Nội", "Quận Cầu Giấy", "Xã Dịch Vọng")
-        NominatimService.pickBestVietnamSubProvincePart(parts, isLocationIQSource = false) shouldBe
-            "Xã Dịch Vọng"
+    fun `pickBestVietnamSubProvincePart - multiple matches - last (innermost) wins`() {
+        // Two tokens match: "Xã Dịch Vọng" first, "Phường Cầu Giấy" last
+        // lastOrNull must return the last match; firstOrNull would wrongly return Xã first
+        val parts = listOf("Xã Dịch Vọng", "Phường Cầu Giấy", "Hà Nội", "Việt Nam")
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe
+            "Phường Cầu Giấy"
     }
 
     @Test
     fun `pickBestVietnamSubProvincePart - Dac Khu prefix is recognized`() {
         val parts = listOf("Đặc Khu Phú Quốc", "Kiên Giang", "Việt Nam")
-        NominatimService.pickBestVietnamSubProvincePart(parts, isLocationIQSource = true) shouldBe
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe
             "Đặc Khu Phú Quốc"
     }
 
     @Test
     fun `pickBestVietnamSubProvincePart - empty list returns null`() {
-        NominatimService.pickBestVietnamSubProvincePart(emptyList(), isLocationIQSource = true) shouldBe null
+        NominatimService.pickBestVietnamSubProvincePart(emptyList()) shouldBe null
     }
 
     @Test
     fun `pickBestVietnamSubProvincePart - no matching prefix parts returns null`() {
         val parts = listOf("Quận Hà Đông", "Hà Nội", "Việt Nam")
-        NominatimService.pickBestVietnamSubProvincePart(parts, isLocationIQSource = true) shouldBe null
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe null
+    }
+
+    // Multi-match ordering: last valid VN token always wins (innermost ward)
+
+    @Test
+    fun `pickBestVietnamSubProvincePart - Xa A then Phuong B - picks Phuong B (last)`() {
+        // "Xã A, Phường B, ..." → Phường B is LAST match; must NOT pick Xã A
+        val parts = listOf("Xã A", "Phường B", "Quận X", "Việt Nam")
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe "Phường B"
+    }
+
+    @Test
+    fun `pickBestVietnamSubProvincePart - Phuong B then Xa A - picks Xa A (last)`() {
+        // "Phường B, Xã A, ..." → Xã A is LAST match
+        val parts = listOf("Phường B", "Xã A", "Quận X", "Việt Nam")
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe "Xã A"
+    }
+
+    @Test
+    fun `pickBestVietnamSubProvincePart - Dac Khu B then Phuong A - picks Phuong A (last)`() {
+        // "Đặc khu B, Phường A, ..." → Phường A is LAST match; Đặc khu is a higher-level unit
+        val parts = listOf("Đặc khu B", "Phường A", "Tỉnh X", "Việt Nam")
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe "Phường A"
+    }
+
+    @Test
+    fun `pickBestVietnamSubProvincePart - UBND prefix then Dac Khu then Xa - picks Xa (last)`() {
+        // "Ủy ban nhân dân phường A, Đặc khu B, xã C" → UBND does NOT match; Đặc khu matches;
+        // xã C is LAST match → picks xã C  (UBND prefix correctly dropped by regex)
+        val parts = listOf("Ủy ban nhân dân phường A", "Đặc khu B", "xã C", "Tỉnh X")
+        NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe "xã C"
     }
 
     // ─── isCleanVnCity edge cases ─────────────────────────────────────────────────
