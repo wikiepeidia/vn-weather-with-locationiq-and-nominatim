@@ -73,30 +73,30 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADDR-01 | TBD | Pending |
-| ADDR-02 | TBD | Pending |
-| ADDR-03 | TBD | Pending |
-| ADDR-04 | TBD | Pending |
-| XVAL-01 | TBD | Pending |
-| XVAL-02 | TBD | Pending |
-| XVAL-03 | TBD | Pending |
-| PERF-01 | TBD | Pending |
-| PERF-02 | TBD | Pending |
-| PERF-03 | TBD | Pending |
-| REL-01 | TBD | Pending |
-| REL-02 | TBD | Pending |
-| REL-03 | TBD | Pending |
-| GIGL-01 | TBD | Pending |
-| GIGL-02 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
-| TEST-04 | TBD | Pending |
+| ADDR-01 | Phase 2 | Pending |
+| ADDR-02 | Phase 2 | Pending |
+| ADDR-03 | Phase 1 | Pending |
+| ADDR-04 | Phase 1 | Pending |
+| XVAL-01 | Phase 2 | Pending |
+| XVAL-02 | Phase 2 | Pending |
+| XVAL-03 | Phase 2 | Pending |
+| PERF-01 | Phase 3 | Pending |
+| PERF-02 | Phase 3 | Pending |
+| PERF-03 | Phase 3 | Pending |
+| REL-01 | Phase 3 | Pending |
+| REL-02 | Phase 3 | Pending |
+| REL-03 | Phase 3 | Pending |
+| GIGL-01 | Phase 4 | Pending |
+| GIGL-02 | Phase 4 | Pending |
+| TEST-01 | Phase 5 | Pending |
+| TEST-02 | Phase 5 | Pending |
+| TEST-03 | Phase 5 | Pending |
+| TEST-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 19 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 19 ⚠️
+- Mapped to phases: 19 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-23*
