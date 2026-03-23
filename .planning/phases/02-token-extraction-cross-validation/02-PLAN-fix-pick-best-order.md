@@ -38,6 +38,7 @@ private fun pickBestVietnamSubProvincePart(parts: List<String>): String? {
 ```
 
 **Current convertLocation VN block (after Phase 1) — the raw fallback to remove:**
+
 ```kotlin
 } else if (isLocationIQSource) {
     // Fallback for LocationIQ when regex also fails: use first display_name segment
@@ -50,6 +51,7 @@ private fun pickBestVietnamSubProvincePart(parts: List<String>): String? {
 ```
 
 **Target logic:**
+
 - `pickBestVietnamSubProvincePart(parts, isLocationIQSource = true)` → `parts.firstOrNull { ... }`
 - `pickBestVietnamSubProvincePart(parts, isLocationIQSource = false)` → `parts.lastOrNull { ... }`
 - Remove the `else if (isLocationIQSource)` raw fallback entirely from `convertLocation`
@@ -73,6 +75,7 @@ private fun pickBestVietnamSubProvincePart(parts: List<String>): String? {
 4. Remove the `else if (isLocationIQSource) { val fallback = parts.firstOrNull()?.trim() ... }` block from `convertLocation`.
 
 **New pickBestVietnamSubProvincePart:**
+
 ```kotlin
 private fun pickBestVietnamSubProvincePart(parts: List<String>, isLocationIQSource: Boolean): String? {
     return if (isLocationIQSource) {
@@ -86,11 +89,13 @@ private fun pickBestVietnamSubProvincePart(parts: List<String>, isLocationIQSour
 ```
 
 **Updated call site in convertLocation:**
+
 ```kotlin
 val cleanPart = pickBestVietnamSubProvincePart(parts, isLocationIQSource)
 ```
 
 **Remove entirely from convertLocation:**
+
 ```kotlin
 } else if (isLocationIQSource) {
     // Fallback for LocationIQ when regex also fails: use first display_name segment

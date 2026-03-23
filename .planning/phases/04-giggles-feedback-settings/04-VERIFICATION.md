@@ -60,6 +60,7 @@ re_verification: false
 `[GiggleRescue] Nominatim rescued address for [lat,lon]: was '[dirty]', now '[clean]'`
 
 **Actual implementation:**  
+
 ```kotlin
 Log.d(
     "NominatimService",

@@ -30,6 +30,7 @@ must_haves:
 Implement real cross-validation in `requestNearestLocation`'s `Observable.zip` block. When both LocationIQ and Nominatim results are available for a VN location, compare the city tokens against `vnSubProvinceRegex` — the cleanest result wins. LocationIQ always takes priority when clean. Nominatim rescues when LocationIQ is dirty. Both-dirty falls back to LocationIQ (last resort). Non-VN behavior is unchanged.
 
 **Priority ladder (for VN):**
+
 1. LocationIQ clean → use LocationIQ
 2. LocationIQ dirty + Nominatim clean → use Nominatim (rescue)
 3. Both dirty OR Nominatim absent → use LocationIQ (last resort)
@@ -51,6 +52,7 @@ return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
     else if (nomInfo != null) nomList
     else throw InvalidLocationException()
 }
+
 ```
 
 **Target zip block:**
@@ -83,12 +85,14 @@ return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
 ```
 
 **New private helper to add (near pickBestVietnamSubProvincePart):**
+
 ```kotlin
 private fun isCleanVnCity(city: String?): Boolean {
     if (city.isNullOrEmpty()) return false
     return vnSubProvinceRegex.matcher(city).matches()
 }
 ```
+
 </context>
 
 <tasks>
@@ -110,6 +114,7 @@ private fun isCleanVnCity(city: String?): Boolean {
     return vnSubProvinceRegex.matcher(city).matches()
 }
 ```
+
   </action>
 </task>
 
@@ -121,6 +126,7 @@ private fun isCleanVnCity(city: String?): Boolean {
 Replace the entire `Observable.zip` block in `requestNearestLocation` with the VN-aware version. The non-VN fallback path at the bottom must be identical to the current logic (no behaviour change for non-VN).
 
 Replace:
+
 ```kotlin
             return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
                 val liqInfo = liqList.firstOrNull()
@@ -136,6 +142,7 @@ Replace:
 ```
 
 With:
+
 ```kotlin
             return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
                 val liqInfo = liqList.firstOrNull()
@@ -163,6 +170,7 @@ With:
                 }
             }
 ```
+
   </action>
 
   <verify>

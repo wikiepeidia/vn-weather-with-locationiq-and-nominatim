@@ -14,10 +14,12 @@ objective: |
 # Plan 04-01: Giggles Feedback & Settings
 
 ## Goal
+
 Developers and users receive visible confirmation when the fallback system catches a bad
 result, and the Settings screen explains the fallback toggle in a human, playful way.
 
 ## Requirements
+
 - **GIGL-01**: When Nominatim rescues a dirty LIQ result, emit:
   `[GiggleRescue] Nominatim rescued address for [lat,lon]: was 'dirty', now 'clean'`
 - **GIGL-02**: Settings screen description shows playful text e.g.
@@ -32,6 +34,7 @@ result, and the Settings screen explains the fallback toggle in a human, playful
   `isCleanVnCity(nomInfo?.city) -> nomList` branch
 
 Change the rescue branch from a single expression to a block that logs before returning:
+
 ```kotlin
 isCleanVnCity(nomInfo?.city) -> {
     Log.d("NominatimService", "[GiggleRescue] Nominatim rescued address for " +
@@ -46,6 +49,7 @@ isCleanVnCity(nomInfo?.city) -> {
 **Location**: `getPreferences()` → `EditTextPreference` `summary` lambda
 
 Update the `summary` lambda to include playful Nominatim fallback description:
+
 ```kotlin
 summary = { _, content ->
     when {
@@ -59,6 +63,7 @@ summary = { _, content ->
 ```
 
 ## Verification
+
 - Build succeeds: `./gradlew :app:compileFreenetDebugKotlin`
 - `[GiggleRescue]` log line is present in compiled output (grep source)
 - Settings summary logic covers all 3 branches (LIQ key, empty, custom URL)
