@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Vær</string>
+    <string name="app_name">Vær VN</string>
     <string name="alerts_to_follow">Kommende farevarsler, trykk her for å se dem.</string>
     <string name="daily_yesterday_short">I går</string>
     <string name="daily_today_short">I dag</string>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- app. -->
-    <string name="app_name">الطقس</string>
+    <string name="app_name">الطقس VN</string>
     <!-- keyword. -->
     <string name="location_current">المنطقة الحالية</string>
     <string name="daily_today_short">اليوم</string>

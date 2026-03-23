@@ -49,7 +49,7 @@
     <string name="air_quality_pm10_voice">ПМ десет</string>
     <string name="air_quality_so2_voice">Сулфур диоксид</string>
     <string name="wind">Ветер</string>
-    <string name="app_name">Метео</string>
+    <string name="app_name">Метео VN</string>
     <string name="wind_strength_7">Жесток ветар</string>
     <string name="wind_strength_9">Силна луња</string>
     <string name="uv_alert_level">Алармантен</string>

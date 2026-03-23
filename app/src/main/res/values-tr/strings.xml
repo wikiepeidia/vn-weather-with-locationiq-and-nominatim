@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- app. -->
-    <string name="app_name">Hava Durumu</string>
+    <string name="app_name">Hava Durumu VN</string>
     <!-- keyword. -->
     <string name="location_current">Konumunuz</string>
     <string name="daily_today_short">Bugün</string>

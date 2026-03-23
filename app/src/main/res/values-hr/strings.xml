@@ -347,7 +347,7 @@
     <string name="ephemeris_moonrise_at">Izlazak mjeseca u %s</string>
     <string name="wind_direction_SE_short">JI</string>
     <string name="weather_message_data_refresh_failed">Osvježavanje podataka neuspjelo</string>
-    <string name="app_name">Vrijeme</string>
+    <string name="app_name">Vrijeme VN</string>
     <string name="settings_location_access_switch_title">Pristup lokaciji</string>
     <string name="weather_api_unauthorized_title">Pristup API-ju nije autoriziran</string>
     <string name="dew_point">Rosište</string>

@@ -100,7 +100,7 @@
     <string name="widget_clock_day_horizontal">Годинник та щоденний (горизонтальний)</string>
     <string name="widget_text">Текст</string>
     <string name="widget_multi_city">Декілька міст</string>
-    <string name="app_name">Погода</string>
+    <string name="app_name">Погода VN</string>
     <string name="daily_forecast">Щоденний прогноз</string>
     <string name="hourly_forecast">Щогодинний прогноз</string>
     <string name="precipitation_nowcasting">Поточні опади</string>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- app. -->
-    <string name="app_name">Време</string>
+    <string name="app_name">Време VN</string>
     <!-- keyword. -->
     <string name="location_current">Тренутна локација</string>
     <string name="daily_today_short">Данас</string>

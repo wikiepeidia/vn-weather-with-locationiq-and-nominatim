@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name">Veður</string>
+    <string name="app_name">Veður VN</string>
     <string name="forecast">Veðurspá</string>
     <string name="current_weather">Veðrið núna</string>
     <string name="air_quality">Loftgæði</string>

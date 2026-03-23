@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- app -->
-    <string name="app_name">Météo</string>
+    <string name="app_name">Météo VN</string>
     <!-- mots-clés -->
     <string name="location_current">Ma position</string>
     <string name="location_custom_name">Nom personnalisé</string>

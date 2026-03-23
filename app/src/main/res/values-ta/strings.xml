@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">வானிலை</string>
+    <string name="app_name">வானிலை VN</string>
     <string name="daily_forecast">தினசரி முன்னறிவிப்பு</string>
     <string name="hourly_forecast">மணிநேர முன்னறிவிப்பு</string>
     <string name="air_quality">காற்றின் தரம்</string>

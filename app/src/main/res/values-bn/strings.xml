@@ -10,7 +10,7 @@
     <string name="temperature_feels_like_with_unit">মনে হচ্ছে যেন %s</string>
     <string name="temperature_wind_chill">বাতাসের শৈত্যতা</string>
     <string name="temperature_average_short">গড়</string>
-    <string name="app_name">আবহাওয়া</string>
+    <string name="app_name">আবহাওয়া VN</string>
     <string name="daily_forecast">দৈনিক পূর্বাভাস</string>
     <string name="precipitation_nowcasting">এখন বৃষ্টিপাত হচ্ছে</string>
     <string name="hourly_forecast">প্রতি ঘণ্টার পূর্বাভাস</string>

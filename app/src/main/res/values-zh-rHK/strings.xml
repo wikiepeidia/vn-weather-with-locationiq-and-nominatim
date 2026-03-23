@@ -53,7 +53,7 @@
     <string name="common_weather_text_drizzle_moderate">中毛毛雨</string>
     <string name="common_weather_text_drizzle_heavy">大毛毛雨</string>
     <string name="null_data_text">N/A</string>
-    <string name="app_name">天氣</string>
+    <string name="app_name">天氣 VN</string>
     <string name="daily_forecast">每日預報</string>
     <string name="hourly_forecast">每小時預報</string>
     <string name="current_weather">目前天氣</string>

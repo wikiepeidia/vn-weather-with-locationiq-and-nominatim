@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- app. -->
-    <string name="app_name">天気</string>
+    <string name="app_name">天気 VN</string>
     <!-- keyword. -->
     <string name="location_current">現在地</string>
     <string name="daily_today_short">今日</string>

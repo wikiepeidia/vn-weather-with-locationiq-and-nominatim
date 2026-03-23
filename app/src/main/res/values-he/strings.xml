@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">מזג אוויר</string>
+    <string name="app_name">מזג אוויר VN</string>
     <string name="daily_forecast">תחזית יומית</string>
     <string name="hourly_forecast">תחזית שעתית</string>
     <string name="ephemeris">שמש וירח</string>

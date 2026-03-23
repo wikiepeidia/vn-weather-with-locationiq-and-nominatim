@@ -69,7 +69,7 @@ If this only happens with one source and not others:
 
 If this is happening will all sources, and presumably with other apps, in the worst case, you may be a victim of a [man-in-middle attack](https://en.wikipedia.org/wiki/Man-in-the-middle_attack).
 
-If in doubt, [start a discussion to ask for help](https://github.com/breezy-weather/breezy-weather/discussions/new?category=general).
+If in doubt, [open an issue on GitHub](https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues).
 
 ___
 
@@ -177,4 +177,4 @@ With clear design toolkit guidelines, Material 3 Expressive provides a **consist
 
 Regarding the ability to make an option to switch between the new and old design, it’s not possible, because there were significant technical changes during the migration to get rid of most of the technical debt, which allows for easier maintenance of the app.
 
-Maintaining more than 1 design has a high maintenance cost. We do provide some abilities to customize this design for flexibility, but for more significant changes, we provide the [ability to make 3rd party designs](https://github.com/breezy-weather/breezy-weather/discussions/2089), either by yourself or by commissioning someone. If you concretize it, we would be happy if you could share it in the [Show & Tell section](https://github.com/breezy-weather/breezy-weather/discussions/categories/show-and-tell)!
+Maintaining more than 1 design has a high maintenance cost. We do provide some abilities to customize this design for flexibility. For more significant changes or to share your work, feel free to open a discussion on our [GitHub repository](https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues).

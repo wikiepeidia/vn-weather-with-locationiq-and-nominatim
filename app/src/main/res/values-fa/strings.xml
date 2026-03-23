@@ -5,7 +5,7 @@
     <string name="temperature">دما</string>
     <string name="temperature_feels_like">احساس می شود</string>
     <string name="temperature_feels_like_with_unit">احساس می شود %s</string>
-    <string name="app_name">آب و هوا</string>
+    <string name="app_name">آب و هوا VN</string>
     <string name="daily_forecast">پیش بینی روزانه</string>
     <string name="precipitation_nowcasting">بارش دقیقه به دقیقه</string>
     <string name="air_quality">کیفیت هوا</string>

@@ -13,17 +13,10 @@
 - This License does not grant any rights in the trademarks, service marks, or logos of any Contributor.
 - Misrepresentation of the origin of that material is prohibited, and modified versions of such material must be marked in reasonable ways as different from the original version.
 
-Before creating a fork, check if the intent action `nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER` can cover your need (for example, you want to re-use our weather data in your own customized widget). It can be enabled from Settings > Widgets & Live Wallpaper > Data sharing. You can also [help testing our `ContentProvider` exposing the full weather data of Breezy Weather](https://github.com/breezy-weather/breezy-weather/discussions/2089).
+This project is a compliant fork:
+- App name changed to **Weather VN** (all languages)
+- Application ID changed to `io.github.wikiepeidia.vnweather`
+- The `breezy` flag is not set in distributed builds
+- Custom icons used in place of Breezy Weather icons
 
-Otherwise, remember to:
-
-- Respect the project’s LICENSE
-- Avoid confusion with the Breezy Weather app:
-  - Do NOT use the `breezy` flag when compiling releases you plan to distribute
-  - Change the app name in [`res_fork/values/strings.xml`](https://github.com/breezy-weather/breezy-weather/blob/main/app/src/res_fork/values/strings.xml)
-  - Change the app icons in the [`res_fork`](https://github.com/breezy-weather/breezy-weather/blob/main/app/src/res_fork) folders
-  - Avoid installation conflicts: change the `applicationId` in [`build.gradle.kts`](https://github.com/breezy-weather/breezy-weather/blob/main/app/build.gradle.kts#L25)
-
-## TODO
-
-- rebase the application to the latest version of Breezy Weather while maintaining the features of this fork. Try to probably not impersonating the original app, but rather making it clear that this is a fork optimized for Vietnamese users with specific features.
+The upstream project (Breezy Weather) is available at https://github.com/breezy-weather/breezy-weather and is licensed under LGPL-3.0.

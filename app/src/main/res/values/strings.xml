@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- App -->
-    <string name="app_name">Weather</string>
+    <string name="app_name">Weather VN</string>
     <string name="breezy_weather" translatable="false">Breezy Weather</string>
     <string name="forecast">Forecast</string>
     <string name="daily_forecast">Daily forecast</string>

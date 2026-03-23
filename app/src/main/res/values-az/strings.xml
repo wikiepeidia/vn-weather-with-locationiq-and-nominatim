@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Hava</string>
+    <string name="app_name">Hava VN</string>
     <string name="forecast">Proqnoz</string>
     <string name="daily_forecast">Günlük proqnoz</string>
     <string name="hourly_forecast">Saatlıq proqnoz</string>

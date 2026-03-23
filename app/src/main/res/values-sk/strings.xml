@@ -69,7 +69,7 @@
     <string name="air_quality_no2_voice">Oxid dusičitý</string>
     <string name="air_quality_o3_voice">Ozón</string>
     <string name="air_quality_co_voice">Oxid uhoľnatý</string>
-    <string name="app_name">Počasie</string>
+    <string name="app_name">Počasie VN</string>
     <string name="daily_forecast">Denná predpoveď</string>
     <string name="hourly_forecast">Hodinová predpoveď</string>
     <string name="precipitation_snow">Sneh</string>

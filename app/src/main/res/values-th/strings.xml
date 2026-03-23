@@ -5,7 +5,7 @@
     <string name="temperature">อุณหภูมิ</string>
     <string name="pollen">ละอองเรณู</string>
     <string name="alert_source">ที่มา: %s</string>
-    <string name="app_name">สภาพอากาศ</string>
+    <string name="app_name">สภาพอากาศ VN</string>
     <string name="forecast">พยากรณ์</string>
     <string name="daily_forecast">พยากรณ์รายวัน</string>
     <string name="hourly_forecast">พยากรณ์อากาศรายชั่วโมง</string>

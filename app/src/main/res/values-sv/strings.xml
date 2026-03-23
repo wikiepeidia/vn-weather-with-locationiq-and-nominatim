@@ -178,7 +178,7 @@
     <string name="settings_units_distance">Längdenhet</string>
     <string name="ephemeris_moonrise_at">Månuppgång vid %s</string>
     <string name="wind_direction_SE_short">SO</string>
-    <string name="app_name">Väder</string>
+    <string name="app_name">Väder VN</string>
     <string name="dew_point">Daggpunkt</string>
     <string name="sunshine_duration">Solskenstid</string>
     <string name="daytime">Dagtid</string>

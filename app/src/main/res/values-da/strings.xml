@@ -11,7 +11,7 @@
     <string name="temperature_wind_chill">Vindafkøling</string>
     <string name="alerts">Varsler</string>
     <string name="daily_today_short">I dag</string>
-    <string name="app_name">Vejr</string>
+    <string name="app_name">Vejr VN</string>
     <string name="daily_yesterday_short">I går</string>
     <string name="precipitation_thunderstorm">Tordenvejr</string>
     <string name="wind_direction_S_short">S</string>

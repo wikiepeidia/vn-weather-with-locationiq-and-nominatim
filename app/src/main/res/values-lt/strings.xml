@@ -111,7 +111,7 @@
     <string name="location_message_permission_missing">Prieiga prie jūsų dabartinės buvimo vietos - nesuteikta</string>
     <string name="location_message_permission_background_missing">Prieiga prie jūsų dabartinės buvimo vietos, kai programa yra fone - nesuteikta</string>
     <string name="location_message_reverse_geocoding_failed">Orų šaltinis nerado atitikmens jūsų vietovei</string>
-    <string name="app_name">Orai</string>
+    <string name="app_name">Orai VN</string>
     <string name="alerts">Perspėjimai</string>
     <string name="daily_forecast">Orai artimiausiomis dienomis</string>
     <string name="ephemeris">Saulė ir Mėnulis</string>

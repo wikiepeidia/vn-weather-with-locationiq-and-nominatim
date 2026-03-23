@@ -45,7 +45,7 @@
     <string name="wind_strength_1">Vaikne tuul</string>
     <string name="visibility">Nähtavus</string>
     <string name="temperature_wind_chill">Tuulekülm</string>
-    <string name="app_name">Ilm</string>
+    <string name="app_name">Ilm VN</string>
     <string name="daily_forecast">Päevaprognoos</string>
     <string name="hourly_forecast">Tunniprognoos</string>
     <string name="precipitation_nowcasting">Sademed minutist minutisse</string>

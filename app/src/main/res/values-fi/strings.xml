@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <!-- app. -->
-    <string name="app_name">Sää</string>
+    <string name="app_name">Sää VN</string>
     <!-- keyword. -->
     <string name="location_current">Nykyinen sijainti</string>
     <string name="daily_today_short">Tänään</string>
