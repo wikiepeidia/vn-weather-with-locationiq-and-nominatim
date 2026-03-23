@@ -10,7 +10,7 @@
 ## Phases
 
 - [x] **Phase 1: Data Model Foundation** — Map missing Nominatim structured fields so VN ward data is never silently discarded ✓
-- [ ] **Phase 2: Token Extraction & Cross-Validation** — Fix firstOrNull/lastOrNull ordering and implement real cross-validation to eliminate POI-prefix garbage
+- [x] **Phase 2: Token Extraction & Cross-Validation** — Fix firstOrNull/lastOrNull ordering and implement real cross-validation to eliminate POI-prefix garbage ✓
 - [ ] **Phase 3: Performance & Reliability** — Lazy Nominatim strategy, fresh API client per call, error logging, Asia endpoint
 - [ ] **Phase 4: Giggles Feedback & Settings** — Rescue log + playful settings description so users and devs see the system working
 - [ ] **Phase 5: Kotlin Unit Tests** — Full JUnit coverage for all VN address logic in Gradle test suite
