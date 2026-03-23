@@ -375,8 +375,7 @@ class NominatimService @Inject constructor(
 
     // CONFIG
     private val config = SourceConfigStore(context, id)
-    override val isConfigured
-        get() = BreezyWeather.instance.userAgent.isNotEmpty()
+    override val isConfigured = true  // Nominatim requires no API key
     override val isRestricted = false
     private var instance: String?
         set(value) {
