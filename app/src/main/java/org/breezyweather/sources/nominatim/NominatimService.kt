@@ -70,10 +70,8 @@ class NominatimService @Inject constructor(
         "https://osm.org/copyright" to "https://osm.org/copyright"
     )
 
-    // Regex for Vietnam Display Name parsing
-    // Finds specific administrative prefixes: Xã, Phường, Đặc Khu (case-insensitive, with/without accents)
-    // Matches if the component strictly STARTS with the prefix to avoid garbage like "Ủy ban nhân dân..."
-    private val vnSubProvinceRegex = Pattern.compile("(?iu)^(?:xã|phường|đặc\\s*khu|xa|phuong|dac\\s*khu)\\s+.*")
+    // Regex for Vietnam Display Name parsing — see companion object for testable static reference
+    // Use NominatimService.vnSubProvinceRegex for tests
 
     private fun isLocationIqKey(value: String?): Boolean {
         return value?.startsWith("pk.") == true
@@ -155,11 +153,16 @@ class NominatimService @Inject constructor(
                     // VN but dirty — lazy-fetch Nominatim for potential rescue
                     nominatimFetch.map { nomList ->
                         val nomInfo = nomList.firstOrNull()
-                        when {
-                            isCleanVnCity(nomInfo?.city) -> nomList         // Nominatim rescued
-                            liqInfo != null              -> listOf(liqInfo) // Both dirty — LIQ last resort
-                            else                         -> emptyList()
+                        val rescued = isCleanVnCity(nomInfo?.city)
+                        if (rescued) {
+                            // GIGL-01: [GiggleRescue] log — Nominatim superseded dirty LIQ result
+                            Log.d(
+                                "NominatimService",
+                                "[GiggleRescue] Nominatim rescued address for " +
+                                    "[$latitude,$longitude]: was '${liqInfo?.city}', now '${nomInfo?.city}'"
+                            )
                         }
+                        mergeVnResults(liqInfo, nomList)
                     }
                 }
             }.onErrorResumeNext { e: Throwable ->
@@ -244,20 +247,16 @@ class NominatimService @Inject constructor(
         }
     }
 
-    private fun pickBestVietnamSubProvincePart(parts: List<String>, isLocationIQSource: Boolean): String? {
-        return if (isLocationIQSource) {
-            // LocationIQ zoom=18: ward/commune is the FIRST matching segment (most specific comes first)
-            parts.firstOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
-        } else {
-            // Nominatim zoom=13: ward/commune is the LAST matching segment
-            parts.lastOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
-        }
-    }
+    private fun pickBestVietnamSubProvincePart(parts: List<String>, isLocationIQSource: Boolean): String? =
+        Companion.pickBestVietnamSubProvincePart(parts, isLocationIQSource)
 
-    private fun isCleanVnCity(city: String?): Boolean {
-        if (city.isNullOrEmpty()) return false
-        return vnSubProvinceRegex.matcher(city).matches()
-    }
+    private fun isCleanVnCity(city: String?): Boolean =
+        Companion.isCleanVnCity(city)
+
+    private fun mergeVnResults(
+        liqInfo: LocationAddressInfo?,
+        nomList: List<LocationAddressInfo>,
+    ): List<LocationAddressInfo> = Companion.mergeVnResults(liqInfo, nomList)
 
     private fun getAdmin1CodeForCountry(
         address: NominatimAddress,
@@ -388,8 +387,13 @@ class NominatimService @Inject constructor(
             EditTextPreference(
                 titleId = R.string.settings_weather_source_nominatim_instance,
                 summary = { _, content ->
-                    if (isLocationIqKey(content)) "LocationIQ" else content.ifEmpty {
-                        NOMINATIM_BASE_URL
+                    when {
+                        // GIGL-02: playful description so users/devs see when the rescue system is active
+                        isLocationIqKey(content) ->
+                            "LocationIQ \u2022 Backup address detective on standby"
+                        content.isEmpty() ->
+                            "Backup address detective (fires when LocationIQ returns garbage)"
+                        else -> content
                     }
                 },
                 content = if (instance != NOMINATIM_BASE_URL) instance else null,
@@ -416,5 +420,49 @@ class NominatimService @Inject constructor(
         private const val LOCATIONIQ_BASE_URL = "https://ap1.locationiq.com/v1/"
         private const val USER_AGENT =
             "BreezyWeather/${BuildConfig.VERSION_NAME} github.com/breezy-weather/breezy-weather/issues"
+
+        // VN sub-province regex: matches strings strictly starting with Phường/Xã/Đặc Khu prefix
+        // Internal so unit tests can reference it directly
+        internal val vnSubProvinceRegex: Pattern =
+            Pattern.compile("(?iu)^(?:xã|phường|đặc\\s*khu|xa|phuong|dac\\s*khu)\\s+.*")
+
+        /**
+         * Returns the best VN sub-province name from a list of display_name parts.
+         * LIQ zoom=18: ward appears FIRST — use firstOrNull.
+         * Nominatim zoom=13: ward appears LAST — use lastOrNull.
+         */
+        internal fun pickBestVietnamSubProvincePart(
+            parts: List<String>,
+            isLocationIQSource: Boolean,
+        ): String? = if (isLocationIQSource) {
+            parts.firstOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
+        } else {
+            parts.lastOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
+        }
+
+        /**
+         * Returns true if [city] strictly starts with a Phường/Xã/Đặc khu prefix.
+         * Used to decide whether a LocationIQ or Nominatim result is "clean" for VN addresses.
+         */
+        internal fun isCleanVnCity(city: String?): Boolean {
+            if (city.isNullOrEmpty()) return false
+            return vnSubProvinceRegex.matcher(city).matches()
+        }
+
+        /**
+         * Cross-validation merge: given a (potentially dirty) LIQ result and the Nominatim result list,
+         * returns the best list — preferring Nominatim when it has a clean city token.
+         */
+        internal fun mergeVnResults(
+            liqInfo: LocationAddressInfo?,
+            nomList: List<LocationAddressInfo>,
+        ): List<LocationAddressInfo> {
+            val nomInfo = nomList.firstOrNull()
+            return when {
+                isCleanVnCity(nomInfo?.city) -> nomList         // Nominatim rescued
+                liqInfo != null              -> listOf(liqInfo) // Both dirty — LIQ last resort
+                else                         -> emptyList()
+            }
+        }
     }
 }
