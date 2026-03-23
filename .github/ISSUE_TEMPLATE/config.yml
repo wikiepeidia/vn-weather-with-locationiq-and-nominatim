@@ -1,11 +1,5 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
 contact_links:
-  - name: Idea
-    url: https://github.com/breezy-weather/breezy-weather/discussions/new?category=ideas
-    about: Suggest something to improve app
-  - name: Translations
-    url: https://hosted.weblate.org/projects/breezy-weather/breezy-weather-android/#information
-    about: New translation, update to existing translations on Weblate
-  - name: Questions
-    url: https://github.com/breezy-weather/breezy-weather/discussions/categories/q-a
-    about: Ask the community for help
+  - name: Questions / Ideas
+    url: https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues
+    about: Ask questions or suggest improvements

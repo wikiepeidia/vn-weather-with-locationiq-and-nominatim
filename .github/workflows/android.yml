@@ -49,5 +49,5 @@ jobs:
       - name: Upload Unsigned APK
         uses: actions/upload-artifact@v4
         with:
-          name: breezy-weather-unsigned
+          name: weather-vn-unsigned
           path: app/build/outputs/apk/basic/release/*.apk
