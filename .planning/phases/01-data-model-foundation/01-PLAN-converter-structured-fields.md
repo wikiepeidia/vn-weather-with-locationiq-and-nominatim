@@ -48,6 +48,7 @@ Output: `NominatimService.kt` with a restructured VN address block inside `conve
 <!-- Key contracts the executor must know before editing NominatimService.kt -->
 
 **Current convertLocation() VN block (lines ~194–220):**
+
 ```kotlin
 // Vietnam Special Parsing
 var city = locationResult.address.town ?: locationResult.name
@@ -78,6 +79,7 @@ if (countryCode.equals("vn", ignoreCase = true)) {
 ```
 
 **Target state after this plan's change:**
+
 ```kotlin
 // Vietnam Special Parsing
 var city = locationResult.address.town ?: locationResult.name
@@ -115,11 +117,13 @@ if (countryCode.equals("vn", ignoreCase = true)) {
 ```
 
 **Critical constraints:**
+
 - The `if (countryCode.equals("vn", ignoreCase = true))` gate must stay as-is — non-VN paths must not be touched
 - `address` is nullable in `NominatimLocationResult` → use safe-call `?.suburb`, `?.hamlet`, `?.quarter`
 - The existing `display_name` regex block (including `pickBestVietnamSubProvincePart` and `isLocationIQSource` fallback) must remain fully intact inside the `else` branch — this is unchanged from its current form
 - No other method or property in NominatimService.kt should be modified
 </interfaces>
+
 </context>
 
 <tasks>
@@ -137,6 +141,7 @@ if (countryCode.equals("vn", ignoreCase = true)) {
 Inside `convertLocation()`, replace ONLY the `if (countryCode.equals("vn", ignoreCase = true)) { ... }` block with the updated version below. Everything else in the method (the `var city`, `var district` declarations above; the `LocationAddressInfo(...)` constructor call below; all other methods) must remain untouched.
 
 **Replace the current VN block:**
+
 ```kotlin
             if (countryCode.equals("vn", ignoreCase = true)) {
                 // Try to extract Xa/Phuong/Dac Khu from display_name
@@ -163,6 +168,7 @@ Inside `convertLocation()`, replace ONLY the `if (countryCode.equals("vn", ignor
 ```
 
 **With this exact replacement:**
+
 ```kotlin
             if (countryCode.equals("vn", ignoreCase = true)) {
                 // 1. Prefer Nominatim's structured fields (ADDR-04) — fastest, cleanest path
@@ -230,6 +236,7 @@ After task completion, verify the overall structure manually by reading lines ~1
 </verification>
 
 <success_criteria>
+
 1. For a VN location where Nominatim returns `"suburb": "Phường Hoàn Kiếm"`, `convertLocation()` sets `city = "Phường Hoàn Kiếm"` without touching display_name at all.
 2. For a VN location where all of suburb/hamlet/quarter are null, the existing display_name regex logic runs exactly as before.
 3. For any non-VN location (e.g. `countryCode == "us"`), the code path is byte-for-byte identical to the pre-change behavior.

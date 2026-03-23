@@ -5,22 +5,27 @@
 ## Test Framework
 
 **Runner:**
+
 - JUnit 5 (Jupiter) `6.0.3`
 - Config: `testImplementation(libs.bundles.test)` + `testRuntimeOnly(libs.junit.platform)` in `app/build.gradle.kts`
 - Version catalog: `gradle/libs.versions.toml`
 
 **Assertion Library:**
+
 - Kotest Assertions Core `6.1.7` — `io.kotest:kotest-assertions-core`
 - Uses `shouldBe` infix style (no `assertEquals`)
 
 **Mocking:**
+
 - MockK `1.14.9` — `io.mockk:mockk`
 
 **Coroutines Testing:**
+
 - `kotlinx-coroutines-test` `1.10.2`
 - All tests use `= runTest { ... }` even when not strictly async (project convention)
 
 **Run Commands:**
+
 ```bash
 ./gradlew test                  # Run all unit tests
 ./gradlew app:test              # Run app module unit tests only
@@ -38,6 +43,7 @@
 **Naming:** `<ClassUnderTest>Test.kt`
 
 **Current test files:**
+
 ```
 app/src/test/java/org/breezyweather/
 ├── LocationTest.kt                         # Empty stub (placeholder only)
@@ -59,6 +65,7 @@ app/src/test/java/org/breezyweather/
 ## Test Structure
 
 **Standard pattern:**
+
 ```kotlin
 class CardDisplayTest {
 
@@ -73,6 +80,7 @@ class CardDisplayTest {
 ```
 
 **Key characteristics:**
+
 - No `@BeforeEach`, `@AfterEach`, `@BeforeAll` setup observed — tests are stateless
 - No nested `@Nested` classes (flat structure per test class)
 - All test functions use `= runTest { ... }` (assigned expression body, not block body with `fun`)
@@ -83,12 +91,14 @@ class CardDisplayTest {
 ## Mocking with MockK
 
 **Creating mocks:**
+
 ```kotlin
 val res = mockk<Resources>()
 val context = mockk<Context>()
 ```
 
 **Stubbing with `every`:**
+
 ```kotlin
 every { res.getStringArray(R.array.dark_modes) } returns
     arrayOf("Automatic", "Follow system", "Always light", "Always dark")
@@ -97,6 +107,7 @@ every { res.getStringArray(R.array.dark_mode_values) } returns
 ```
 
 **Application (from `UtilsTest.kt`):**
+
 ```kotlin
 @Test
 fun getNameByValue() = runTest {
@@ -110,6 +121,7 @@ fun getNameByValue() = runTest {
 ```
 
 **Android Context mocking** uses `mockk<Context>().apply { every { getString(...) } returns "..." }`:
+
 ```kotlin
 val context = mockk<Context>().apply {
     every { getString(any()) } returns "Name"
@@ -118,11 +130,13 @@ val context = mockk<Context>().apply {
 ```
 
 **What is mocked:**
+
 - `android.content.Context`
 - `android.content.res.Resources`
 - Android resource methods (`getString`, `getStringArray`)
 
 **What is NOT mocked:**
+
 - Pure Kotlin domain objects and data classes
 - Static utility functions (called directly)
 - Companion object methods (called directly on the class)
@@ -134,6 +148,7 @@ val context = mockk<Context>().apply {
 Use **Kotest `shouldBe`** infix assertions exclusively. Do not use `assertEquals`.
 
 **Single value:**
+
 ```kotlin
 getWindDegree(null) shouldBe null
 getWindDegree("E") shouldBe 90.0
@@ -141,12 +156,14 @@ getWindDegree("VR") shouldBe -1.0
 ```
 
 **List element access:**
+
 ```kotlin
 list[0] shouldBe CardDisplay.CARD_NOWCAST
 list[12] shouldBe CardDisplay.CARD_MOON
 ```
 
 **String equality:**
+
 ```kotlin
 CardDisplay.toValue(list) shouldBe "nowcast&daily_forecast&hourly_forecast..."
 UnitUtils.getNameByValue(...) shouldBe "Automatic"
@@ -157,6 +174,7 @@ UnitUtils.getNameByValue(...) shouldBe "Automatic"
 ## Test Types
 
 **Unit Tests (only type present):**
+
 - Scope: Single class, method, or pure function
 - Location: `app/src/test/`
 - Dependencies: MockK for Android framework; real objects otherwise
@@ -172,6 +190,7 @@ UnitUtils.getNameByValue(...) shouldBe "Automatic"
 **Requirements:** None enforced — no Jacoco configuration, no coverage threshold found.
 
 **Current state:** Very sparse. Only 5 non-empty test classes covering:
+
 - `CardDisplay` serialization roundtrip (`CardDisplayTest.kt`)
 - `DailyTrendDisplay` (similar roundtrip, `DailyTrendDisplayTest.kt`)
 - `UnitUtils.getNameByValue` (1 test in `UtilsTest.kt`)
@@ -185,6 +204,7 @@ UnitUtils.getNameByValue(...) shouldBe "Automatic"
 ## Writing New Tests
 
 **For a new source converter function:**
+
 ```kotlin
 package org.breezyweather.sources
 
@@ -206,10 +226,12 @@ class MySourceConverterTest {
 NominatimService uses `private` methods, so test the observable output via integration-style test
 or extract the parsing logic into a testable `internal` function. Current `pickBestVietnamSubProvincePart`
 is `private` — to unit test it, either:
+
 1. Make it `internal` and use `@VisibleForTesting`
 2. Test through the public `requestNearestLocation` observable (requires mocking the `NominatimApi`)
 
 **Recommended MockK pattern for Retrofit API mocking:**
+
 ```kotlin
 val api = mockk<NominatimApi>()
 every { api.getReverseLocation(any(), any(), any(), any(), any(), any(), any()) } returns
