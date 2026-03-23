@@ -17,6 +17,7 @@
 package org.breezyweather.sources.nominatim
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.text.input.KeyboardType
 import breezyweather.domain.location.model.LocationAddressInfo
 import breezyweather.domain.source.SourceContinent
@@ -74,15 +75,6 @@ class NominatimService @Inject constructor(
     // Matches if the component strictly STARTS with the prefix to avoid garbage like "Ủy ban nhân dân..."
     private val vnSubProvinceRegex = Pattern.compile("(?iu)^(?:xã|phường|đặc\\s*khu|xa|phuong|dac\\s*khu)\\s+.*")
 
-    private val mApi by lazy {
-        val isLocationIQ = isLocationIqKey(instance)
-        val url = if (isLocationIQ) LOCATIONIQ_BASE_URL else (instance ?: NOMINATIM_BASE_URL)
-        client
-            .baseUrl(url)
-            .build()
-            .create(NominatimApi::class.java)
-    }
-
     private fun isLocationIqKey(value: String?): Boolean {
         return value?.startsWith("pk.") == true
     }
@@ -92,8 +84,11 @@ class NominatimService @Inject constructor(
         query: String,
     ): Observable<List<LocationAddressInfo>> {
         val key = if (isLocationIqKey(instance)) instance else null
-        
-        return mApi.searchLocations(
+        // REL-01: fresh client per call — no stale lazy reference after config changes
+        val url = if (key != null) LOCATIONIQ_BASE_URL else (instance ?: NOMINATIM_BASE_URL)
+        val api = client.baseUrl(url).build().create(NominatimApi::class.java)
+
+        return api.searchLocations(
             acceptLanguage = context.currentLocale.toLanguageTag(),
             userAgent = USER_AGENT,
             q = query,
@@ -114,30 +109,18 @@ class NominatimService @Inject constructor(
         val key = if (isLocationIqKey(instance)) instance else null
         
         if (key != null) {
-            // Concurrent strategy: Call both LocationIQ and Nominatim
-            val locationIQClient = client
+            // REL-03: LocationIQ and Nominatim clients explicitly separated
+            val liqApi = client
                 .baseUrl(LOCATIONIQ_BASE_URL)
                 .build()
                 .create(NominatimApi::class.java)
-
-            val nominatimClient = client
+            val nomApi = client
                 .baseUrl(NOMINATIM_BASE_URL)
                 .build()
                 .create(NominatimApi::class.java)
 
-            val locationIQObs = locationIQClient.getReverseLocation(
-                acceptLanguage = context.currentLocale.toLanguageTag(),
-                userAgent = USER_AGENT,
-                lat = latitude,
-                lon = longitude,
-                zoom = 18,
-                format = "json",
-                key = key
-            ).map<List<LocationAddressInfo>> { result ->
-                convertLocation(result, isLocationIQSource = true)?.let { listOf(it) } ?: emptyList()
-            }.onErrorReturn { emptyList() }
-
-            val nominatimObs = nominatimClient.getReverseLocation(
+            // PERF-01/02: Deferred Nominatim fetch — only subscribed when LocationIQ result is dirty or fails
+            val nominatimFetch: Observable<List<LocationAddressInfo>> = nomApi.getReverseLocation(
                 acceptLanguage = context.currentLocale.toLanguageTag(),
                 userAgent = USER_AGENT,
                 lat = latitude,
@@ -145,38 +128,50 @@ class NominatimService @Inject constructor(
                 zoom = 13,
                 format = "jsonv2",
                 key = null
-            ).map<List<LocationAddressInfo>> { result ->
+            ).map { result ->
                 convertLocation(result, isLocationIQSource = false)?.let { listOf(it) } ?: emptyList()
-            }.onErrorReturn { emptyList() }
+            }.onErrorReturn { e ->
+                // REL-02: log Nominatim failures for diagnosability
+                Log.d("NominatimService", "Nominatim reverse geocoding error: ${e.message}")
+                emptyList()
+            }
 
-            return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
-                val liqInfo = liqList.firstOrNull()
-                val nomInfo = nomList.firstOrNull()
+            return liqApi.getReverseLocation(
+                acceptLanguage = context.currentLocale.toLanguageTag(),
+                userAgent = USER_AGENT,
+                lat = latitude,
+                lon = longitude,
+                zoom = 18,
+                format = "json",
+                key = key
+            ).flatMap { liqResult ->
+                val liqInfo = convertLocation(liqResult, isLocationIQSource = true)
+                val isVN = liqInfo?.countryCode?.equals("vn", ignoreCase = true) == true
 
-                // VN cross-validation: prefer whichever result has a clean ward/commune token
-                val isVNContext = liqInfo?.countryCode?.equals("vn", ignoreCase = true) == true
-                    || nomInfo?.countryCode?.equals("vn", ignoreCase = true) == true
-
-                if (isVNContext) {
-                    val liqClean = isCleanVnCity(liqInfo?.city)
-                    val nomClean = isCleanVnCity(nomInfo?.city)
-                    when {
-                        liqClean        -> liqList                   // LIQ clean — always prefer LocationIQ
-                        nomClean        -> nomList                   // LIQ dirty, NOM clean — Nominatim rescues
-                        liqInfo != null -> liqList                   // Both dirty — LIQ as last resort
-                        nomInfo != null -> nomList                   // Only NOM available
-                        else            -> throw InvalidLocationException()
-                    }
+                if (!isVN || isCleanVnCity(liqInfo?.city)) {
+                    // Non-VN or clean VN — LocationIQ result is authoritative; Nominatim never called
+                    Observable.just(if (liqInfo != null) listOf(liqInfo) else emptyList())
                 } else {
-                    // Non-VN: preserve existing priority — LocationIQ > Nominatim
-                    if (liqInfo != null) liqList
-                    else if (nomInfo != null) nomList
-                    else throw InvalidLocationException()
+                    // VN but dirty — lazy-fetch Nominatim for potential rescue
+                    nominatimFetch.map { nomList ->
+                        val nomInfo = nomList.firstOrNull()
+                        when {
+                            isCleanVnCity(nomInfo?.city) -> nomList         // Nominatim rescued
+                            liqInfo != null              -> listOf(liqInfo) // Both dirty — LIQ last resort
+                            else                         -> emptyList()
+                        }
+                    }
                 }
+            }.onErrorResumeNext { e: Throwable ->
+                // REL-02: log LocationIQ failures; fall through to Nominatim-only path
+                Log.d("NominatimService", "LocationIQ reverse geocoding error: ${e.message}")
+                nominatimFetch
+            }.map { result ->
+                if (result.isEmpty()) throw InvalidLocationException()
+                result
             }
         } else {
             val url = instance ?: NOMINATIM_BASE_URL
-            // Build client freshly to ensure correct url if instance changed, or use mApi approach if guaranteed valid
             val api = client.baseUrl(url).build().create(NominatimApi::class.java)
 
             return api.getReverseLocation(
@@ -191,8 +186,6 @@ class NominatimService @Inject constructor(
                 if (result.address?.countryCode == null || result.address.countryCode.isEmpty()) {
                     throw InvalidLocationException()
                 }
-                
-                // key is null here, so isLocationIQSource is false
                 listOf(convertLocation(result, isLocationIQSource = false)!!)
             }
         }
@@ -420,7 +413,7 @@ class NominatimService @Inject constructor(
     companion object {
         private val COMMA_SPLIT_REGEX = Regex("[,，]")
         private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/"
-        private const val LOCATIONIQ_BASE_URL = "https://us1.locationiq.com/v1/"
+        private const val LOCATIONIQ_BASE_URL = "https://ap1.locationiq.com/v1/"
         private const val USER_AGENT =
             "BreezyWeather/${BuildConfig.VERSION_NAME} github.com/breezy-weather/breezy-weather/issues"
     }
