@@ -195,25 +195,33 @@ class NominatimService @Inject constructor(
             var district = locationResult.address.village
 
             if (countryCode.equals("vn", ignoreCase = true)) {
-                // Try to extract Xa/Phuong/Dac Khu from display_name
-                val displayName = locationResult.displayName
+                // 1. Prefer Nominatim's structured fields (ADDR-04) — fastest, cleanest path
+                val structuredCity = locationResult.address?.suburb
+                    ?: locationResult.address?.hamlet
+                    ?: locationResult.address?.quarter
+                if (structuredCity != null) {
+                    city = structuredCity
+                    district = null
+                } else {
+                    // 2. Fall through to display_name regex when no structured field available
+                    val displayName = locationResult.displayName
+                    if (!displayName.isNullOrEmpty()) {
+                        // Split display_name by standard/full-width comma and pick the last valid VN component.
+                        val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
+                        val cleanPart = pickBestVietnamSubProvincePart(parts)
 
-                if (!displayName.isNullOrEmpty()) {
-                    // Split display_name by standard/full-width comma and pick the last valid VN component.
-                    val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
-                    val cleanPart = pickBestVietnamSubProvincePart(parts)
-
-                    if (cleanPart != null) {
-                        city = cleanPart
-                        district = null // Hide district if we found a better name
-                    } else if (isLocationIQSource) {
-                        // Fallback logic for LocationIQ if regex fails: use first part of display_name
-                        val fallback = parts.firstOrNull()?.trim()
-                        if (fallback != null) {
-                            city = fallback
-                            district = null
+                        if (cleanPart != null) {
+                            city = cleanPart
+                            district = null // Hide district if we found a better name
+                        } else if (isLocationIQSource) {
+                            // Fallback for LocationIQ when regex also fails: use first display_name segment
+                            val fallback = parts.firstOrNull()?.trim()
+                            if (fallback != null) {
+                                city = fallback
+                                district = null
+                            }
                         }
-                    } 
+                    }
                 }
             }
 

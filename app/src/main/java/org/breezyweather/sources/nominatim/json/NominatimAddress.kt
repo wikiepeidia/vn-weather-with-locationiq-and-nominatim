@@ -24,6 +24,10 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class NominatimAddress(
+    val suburb: String?,        // JSON: "suburb"       — Nominatim VN ward/commune (e.g. "Phường Hoàn Kiếm")
+    val hamlet: String?,        // JSON: "hamlet"       — Nominatim VN hamlet
+    val quarter: String?,       // JSON: "quarter"      — Nominatim VN sub-district
+    val neighbourhood: String?, // JSON: "neighbourhood" — Nominatim neighbourhood
     val village: String?, // District
     val town: String?, // City
     val municipality: String?, // Admin 3
