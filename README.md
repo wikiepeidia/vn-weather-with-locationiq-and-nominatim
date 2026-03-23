@@ -14,9 +14,15 @@
 - Misrepresentation of the origin of that material is prohibited, and modified versions of such material must be marked in reasonable ways as different from the original version.
 
 This project is a compliant fork:
+
 - App name changed to **Weather VN** (all languages)
 - Application ID changed to `io.github.wikiepeidia.vnweather`
 - The `breezy` flag is not set in distributed builds
 - Custom icons used in place of Breezy Weather icons
 
-The upstream project (Breezy Weather) is available at https://github.com/breezy-weather/breezy-weather and is licensed under LGPL-3.0.
+The upstream project (Breezy Weather) is available at <https://github.com/breezy-weather/breezy-weather> and is licensed under LGPL-3.0.
+
+## BUGS
+
+- USER_AGENT issue,NominatimService   #2 <https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues/2>
+- will be fixed soon, right now it is breaking the app completely
