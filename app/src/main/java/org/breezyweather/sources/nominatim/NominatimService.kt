@@ -25,7 +25,6 @@ import breezyweather.domain.source.SourceFeature
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.rxjava3.core.Observable
 import org.breezyweather.BreezyWeather
-import org.breezyweather.BuildConfig
 import org.breezyweather.R
 import org.breezyweather.common.exceptions.InvalidLocationException
 import org.breezyweather.common.extensions.currentLocale
@@ -88,7 +87,7 @@ class NominatimService @Inject constructor(
 
         return api.searchLocations(
             acceptLanguage = context.currentLocale.toLanguageTag(),
-            userAgent = USER_AGENT,
+            userAgent = BreezyWeather.instance.userAgent,
             q = query,
             limit = 20,
             key = key
@@ -120,7 +119,7 @@ class NominatimService @Inject constructor(
             // PERF-01/02: Deferred Nominatim fetch — only subscribed when LocationIQ result is dirty or fails
             val nominatimFetch: Observable<List<LocationAddressInfo>> = nomApi.getReverseLocation(
                 acceptLanguage = context.currentLocale.toLanguageTag(),
-                userAgent = USER_AGENT,
+                userAgent = BreezyWeather.instance.userAgent,
                 lat = latitude,
                 lon = longitude,
                 zoom = 13,
@@ -136,7 +135,7 @@ class NominatimService @Inject constructor(
 
             return liqApi.getReverseLocation(
                 acceptLanguage = context.currentLocale.toLanguageTag(),
-                userAgent = USER_AGENT,
+                userAgent = BreezyWeather.instance.userAgent,
                 lat = latitude,
                 lon = longitude,
                 zoom = 18,
@@ -179,7 +178,7 @@ class NominatimService @Inject constructor(
 
             return api.getReverseLocation(
                 acceptLanguage = context.currentLocale.toLanguageTag(),
-                userAgent = USER_AGENT,
+                userAgent = BreezyWeather.instance.userAgent,
                 lat = latitude,
                 lon = longitude,
                 zoom = 13,
@@ -376,7 +375,8 @@ class NominatimService @Inject constructor(
 
     // CONFIG
     private val config = SourceConfigStore(context, id)
-    override val isConfigured = true
+    override val isConfigured
+        get() = BreezyWeather.instance.userAgent.isNotEmpty()
     override val isRestricted = false
     private var instance: String?
         set(value) {
@@ -421,8 +421,6 @@ class NominatimService @Inject constructor(
         private val COMMA_SPLIT_REGEX = Regex("[,，]")
         private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/"
         private const val LOCATIONIQ_BASE_URL = "https://ap1.locationiq.com/v1/"
-        private const val USER_AGENT =
-            "BreezyWeather/${BuildConfig.VERSION_NAME} github.com/breezy-weather/breezy-weather/issues"
 
         // VN sub-province regex: matches strings strictly starting with Phường/Xã/Đặc Khu prefix
         // Internal so unit tests can reference it directly
