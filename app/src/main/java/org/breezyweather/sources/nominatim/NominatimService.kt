@@ -205,28 +205,31 @@ class NominatimService @Inject constructor(
             var district = locationResult.address.village
 
             if (countryCode.equals("vn", ignoreCase = true)) {
-                // 1. Prefer Nominatim's structured fields (ADDR-04) — fastest, cleanest path
-                val structuredCity = locationResult.address?.suburb
-                    ?: locationResult.address?.hamlet
-                    ?: locationResult.address?.quarter
-                if (structuredCity != null) {
-                    city = structuredCity
-                    district = null
-                } else {
-                    // 2. Fall through to display_name regex when no structured field available
-                    val displayName = locationResult.displayName
-                    if (!displayName.isNullOrEmpty()) {
-                        // Split display_name by standard/full-width comma and pick the last valid VN component.
-                        val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
-                        val cleanPart = pickBestVietnamSubProvincePart(parts)
-
-                        if (cleanPart != null) {
-                            city = cleanPart
-                            district = null // Hide district if we found a better name
-                        }
-                        // Regex failure → city stays as address.town ?: locationResult.name
-                        // Cross-validation in requestNearestLocation will rescue if Nominatim is clean
+                // 1. display_name regex FIRST — lastOrNull gives the innermost clean ward token
+                //    (structured fields like suburb can lag the post-2025 admin reform; display_name is fresher)
+                val displayName = locationResult.displayName
+                var vnCityResolved = false
+                if (!displayName.isNullOrEmpty()) {
+                    val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
+                    val cleanPart = pickBestVietnamSubProvincePart(parts)
+                    if (cleanPart != null) {
+                        city = cleanPart
+                        district = null
+                        vnCityResolved = true
                     }
+                }
+
+                if (!vnCityResolved) {
+                    // 2. Structured fields fallback (suburb/hamlet/quarter) when regex finds nothing
+                    val structuredCity = locationResult.address?.suburb
+                        ?: locationResult.address?.hamlet
+                        ?: locationResult.address?.quarter
+                    if (structuredCity != null) {
+                        city = structuredCity
+                        district = null
+                    }
+                    // Regex failure + no structured field → city stays as address.town ?: locationResult.name
+                    // Cross-validation in requestNearestLocation will attempt rescue via the other API
                 }
             }
 
