@@ -9,7 +9,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Data Model Foundation** — Map missing Nominatim structured fields so VN ward data is never silently discarded
+- [x] **Phase 1: Data Model Foundation** — Map missing Nominatim structured fields so VN ward data is never silently discarded ✓
 - [ ] **Phase 2: Token Extraction & Cross-Validation** — Fix firstOrNull/lastOrNull ordering and implement real cross-validation to eliminate POI-prefix garbage
 - [ ] **Phase 3: Performance & Reliability** — Lazy Nominatim strategy, fresh API client per call, error logging, Asia endpoint
 - [ ] **Phase 4: Giggles Feedback & Settings** — Rescue log + playful settings description so users and devs see the system working
@@ -29,7 +29,12 @@
   1. `NominatimAddress` has `suburb`, `hamlet`, `quarter`, and `neighbourhood` fields with correct `@SerializedName` JSON annotations
   2. For `countryCode == "vn"`, `convertLocation()` tries `address.suburb ?: address.hamlet ?: address.quarter` before falling through to `display_name` regex
   3. Existing non-VN location behavior is unchanged — no regressions for any country outside Vietnam  
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+
+- [x] 01-PLAN-nominatim-address-fields.md — Add suburb/hamlet/quarter/neighbourhood fields to NominatimAddress
+  - [x] 01-PLAN-converter-structured-fields.md — Update convertLocation() VN path to use structured fields first
 
 ---
 
