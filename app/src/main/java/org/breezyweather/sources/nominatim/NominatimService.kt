@@ -153,12 +153,26 @@ class NominatimService @Inject constructor(
                 val liqInfo = liqList.firstOrNull()
                 val nomInfo = nomList.firstOrNull()
 
-                // Strict source priority:
-                // 1) LocationIQ if available
-                // 2) Nominatim when LocationIQ is absent/failed
-                if (liqInfo != null) liqList
-                else if (nomInfo != null) nomList
-                else throw InvalidLocationException()
+                // VN cross-validation: prefer whichever result has a clean ward/commune token
+                val isVNContext = liqInfo?.countryCode?.equals("vn", ignoreCase = true) == true
+                    || nomInfo?.countryCode?.equals("vn", ignoreCase = true) == true
+
+                if (isVNContext) {
+                    val liqClean = isCleanVnCity(liqInfo?.city)
+                    val nomClean = isCleanVnCity(nomInfo?.city)
+                    when {
+                        liqClean        -> liqList                   // LIQ clean — always prefer LocationIQ
+                        nomClean        -> nomList                   // LIQ dirty, NOM clean — Nominatim rescues
+                        liqInfo != null -> liqList                   // Both dirty — LIQ as last resort
+                        nomInfo != null -> nomList                   // Only NOM available
+                        else            -> throw InvalidLocationException()
+                    }
+                } else {
+                    // Non-VN: preserve existing priority — LocationIQ > Nominatim
+                    if (liqInfo != null) liqList
+                    else if (nomInfo != null) nomList
+                    else throw InvalidLocationException()
+                }
             }
         } else {
             val url = instance ?: NOMINATIM_BASE_URL
@@ -208,19 +222,14 @@ class NominatimService @Inject constructor(
                     if (!displayName.isNullOrEmpty()) {
                         // Split display_name by standard/full-width comma and pick the last valid VN component.
                         val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
-                        val cleanPart = pickBestVietnamSubProvincePart(parts)
+                        val cleanPart = pickBestVietnamSubProvincePart(parts, isLocationIQSource)
 
                         if (cleanPart != null) {
                             city = cleanPart
                             district = null // Hide district if we found a better name
-                        } else if (isLocationIQSource) {
-                            // Fallback for LocationIQ when regex also fails: use first display_name segment
-                            val fallback = parts.firstOrNull()?.trim()
-                            if (fallback != null) {
-                                city = fallback
-                                district = null
-                            }
                         }
+                        // Regex failure → city stays as address.town ?: locationResult.name
+                        // Cross-validation in requestNearestLocation will rescue if Nominatim is clean
                     }
                 }
             }
@@ -242,10 +251,19 @@ class NominatimService @Inject constructor(
         }
     }
 
-    private fun pickBestVietnamSubProvincePart(parts: List<String>): String? {
-        return parts.lastOrNull { part ->
-            vnSubProvinceRegex.matcher(part).matches()
+    private fun pickBestVietnamSubProvincePart(parts: List<String>, isLocationIQSource: Boolean): String? {
+        return if (isLocationIQSource) {
+            // LocationIQ zoom=18: ward/commune is the FIRST matching segment (most specific comes first)
+            parts.firstOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
+        } else {
+            // Nominatim zoom=13: ward/commune is the LAST matching segment
+            parts.lastOrNull { part -> vnSubProvinceRegex.matcher(part).matches() }
         }
+    }
+
+    private fun isCleanVnCity(city: String?): Boolean {
+        if (city.isNullOrEmpty()) return false
+        return vnSubProvinceRegex.matcher(city).matches()
     }
 
     private fun getAdmin1CodeForCountry(
