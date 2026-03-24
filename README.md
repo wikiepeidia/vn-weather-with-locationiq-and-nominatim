@@ -14,13 +14,13 @@
 - Misrepresentation of the origin of that material is prohibited, and modified versions of such material must be marked in reasonable ways as different from the original version.
 
 - The upstream project (Breezy Weather) is available at <https://github.com/breezy-weather/breezy-weather> and is licensed under LGPL-3.0.
-
-## BUGS 
-
-- USER_AGENT issue,NominatimService   #2 <https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues/2>
-- will be fixed soon, right now it is breaking the app completely
-
-## Urgent
 - Reclarify to the devs: Hobby project for fun, powered ® by Claude
 - remove Releases to incoperate with LICENSE and reduce my stress and giggles
+
+## BUGS
+
+- USER_AGENT issue,NominatimService   #2 <https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues/2> **fixed**
+
+## todo
+
 - continue to improve the app to get higher accurancy on Regex!
