@@ -1,104 +1,104 @@
-# Requirements: VN Weather — Vietnamese Address Quality
+# Requirements: VN Weather — Background Watchdog (v1.1)
 
-**Defined:** 2026-03-23
-**Core Value:** Vietnamese users see a clean ward/commune name — never a POI or government-office prefix — even when LocationIQ or Nominatim individually return garbage.
+**Defined:** 2026-04-02
+**Milestone:** v1.1 — Background Watchdog
+**Core Value:** Weather updates reliably happen on aggressive background-kill ROMs (HyperOS, MIUI) via a persistent foreground Watchdog service the user can opt into.
 
-## v1 Requirements
+---
 
-### Address Quality — VN Token Extraction
+## Previous Milestone: v1.0 — VN Address Quality (Complete ✓)
 
-- [ ] **ADDR-01**: When LocationIQ's `display_name` returns a POI-prefixed string (e.g. "Ủy ban nhân dân Phường X"), the app must NOT show that prefix — it must extract only the clean "Phường X" token (or fall through to Nominatim)
-- [ ] **ADDR-02**: `pickBestVietnamSubProvincePart()` uses `firstOrNull` on LocationIQ results (ward is earliest segment at zoom=18) and `lastOrNull` on Nominatim results (ward is last segment at zoom=13)
-- [ ] **ADDR-03**: `NominatimAddress` data class maps `suburb`, `hamlet`, `quarter`, and `neighbourhood` fields so Nominatim's structured ward data is not discarded
-- [ ] **ADDR-04**: For `countryCode == "vn"`, the converter tries `address.suburb ?: address.hamlet ?: address.quarter` before falling through to `display_name` regex
+All 19 requirements from v1.0 delivered across Phases 1–5. See archived REQUIREMENTS-v1.0.md for history.
 
-### Address Quality — Cross-Validation
+---
 
-- [ ] **XVAL-01**: When both LocationIQ and Nominatim results are available for a VN location, the app prefers whichever produced a clean VN sub-province token (matching `vnSubProvinceRegex`)
-- [ ] **XVAL-02**: If LocationIQ result is clean → use LocationIQ result. If LocationIQ dirty but Nominatim clean → use Nominatim result. If both dirty → use LocationIQ as last resort (current fallback behavior preserved)
-- [ ] **XVAL-03**: The fallback `parts.firstOrNull()` raw-string assignment is eliminated; when regex fails for LocationIQ, the result is treated as "dirty" and triggers the cross-validation path
+## v1.1 Requirements
 
-### Performance — Lazy Nominatim
+### Watchdog Service — Core Keepalive
 
-- [ ] **PERF-01**: When a LocationIQ API key is configured and LocationIQ returns a clean VN result, Nominatim is NOT called — eliminating the always-parallel second request
-- [ ] **PERF-02**: Nominatim is only invoked when LocationIQ result fails the VN regex check (lazy/conditional strategy), reducing API calls per background refresh cycle
-- [ ] **PERF-03**: The LocationIQ endpoint is configurable or defaults to a region closer to Vietnam (Asia endpoint) instead of hardcoded `us1.locationiq.com`
+- [ ] **WATCH-01**: A `WatchdogService` (Android `Service`) runs as a foreground service while Watchdog mode is enabled, preventing the ROM from killing the process silently
+- [ ] **WATCH-02**: `WatchdogService` posts a persistent notification on a minimal-priority channel (no sound, no popup) when it starts, as required by the Android foreground-service API
+- [ ] **WATCH-03**: `WatchdogService` monitors `WeatherUpdateJob` at each heartbeat tick — if the WorkManager job is no longer ENQUEUED or RUNNING, it re-enqueues it via `WeatherUpdateJob.setupTask(context)`
+- [ ] **WATCH-04**: `WatchdogService` self-heals: it schedules an `AlarmManager.setExactAndAllowWhileIdle()` alarm before each sleep cycle so the ROM restarts it if the process is killed between heartbeats
 
-### Reliability — Client Freshness & Logging
+### Watchdog Notification
 
-- [ ] **REL-01**: The stale `mApi by lazy {}` pattern is removed; a fresh API client is constructed per `requestLocationSearch` call (matching the pattern already used in `requestNearestLocation`)
-- [ ] **REL-02**: Each `onErrorReturn` handler logs the error at debug level (source name + throwable message) before returning an empty list, so failures are diagnosable
-- [ ] **REL-03**: The Nominatim client and LocationIQ client are clearly separated in construction to prevent future JSON schema divergence from being silently ignored
+- [ ] **NOTIF-01**: A dedicated `CHANNEL_WATCHDOG` notification channel is created with `IMPORTANCE_MIN` (shows in status bar shade, no sound, no badge, no popup)
+- [ ] **NOTIF-02**: The Watchdog notification displays the last successful weather update timestamp (e.g. "Weather last updated 12 min ago") and updates with each completed refresh
+- [ ] **NOTIF-03**: The Watchdog notification is non-dismissible while the Watchdog service is running (ongoing = true)
 
-### "Giggles" — Rescue Feedback
+### Settings — Watchdog Toggle
 
-- [ ] **GIGL-01**: When cross-validation selects Nominatim's result over LocationIQ's (a "rescue" event), a debug-level log line is emitted: `"[GiggleRescue] Nominatim rescued address for [lat,lon]: was '[dirty]', now '[clean]'"`
-- [ ] **GIGL-02**: Settings screen shows a playful description for the Nominatim fallback toggle: something like "Backup address detective (fires when LocationIQ returns garbage)"
+- [ ] **SETT-01**: `BackgroundUpdatesSettingsScreen` includes a "Watchdog Mode" toggle (default: OFF) that starts/stops `WatchdogService`
+- [ ] **SETT-02**: When the user enables Watchdog mode and the app is not battery-optimization-exempt, a prompt is shown directing them to the system battery optimization settings (`Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`)
+- [ ] **SETT-03**: `SettingsManager` persists the `watchdogEnabled: Boolean` preference so Watchdog state survives app restarts
+- [ ] **SETT-04**: `BackgroundUpdatesSettingsScreen` shows a HyperOS/MIUI "Autostart" deep-link button when the device manufacturer is Xiaomi/Redmi/POCO, directing users to the MIUI autostart permission manager
 
-### Test Coverage — VN Address Logic
+### Boot & Resume
 
-- [ ] **TEST-01**: Kotlin JUnit unit tests cover `pickBestVietnamSubProvincePart()` — including the POI-prefix dirty case, clean Phường/Xã/Đặc khu cases, and the empty-string/null edge cases
-- [ ] **TEST-02**: Kotlin unit tests cover the cross-validation merge logic (XVAL-01 through XVAL-03) with mock LocationIQ and Nominatim responses for VN addresses
-- [ ] **TEST-03**: Kotlin unit tests cover the `NominatimAddress` structured field mapping (ADDR-03/ADDR-04) with real-shaped Nominatim JSON fixtures
-- [ ] **TEST-04**: All new tests run as part of the existing Gradle `./gradlew test` suite and pass in CI
+- [ ] **BOOT-01**: `BootReceiver` starts `WatchdogService` on `ACTION_BOOT_COMPLETED` if `watchdogEnabled` is true, ensuring Watchdog resumes after device reboot without user action
+- [ ] **BOOT-02**: `WatchdogService` on start always re-enqueues `WeatherUpdateJob` if it is not already scheduled, acting as an immediate catch-up after boot or process death
 
-## v2 Requirements
+### Graceful Degradation
 
-### Performance & Architecture
+- [ ] **DEGRADE-01**: If `setExactAndAllowWhileIdle()` is unavailable or throws (restricted by ROM policy), `WatchdogService` falls back to `setInexactRepeating()` and logs a debug warning — no crash
+- [ ] **DEGRADE-02**: When Watchdog mode is disabled by the user, `WatchdogService` is stopped cleanly, the pending AlarmManager alarm is cancelled, and the Watchdog notification is dismissed
 
-- **PERF-V2-01**: Full RxJava → Kotlin Coroutines migration for `NominatimService` (using `supervisorScope` + `async/await` instead of `Observable.zip`)
-- **PERF-V2-02**: Nominatim rate limiter / request queue (1 req/sec ceiling) as a hard safety net for bulk refresh scenarios
+---
 
-### Security
+## v2 Requirements (deferred)
 
-- **SEC-V2-01**: `SourceConfigStore` migrated to `EncryptedSharedPreferences` for API key storage at rest
+### Enhanced Watchdog Intelligence
 
-### Infrastructure
+- **WATCH-V2-01**: Watchdog checks actual weather data freshness (compare `weatherUpdateLastTimestamp` vs. expected interval) rather than just WorkManager job state
+- **WATCH-V2-02**: Watchdog notification shows current temperature and conditions (e.g. "28°C · Partly cloudy · Updated 5 min ago")
+- **WATCH-V2-03**: Watchdog heartbeat interval configurable (5 / 15 / 30 min) instead of fixed
 
-- **INFRA-V2-01**: `ConfigStore` → Android DataStore migration
-- **INFRA-V2-02**: `UpdateStrategy.ALWAYS_UPDATE` logic implemented so locations can opt out of refresh
+### ROM-Specific Hardening
+
+- **ROM-V2-01**: Detect HyperOS version and auto-suggest "Lock app in Recents" guidance specific to that HyperOS generation
+- **ROM-V2-02**: Support Samsung `DeepSleep` whitelist deep-link for Galaxy devices alongside MIUI autostart
+
+---
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| RxJava → Coroutines full migration | Large independent refactor; doesn't fix address quality directly |
-| EncryptedSharedPreferences for API key | Security improvement but orthogonal to VN address quality goal |
-| Astro/timezone bugs | Unrelated module; no impact on address display |
-| `Release.getDownloadLink` fix | Unrelated to address quality |
-| Non-VN location changes | All VN-logic gated on `countryCode == "vn"`; other countries unaffected |
-| Nominatim SLA / self-hosted setup | Infrastructure concern; partial mitigation via lazy fallback already in scope |
+| Floating overlay / always-on-top widget | Too intrusive for a weather app; notification is sufficient keepalive |
+| Root-level process protection | Requires root; out of scope for a Play Store app |
+| System app installation path | Requires ROM signing; out of scope |
+| Full replacement of WorkManager | WorkManager remains primary scheduler; Watchdog is a supplement/safety net |
+| Battery usage dashboard / diagnostics screen | Nice-to-have but orthogonal to the keepalive goal; defer to v2 |
+| Coroutines migration of WeatherUpdateJob | Large refactor; independent of Watchdog reliability goal |
+
+---
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ADDR-01 | Phase 2 | Pending |
-| ADDR-02 | Phase 2 | Pending |
-| ADDR-03 | Phase 1 | Pending |
-| ADDR-04 | Phase 1 | Pending |
-| XVAL-01 | Phase 2 | Pending |
-| XVAL-02 | Phase 2 | Pending |
-| XVAL-03 | Phase 2 | Pending |
-| PERF-01 | Phase 3 | Pending |
-| PERF-02 | Phase 3 | Pending |
-| PERF-03 | Phase 3 | Pending |
-| REL-01 | Phase 3 | Pending |
-| REL-02 | Phase 3 | Pending |
-| REL-03 | Phase 3 | Pending |
-| GIGL-01 | Phase 4 | Pending |
-| GIGL-02 | Phase 4 | Pending |
-| TEST-01 | Phase 5 | Pending |
-| TEST-02 | Phase 5 | Pending |
-| TEST-03 | Phase 5 | Pending |
-| TEST-04 | Phase 5 | Pending |
+| WATCH-01 | Phase 6 | Pending |
+| WATCH-02 | Phase 6 | Pending |
+| WATCH-03 | Phase 6 | Pending |
+| WATCH-04 | Phase 6 | Pending |
+| NOTIF-01 | Phase 6 | Pending |
+| NOTIF-02 | Phase 6 | Pending |
+| NOTIF-03 | Phase 6 | Pending |
+| SETT-01 | Phase 7 | Pending |
+| SETT-02 | Phase 7 | Pending |
+| SETT-03 | Phase 7 | Pending |
+| SETT-04 | Phase 7 | Pending |
+| BOOT-01 | Phase 8 | Pending |
+| BOOT-02 | Phase 8 | Pending |
+| DEGRADE-01 | Phase 6 | Pending |
+| DEGRADE-02 | Phase 7 | Pending |
 
 **Coverage:**
-
-- v1 requirements: 19 total
-- Mapped to phases: 19 ✓
+- v1.1 requirements: 15 total
+- Mapped to phases: 15 ✓
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-03-23*
-*Last updated: 2026-03-23 after initialization*
+*Requirements defined: 2026-04-02*
+*Last updated: 2026-04-02 after initial definition*
