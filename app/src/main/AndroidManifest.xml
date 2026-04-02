@@ -40,6 +40,8 @@
 
     <!-- weather update in background -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Watchdog AlarmManager wakeup -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Data sharing -->
     <permission
@@ -343,6 +345,16 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="wallpaper" />
         </service>
+
+        <!-- Watchdog service for HyperOS/MIUI background-kill recovery -->
+        <service
+            android:name=".background.watchdog.WatchdogService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
+        <receiver
+            android:name=".background.watchdog.WatchdogAlarmReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".background.receiver.BootReceiver"
