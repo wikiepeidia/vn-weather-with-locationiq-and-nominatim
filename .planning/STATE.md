@@ -24,7 +24,7 @@ progress:
 
 ## Current Position
 
-Phase: 07 (settings-teardown) — PENDING
+Phase: 08 (boot-manifest-wiring) — PENDING
 
 ## v1.0 Archive (VN Address Quality)
 
@@ -39,7 +39,7 @@ Phase: 07 (settings-teardown) — PENDING
 ## v1.1 Phase Checklist
 
 - [x] Phase 6: WatchdogService Core — commit `c7185e2e2`
-- [ ] Phase 7: Settings & Teardown
+- [x] Phase 7: Settings & Teardown — commit `9a7d33b53`
 - [ ] Phase 8: Boot & Manifest Wiring
 
 ---
