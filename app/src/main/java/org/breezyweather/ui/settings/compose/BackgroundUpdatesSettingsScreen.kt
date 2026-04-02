@@ -22,27 +22,35 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
@@ -58,7 +66,9 @@ import org.breezyweather.common.extensions.powerManager
 import org.breezyweather.common.options.UpdateInterval
 import org.breezyweather.common.utils.helpers.SnackbarHelper
 import org.breezyweather.domain.settings.SettingsManager
+import org.breezyweather.ui.common.widgets.Material3ExpressiveCardListItem
 import org.breezyweather.ui.common.widgets.Material3Scaffold
+import org.breezyweather.ui.common.widgets.defaultCardListItemElevation
 import org.breezyweather.ui.common.widgets.generateCollapsedScrollBehavior
 import org.breezyweather.ui.common.widgets.insets.FitStatusBarTopAppBar
 import org.breezyweather.ui.settings.activities.WorkerInfoActivity
@@ -249,7 +259,7 @@ fun BackgroundSettingsScreen(
                     summaryOffId = R.string.settings_disabled,
                     checked = SettingsManager.getInstance(context).watchdogEnabled,
                     isFirst = true,
-                    isLast = !isXiaomiDevice,
+                    isLast = false,
                     onValueChanged = { enabled ->
                         SettingsManager.getInstance(context).watchdogEnabled = enabled
                         if (enabled) {
@@ -316,6 +326,61 @@ fun BackgroundSettingsScreen(
                             }
                         }
                     )
+                }
+            }
+
+            smallSeparatorItem()
+            item {
+                val settingsManager = SettingsManager.getInstance(context)
+                val watchdogOn = settingsManager.watchdogEnabled
+                var sliderValue by remember {
+                    mutableFloatStateOf(settingsManager.watchdogHeartbeatInterval.toFloat())
+                }
+
+                Material3ExpressiveCardListItem(
+                    elevation = if (watchdogOn) defaultCardListItemElevation else 0.dp,
+                    isFirst = false,
+                    isLast = !isXiaomiDevice
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alpha(if (watchdogOn) 1f else 0.5f)
+                            .padding(PaddingValues(horizontal = 16.dp, vertical = 8.dp))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_background_updates_watchdog_heartbeat_interval),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.settings_background_updates_watchdog_heartbeat_interval_summary,
+                                    sliderValue.toInt()
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Slider(
+                            value = sliderValue,
+                            onValueChange = { sliderValue = it },
+                            onValueChangeFinished = {
+                                val newInterval = sliderValue.toInt()
+                                settingsManager.watchdogHeartbeatInterval = newInterval
+                                if (watchdogOn) {
+                                    WatchdogService.start(context)
+                                }
+                            },
+                            valueRange = 10f..30f,
+                            steps = 3,
+                            enabled = watchdogOn
+                        )
+                    }
                 }
             }
 
