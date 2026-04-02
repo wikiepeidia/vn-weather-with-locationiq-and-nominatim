@@ -24,7 +24,7 @@ progress:
 
 ## Current Position
 
-Phase: 08 (boot-manifest-wiring) — PENDING
+Phase: COMPLETE — all v1.1 phases delivered
 
 ## v1.0 Archive (VN Address Quality)
 
@@ -40,7 +40,7 @@ Phase: 08 (boot-manifest-wiring) — PENDING
 
 - [x] Phase 6: WatchdogService Core — commit `c7185e2e2`
 - [x] Phase 7: Settings & Teardown — commit `9a7d33b53`
-- [ ] Phase 8: Boot & Manifest Wiring
+- [x] Phase 8: Boot & Manifest Wiring — commit `250bc35e3`
 
 ---
 

@@ -19,7 +19,7 @@
 
 - [x] **Phase 6: WatchdogService Core** — Foreground service with keepalive notification, AlarmManager heartbeat, job monitor, and graceful alarm fallback ✓
 - [x] **Phase 7: Settings & Teardown** — Watchdog toggle UI, SettingsManager persistence, battery-opt prompt, MIUI/HyperOS autostart deep-link, and clean disable path ✓
-- [ ] **Phase 8: Boot & Manifest Wiring** — BootReceiver integration, WATCH_ALARM BroadcastReceiver, AndroidManifest registrations so the service survives reboot and ROM alarm delivery
+- [x] **Phase 8: Boot & Manifest Wiring** — BootReceiver integration, WATCH_ALARM BroadcastReceiver, AndroidManifest registrations so the service survives reboot and ROM alarm delivery ✓
 
 ---
 

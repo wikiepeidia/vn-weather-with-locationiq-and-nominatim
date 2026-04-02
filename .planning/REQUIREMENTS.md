@@ -58,6 +58,7 @@ All 19 requirements from v1.0 delivered across Phases 1–5. See archived REQUIR
 
 - **ROM-V2-01**: Detect HyperOS version and auto-suggest "Lock app in Recents" guidance specific to that HyperOS generation
 - **ROM-V2-02**: Support Samsung `DeepSleep` whitelist deep-link for Galaxy devices alongside MIUI autostart
+- **ROM-V2-03**: HyperOS kills foreground services even with battery-opt disabled + autostart + memory exclusion. Investigate: (a) binding WatchdogService from main Activity to elevate OOM adj, (b) dual-process architecture, (c) IMPORTANCE_LOW notification instead of MIN for higher protection, (d) `WakeLock` during critical heartbeat windows. User reports needing 2-3 app refreshes for address data to appear after HyperOS kills.
 
 ---
 
