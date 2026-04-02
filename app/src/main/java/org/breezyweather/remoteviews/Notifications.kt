@@ -27,6 +27,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_DEFAULT
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_HIGH
+import androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_MIN
 import androidx.core.content.ContextCompat
 import androidx.core.text.parseAsHtml
@@ -138,7 +139,15 @@ object Notifications {
                     setGroup(GROUP_BREEZY_WEATHER)
                     setShowBadge(false)
                 },
-                buildNotificationChannel(CHANNEL_WATCHDOG, IMPORTANCE_MIN) {
+                // NOTIF-05: Elevated importance on Xiaomi/Redmi/POCO to reduce kill chance
+                buildNotificationChannel(
+                    CHANNEL_WATCHDOG,
+                    if (Build.MANUFACTURER.lowercase() in listOf("xiaomi", "redmi", "poco")) {
+                        IMPORTANCE_LOW
+                    } else {
+                        IMPORTANCE_MIN
+                    }
+                ) {
                     setName(context.getString(R.string.notification_channel_watchdog))
                     setGroup(GROUP_BREEZY_WEATHER)
                     setShowBadge(false)

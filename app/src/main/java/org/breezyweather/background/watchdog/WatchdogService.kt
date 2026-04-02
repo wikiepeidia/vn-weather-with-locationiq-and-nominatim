@@ -130,19 +130,34 @@ class WatchdogService : Service() {
      * Builds the keepalive notification showing relative time since last weather update.
      */
     private fun buildNotification(): Notification {
-        val lastUpdate = SettingsManager.getInstance(this).weatherUpdateLastTimestamp
-        val contentText = if (lastUpdate > 0) {
-            getString(
-                R.string.location_last_updated_x,
-                DateUtils.getRelativeTimeSpanString(
-                    lastUpdate,
-                    System.currentTimeMillis(),
-                    DateUtils.MINUTE_IN_MILLIS,
-                    DateUtils.FORMAT_ABBREV_RELATIVE
-                )
-            )
+        val settingsManager = SettingsManager.getInstance(this)
+        val lastUpdate = settingsManager.weatherUpdateLastTimestamp
+        val intervalMin = settingsManager.watchdogHeartbeatInterval
+
+        // NOTIF-04: Show both "Last updated" and "Next refresh" timing
+        val contentText = buildString {
+            if (lastUpdate > 0) {
+                append(getString(
+                    R.string.location_last_updated_x,
+                    DateUtils.getRelativeTimeSpanString(
+                        lastUpdate,
+                        System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS,
+                        DateUtils.FORMAT_ABBREV_RELATIVE
+                    )
+                ))
+                append(" · ")
+                append(getString(R.string.watchdog_next_refresh, intervalMin))
+            } else {
+                append(getString(R.string.notification_running_in_background))
+            }
+        }
+
+        // NOTIF-05: Elevate notification priority on Xiaomi/Redmi/POCO to reduce kill chance
+        val notifPriority = if (isXiaomiDevice()) {
+            NotificationCompat.PRIORITY_LOW
         } else {
-            getString(R.string.notification_running_in_background)
+            NotificationCompat.PRIORITY_MIN
         }
 
         return notificationBuilder(Notifications.CHANNEL_WATCHDOG) {
@@ -151,7 +166,7 @@ class WatchdogService : Service() {
             setContentText(contentText)
             setOngoing(true)
             setShowWhen(false)
-            priority = NotificationCompat.PRIORITY_MIN
+            priority = notifPriority
         }.build()
     }
 
