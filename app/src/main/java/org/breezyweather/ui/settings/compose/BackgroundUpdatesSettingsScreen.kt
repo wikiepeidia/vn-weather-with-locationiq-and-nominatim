@@ -330,6 +330,27 @@ fun BackgroundSettingsScreen(
             }
 
             smallSeparatorItem()
+
+            // Notification visibility toggle
+            switchPreferenceItem(R.string.settings_background_updates_watchdog_notification_visible) { id ->
+                SwitchPreferenceView(
+                    titleId = id,
+                    summaryOnId = R.string.settings_background_updates_watchdog_notification_visible_on,
+                    summaryOffId = R.string.settings_background_updates_watchdog_notification_visible_off,
+                    checked = SettingsManager.getInstance(context).watchdogNotificationVisible,
+                    enabled = SettingsManager.getInstance(context).watchdogEnabled,
+                    isFirst = false,
+                    isLast = false,
+                    onValueChanged = { visible ->
+                        SettingsManager.getInstance(context).watchdogNotificationVisible = visible
+                        if (SettingsManager.getInstance(context).watchdogEnabled) {
+                            WatchdogService.start(context)
+                        }
+                    }
+                )
+            }
+
+            smallSeparatorItem()
             item {
                 val settingsManager = SettingsManager.getInstance(context)
                 val watchdogOn = settingsManager.watchdogEnabled

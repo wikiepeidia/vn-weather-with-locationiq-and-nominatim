@@ -131,6 +131,18 @@ class WatchdogService : Service() {
      */
     private fun buildNotification(): Notification {
         val settingsManager = SettingsManager.getInstance(this)
+        val showNotification = settingsManager.watchdogNotificationVisible
+
+        // When user hides notification, use absolute minimum content
+        if (!showNotification) {
+            return notificationBuilder(Notifications.CHANNEL_WATCHDOG) {
+                setSmallIcon(R.drawable.ic_running_in_background)
+                setOngoing(true)
+                setShowWhen(false)
+                priority = NotificationCompat.PRIORITY_MIN
+            }.build()
+        }
+
         val lastUpdate = settingsManager.weatherUpdateLastTimestamp
         val intervalMin = settingsManager.watchdogHeartbeatInterval
 
