@@ -64,22 +64,22 @@
 
 | Requirement | Phase |
 |-------------|-------|
-| HEART-01 | — |
-| HEART-02 | — |
-| HEART-03 | — |
-| RESTART-01 | — |
-| RESTART-02 | — |
-| RESTART-03 | — |
-| PROC-01 | — |
-| PROC-02 | — |
-| PROC-03 | — |
-| HEALTH-01 | — |
-| HEALTH-02 | — |
-| HEALTH-03 | — |
-| NOTIF-04 | — |
-| NOTIF-05 | — |
-| DEBT-01 | — |
-| DEBT-02 | — |
+| HEART-01 | Phase 10 |
+| HEART-02 | Phase 10 |
+| HEART-03 | Phase 10 |
+| RESTART-01 | Phase 11 |
+| RESTART-02 | Phase 11 |
+| RESTART-03 | Phase 11 |
+| PROC-01 | Phase 12 |
+| PROC-02 | Phase 12 |
+| PROC-03 | Phase 12 |
+| HEALTH-01 | Phase 14 |
+| HEALTH-02 | Phase 14 |
+| HEALTH-03 | Phase 14 |
+| NOTIF-04 | Phase 13 |
+| NOTIF-05 | Phase 13 |
+| DEBT-01 | Phase 9 |
+| DEBT-02 | Phase 9 |
 
 ---
 *Requirements created: 2026-04-02*
