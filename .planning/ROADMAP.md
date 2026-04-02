@@ -69,7 +69,11 @@ Plans:
   1. WatchdogService acquires a partial WakeLock before heartbeat logic and releases it after — heartbeat completes even when device enters Doze
   2. User can adjust heartbeat interval (10–30 min) via a slider in Background Updates settings, and the next alarm fires at the chosen interval
   3. Each heartbeat writes a timestamped diagnostic entry (heartbeat count, service uptime, job status) to SharedPreferences that the health dashboard can later read
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — WakeLock + dynamic interval backend + diagnostic logging (HEART-01, HEART-02 backend, HEART-03)
+- [ ] 10-02-PLAN.md — Heartbeat interval slider UI (HEART-02 frontend)
 
 #### Phase 11: Restart Resilience
 **Goal**: WatchdogService survives AlarmManager failures through redundant restart paths and tracks its own restarts
@@ -116,7 +120,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 9. Tech Debt Cleanup | 0/? | Not started | - |
-| 10. Heartbeat Hardening | 0/? | Not started | - |
+| 10. Heartbeat Hardening | 0/2 | Not started | - |
 | 11. Restart Resilience | 0/? | Not started | - |
 | 12. Process Importance Elevation | 0/? | Not started | - |
 | 13. Notification Enhancement | 0/? | Not started | - |
