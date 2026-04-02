@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import kotlinx.coroutines.delay
 import org.breezyweather.R
+import org.breezyweather.background.watchdog.WatchdogService
 import org.breezyweather.background.weather.WeatherUpdateJob
 import org.breezyweather.common.extensions.currentLocale
 import org.breezyweather.common.extensions.formatTime
@@ -230,6 +232,129 @@ fun BackgroundSettingsScreen(
                 )
             }
             sectionFooterItem(R.string.settings_background_updates_section_general)
+
+            largeSeparatorItem()
+
+            // Watchdog Mode section — persistent foreground service for HyperOS/MIUI keepalive
+            sectionHeaderItem(R.string.settings_background_updates_section_watchdog)
+
+            val isXiaomiDevice = Build.MANUFACTURER.equals("xiaomi", ignoreCase = true)
+
+            switchPreferenceItem(R.string.settings_background_updates_watchdog_switch) { id ->
+                val dialogBatteryOptState = remember { mutableStateOf(false) }
+
+                SwitchPreferenceView(
+                    titleId = id,
+                    summaryOnId = R.string.settings_enabled,
+                    summaryOffId = R.string.settings_disabled,
+                    checked = SettingsManager.getInstance(context).watchdogEnabled,
+                    isFirst = true,
+                    isLast = !isXiaomiDevice,
+                    onValueChanged = { enabled ->
+                        SettingsManager.getInstance(context).watchdogEnabled = enabled
+                        if (enabled) {
+                            WatchdogService.start(context)
+                            if (!context.powerManager.isIgnoringBatteryOptimizations(context.packageName)) {
+                                dialogBatteryOptState.value = true
+                            }
+                        } else {
+                            WatchdogService.stop(context)
+                        }
+                    }
+                )
+
+                if (dialogBatteryOptState.value) {
+                    AlertDialog(
+                        onDismissRequest = { dialogBatteryOptState.value = false },
+                        title = {
+                            Text(
+                                text = stringResource(R.string.settings_background_updates_watchdog_battery_opt_title),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = stringResource(R.string.settings_background_updates_watchdog_battery_opt_message),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    dialogBatteryOptState.value = false
+                                    try {
+                                        @SuppressLint("BatteryLife")
+                                        val intent = Intent().apply {
+                                            action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                                            data = "package:${context.packageName}".toUri()
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (e: ActivityNotFoundException) {
+                                        SnackbarHelper.showSnackbar(
+                                            context.getString(R.string.settings_background_updates_battery_optimization_activity_not_found)
+                                        )
+                                    }
+                                }
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_background_updates_battery_optimization),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { dialogBatteryOptState.value = false }) {
+                                Text(
+                                    text = stringResource(android.R.string.cancel),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+
+            if (isXiaomiDevice) {
+                smallSeparatorItem()
+                clickablePreferenceItem(R.string.settings_background_updates_watchdog_hyperios_autostart) { id ->
+                    PreferenceViewWithCard(
+                        titleId = id,
+                        summaryId = R.string.settings_background_updates_watchdog_hyperios_autostart_summary,
+                        isFirst = false,
+                        isLast = true
+                    ) {
+                        try {
+                            val intent = Intent().apply {
+                                setClassName(
+                                    "com.miui.securitycenter",
+                                    "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                                )
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        } catch (e: ActivityNotFoundException) {
+                            try {
+                                val intent = Intent("miui.intent.action.APP_PERM_EDITOR").apply {
+                                    putExtra("extra_pkgname", context.packageName)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            } catch (e2: ActivityNotFoundException) {
+                                SnackbarHelper.showSnackbar(
+                                    context.getString(R.string.settings_background_updates_watchdog_hyperios_autostart_not_found)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            sectionFooterItem(R.string.settings_background_updates_section_watchdog)
 
             largeSeparatorItem()
 
