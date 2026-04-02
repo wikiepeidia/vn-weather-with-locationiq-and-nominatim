@@ -171,6 +171,13 @@ class SettingsManager private constructor(
         }
         get() = config.getBoolean("refresh_ignore_battery_low", true)
 
+    var watchdogEnabled: Boolean
+        set(value) {
+            config.edit().putBoolean("watchdog_enabled", value).apply()
+            notifySettingsChanged()
+        }
+        get() = config.getBoolean("watchdog_enabled", false)
+
     var darkMode: DarkMode
         set(value) {
             config.edit().putString("dark_mode", value.id).apply()
