@@ -11,9 +11,14 @@
 
 ## Current Position
 
-**Active Phase:** *(none — defining requirements)*  
+**Active Phase:** Phase 6 — WatchdogService Core  
 **Active Plan:** none  
-**Status:** Milestone started — requirements definition in progress  
+**Status:** Roadmap created — ready to plan Phase 6
+
+**Progress:**
+```
+v1.1: [░░░░░░░░] 0 of 3 phases complete
+```
 
 ---
 
@@ -27,9 +32,13 @@
 - [x] Phase 4: Giggles Feedback & Settings — commit `266f80ce8`
 - [x] Phase 5: Kotlin Unit Tests — commit `5297198d1`
 
----
+## v1.1 Phase Checklist
 
-## Accumulated Context
+- [ ] Phase 6: WatchdogService Core
+- [ ] Phase 7: Settings & Teardown
+- [ ] Phase 8: Boot & Manifest Wiring
+
+---
 
 ### Key Decisions (from PROJECT.md)
 
@@ -67,8 +76,8 @@
 ## Session Continuity
 
 **Last updated:** 2026-04-02  
-**Last action:** Milestone v1.1 started — updating PROJECT.md and STATE.md  
-**Next action:** Run roadmapper to create phased execution plan
+**Last action:** v1.1 roadmap created — Phases 6, 7, 8 defined  
+**Next action:** `/gsd-plan-phase 6` to plan WatchdogService Core
 
 ---
-*STATE.md updated: 2026-04-02*
+*STATE.md updated: 2026-04-02 — v1.1 roadmap created*

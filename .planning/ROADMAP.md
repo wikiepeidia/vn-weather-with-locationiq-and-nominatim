@@ -1,9 +1,9 @@
-# Roadmap: VN Weather — Vietnamese Address Quality
+# Roadmap: VN Weather — Vietnamese Address Quality + Background Watchdog
 
-**Milestone:** v1 — VN Address Quality  
-**Created:** 2026-03-23  
-**Granularity:** Standard (5 phases)  
-**Coverage:** 19/19 v1 requirements mapped ✓
+**Milestones:** v1.0 — VN Address Quality (complete ✓) · v1.1 — Background Watchdog (active)  
+**Created:** 2026-03-23 · **v1.1 added:** 2026-04-02  
+**Granularity:** Standard  
+**Coverage:** v1.0 19/19 ✓ · v1.1 15/15 ✓
 
 ---
 
@@ -14,6 +14,12 @@
 - [x] **Phase 3: Performance & Reliability** — Lazy Nominatim strategy, fresh API client per call, error logging, Asia endpoint ✓
 - [x] **Phase 4: Giggles Feedback & Settings** — Rescue log + playful settings description so users and devs see the system working ✓
 - [x] **Phase 5: Kotlin Unit Tests** — Full JUnit coverage for all VN address logic in Gradle test suite ✓
+
+### v1.1 — Background Watchdog
+
+- [ ] **Phase 6: WatchdogService Core** — Foreground service with keepalive notification, AlarmManager heartbeat, job monitor, and graceful alarm fallback
+- [ ] **Phase 7: Settings & Teardown** — Watchdog toggle UI, SettingsManager persistence, battery-opt prompt, MIUI/HyperOS autostart deep-link, and clean disable path
+- [ ] **Phase 8: Boot & Manifest Wiring** — BootReceiver integration, WATCH_ALARM BroadcastReceiver, AndroidManifest registrations so the service survives reboot and ROM alarm delivery
 
 ---
 
@@ -107,10 +113,70 @@ Plans:
 | 3. Performance & Reliability | 0/? | Not started | — |
 | 4. Giggles Feedback & Settings | 0/? | Not started | — |
 | 5. Kotlin Unit Tests | 0/? | Not started | — |
+| 6. WatchdogService Core | 0/? | Not started | — |
+| 7. Settings & Teardown | 0/? | Not started | — |
+| 8. Boot & Manifest Wiring | 0/? | Not started | — |
+
+---
+
+## v1.1 Phase Details
+
+### Phase 6: WatchdogService Core
+
+**Goal**: `WatchdogService` runs as a persistent foreground service, posts a non-dismissible keepalive notification, monitors `WeatherUpdateJob` at each heartbeat, and self-heals via AlarmManager — with graceful fallback if exact alarms are restricted by the ROM.  
+**Depends on**: Phase 5 (v1.0 complete; existing `WeatherUpdateJob`, `Notifications`, and `BootReceiver` surfaces are stable)  
+**Requirements**: WATCH-01, WATCH-02, WATCH-03, WATCH-04, NOTIF-01, NOTIF-02, NOTIF-03, DEGRADE-01  
+**Success Criteria** (what must be TRUE):
+
+  1. Starting `WatchdogService` causes a persistent, non-dismissible notification to appear in the status bar shade with no sound, badge, or popup (IMPORTANCE_MIN)
+  2. The notification text shows "Weather last updated X min ago" and refreshes after each successful weather update
+  3. When `WeatherUpdateJob` is no longer ENQUEUED or RUNNING at heartbeat time, it is automatically re-enqueued without user action
+  4. On a device where `setExactAndAllowWhileIdle()` is permitted, an exact alarm is armed before the service sleeps; on a device where it is restricted, the service falls back to `setInexactRepeating()` and writes a `Log.d` warning — no crash or ANR
+  5. Killing the `WatchdogService` process between heartbeats (via `adb shell am kill`) causes the AlarmManager alarm to restart the service within the next alarm interval
+
+**Plans**: TBD  
+**UI hint**: yes
+
+---
+
+### Phase 7: Settings & Teardown
+
+**Goal**: Users can enable/disable Watchdog mode through the existing Background Updates settings screen; enabling prompts for battery-optimization exemption and surfaces the MIUI/HyperOS autostart deep-link; disabling cleanly stops the service, cancels the alarm, and dismisses the notification.  
+**Depends on**: Phase 6 (WatchdogService must exist before the toggle can start/stop it)  
+**Requirements**: SETT-01, SETT-02, SETT-03, SETT-04, DEGRADE-02  
+**Success Criteria** (what must be TRUE):
+
+  1. `BackgroundUpdatesSettingsScreen` shows a "Watchdog Mode" toggle defaulting to OFF; toggling it ON starts `WatchdogService` and toggling it OFF stops it
+  2. When Watchdog is enabled and the app is not battery-optimization-exempt, the system battery-optimization settings screen is opened automatically (or a prompt shown directing the user there)
+  3. On a Xiaomi/Redmi/POCO device, a clearly visible "MIUI Autostart" button appears in Background Updates settings and taps through to the MIUI autostart permission manager
+  4. Disabling Watchdog mode via the toggle results in: service stopped, AlarmManager alarm cancelled, Watchdog notification gone — no orphaned notification or dangling alarm remains
+  5. After an app restart, the Watchdog toggle reflects the persisted `watchdogEnabled` state — it does not reset to OFF if the user had left it ON
+
+**Plans**: TBD  
+**UI hint**: yes
+
+---
+
+### Phase 8: Boot & Manifest Wiring
+
+**Goal**: The full Watchdog lifecycle is registered in `AndroidManifest.xml` and wired into `BootReceiver` so that the service automatically resumes after device reboot, and the `WATCH_ALARM` intent from AlarmManager is handled by a dedicated `BroadcastReceiver` that restarts the service after a ROM kill.  
+**Depends on**: Phase 6 (WatchdogService core) and Phase 7 (SettingsManager `watchdogEnabled` preference)  
+**Requirements**: BOOT-01, BOOT-02  
+**Success Criteria** (what must be TRUE):
+
+  1. After a full device reboot with Watchdog mode enabled, `WatchdogService` starts automatically — the Watchdog notification appears in the status bar within a few seconds of the home screen becoming interactive
+  2. After a full device reboot with Watchdog mode disabled, `WatchdogService` does NOT start — existing WorkManager-only behavior is completely unchanged
+  3. On boot, `WatchdogService` immediately re-enqueues `WeatherUpdateJob` if it is not already scheduled, providing catch-up coverage for any refresh that was missed during the off period
+  4. The `WATCH_ALARM` broadcast intent (fired by AlarmManager) causes `WatchdogService` to restart even if the process was killed — confirmed by killing the process and waiting for the alarm interval
+  5. `./gradlew assembleDebug` succeeds with all new service, receiver, and permission declarations present in `AndroidManifest.xml`
+
+**Plans**: TBD
 
 ---
 
 ## Coverage Map
+
+### v1.0 Requirements
 
 | Requirement | Phase |
 |-------------|-------|
@@ -134,7 +200,29 @@ Plans:
 | TEST-03 | Phase 5 |
 | TEST-04 | Phase 5 |
 
-**Total mapped: 19/19 ✓**
+**v1.0 Total mapped: 19/19 ✓**
+
+### v1.1 Requirements
+
+| Requirement | Phase |
+|-------------|-------|
+| WATCH-01 | Phase 6 |
+| WATCH-02 | Phase 6 |
+| WATCH-03 | Phase 6 |
+| WATCH-04 | Phase 6 |
+| NOTIF-01 | Phase 6 |
+| NOTIF-02 | Phase 6 |
+| NOTIF-03 | Phase 6 |
+| DEGRADE-01 | Phase 6 |
+| SETT-01 | Phase 7 |
+| SETT-02 | Phase 7 |
+| SETT-03 | Phase 7 |
+| SETT-04 | Phase 7 |
+| DEGRADE-02 | Phase 7 |
+| BOOT-01 | Phase 8 |
+| BOOT-02 | Phase 8 |
+
+**v1.1 Total mapped: 15/15 ✓**
 
 ---
-*Roadmap created: 2026-03-23*
+*Roadmap created: 2026-03-23 · v1.1 phases added: 2026-04-02*
