@@ -148,7 +148,7 @@ class WatchdogService : Service() {
         Log.d(TAG, "Performing heartbeat check")
 
         val workQuery = WorkQuery.Builder
-            .fromUniqueWorkNames(listOf(WEATHER_UPDATE_WORK_NAME))
+            .fromUniqueWorkNames(listOf(WeatherUpdateJob.WORK_NAME_AUTO))
             .addStates(listOf(WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED))
             .build()
 
@@ -214,7 +214,6 @@ class WatchdogService : Service() {
 
         private const val HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000L
         private const val REQUEST_CODE_WATCHDOG_ALARM = 1001
-        private const val WEATHER_UPDATE_WORK_NAME = "WeatherUpdate-auto"
 
         /**
          * Starts the WatchdogService.
