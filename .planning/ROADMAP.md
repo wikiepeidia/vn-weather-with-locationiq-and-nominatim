@@ -158,7 +158,13 @@ Plans:
   4. Disabling Watchdog mode via the toggle results in: service stopped, AlarmManager alarm cancelled, Watchdog notification gone — no orphaned notification or dangling alarm remains
   5. After an app restart, the Watchdog toggle reflects the persisted `watchdogEnabled` state — it does not reset to OFF if the user had left it ON
 
-**Plans**: TBD  
+**Plans:** 3 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Add watchdogEnabled Boolean property to SettingsManager (SETT-03)
+- [ ] 07-02-PLAN.md — Add Watchdog UI string resources to strings.xml
+- [ ] 07-03-PLAN.md — Add Watchdog section to BackgroundUpdatesSettingsScreen (SETT-01, SETT-02, SETT-04, DEGRADE-02)
+
 **UI hint**: yes
 
 ---
