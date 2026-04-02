@@ -921,7 +921,8 @@
     <string name="notification_channel_background_services">Background services</string>
     <string name="notification_channel_crash_logs">Crash logs</string>
     <string name="notification_channel_app_updates">App updates</string>
-    <string name="notification_channel_watchdog">Watchdog keepalive</string>
+    <string name="notification_channel_watchdog">Background guard</string>
+    <string name="watchdog_notification_title">Background guard</string>
     <string name="notification_running_in_background">Running in background to keep updating</string>
     <string name="notification_updating_weather_data">Updating weather data (%1$d/%2$d)</string>
     <string name="notification_update_error">%d update(s) failed</string>

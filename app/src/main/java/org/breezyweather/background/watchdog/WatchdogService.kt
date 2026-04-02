@@ -41,6 +41,7 @@ import org.breezyweather.common.extensions.notificationBuilder
 import org.breezyweather.common.extensions.workManager
 import org.breezyweather.domain.settings.SettingsManager
 import org.breezyweather.remoteviews.Notifications
+import org.breezyweather.remoteviews.presenters.notification.WidgetNotificationIMP
 import org.json.JSONObject
 
 /**
@@ -66,6 +67,8 @@ class WatchdogService : Service() {
     private var alarmManager: AlarmManager? = null
     private var alarmPendingIntent: PendingIntent? = null
     private var serviceStartTime = 0L
+    /** Tracks which notification ID we're using for startForeground */
+    private var foregroundNotifId = Notifications.ID_WATCHDOG_KEEPALIVE
 
     override fun onCreate() {
         super.onCreate()
@@ -83,15 +86,22 @@ class WatchdogService : Service() {
         incrementRestartCount(source)
 
         // Promote to foreground immediately — Android requires this within 5 seconds
+        // Piggyback on the weather widget notification when it's enabled, so the user
+        // sees only ONE notification (the useful weather one) instead of a separate keepalive.
+        foregroundNotifId = if (WidgetNotificationIMP.isEnabled(this)) {
+            Notifications.ID_WIDGET
+        } else {
+            Notifications.ID_WATCHDOG_KEEPALIVE
+        }
         val notification = buildNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
-                Notifications.ID_WATCHDOG_KEEPALIVE,
+                foregroundNotifId,
                 notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
             )
         } else {
-            startForeground(Notifications.ID_WATCHDOG_KEEPALIVE, notification)
+            startForeground(foregroundNotifId, notification)
         }
 
         // HEART-01: WakeLock prevents CPU sleep during heartbeat check
@@ -120,6 +130,10 @@ class WatchdogService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
+        // When piggybacking on widget notification, detach without removing it
+        if (foregroundNotifId == Notifications.ID_WIDGET) {
+            stopForeground(STOP_FOREGROUND_DETACH)
+        }
         Log.d(TAG, "WatchdogService destroyed")
         cancelAlarm()
     }
@@ -127,13 +141,31 @@ class WatchdogService : Service() {
     override fun onBind(intent: Intent?): IBinder = binder
 
     /**
-     * Builds the keepalive notification showing relative time since last weather update.
+     * Builds the foreground notification.
+     *
+     * When the weather widget notification is enabled, this builds a placeholder on
+     * CHANNEL_WIDGET that gets immediately replaced by the rich weather notification
+     * on the next weather update. When disabled, builds a minimal keepalive.
      */
     private fun buildNotification(): Notification {
         val settingsManager = SettingsManager.getInstance(this)
+
+        // When piggybacking on widget notification, build on CHANNEL_WIDGET
+        // so the rich weather notification naturally replaces this placeholder.
+        if (foregroundNotifId == Notifications.ID_WIDGET) {
+            return notificationBuilder(Notifications.CHANNEL_WIDGET) {
+                setSmallIcon(R.drawable.ic_running_in_background)
+                setContentTitle(getString(R.string.notification_channel_watchdog))
+                setContentText(getString(R.string.notification_running_in_background))
+                setOngoing(true)
+                setShowWhen(false)
+                priority = NotificationCompat.PRIORITY_MIN
+            }.build()
+        }
+
+        // Standalone watchdog notification (widget notification disabled)
         val showNotification = settingsManager.watchdogNotificationVisible
 
-        // When user hides notification, use absolute minimum content
         if (!showNotification) {
             return notificationBuilder(Notifications.CHANNEL_WATCHDOG) {
                 setSmallIcon(R.drawable.ic_running_in_background)
@@ -146,7 +178,6 @@ class WatchdogService : Service() {
         val lastUpdate = settingsManager.weatherUpdateLastTimestamp
         val intervalMin = settingsManager.watchdogHeartbeatInterval
 
-        // NOTIF-04: Show both "Last updated" and "Next refresh" timing
         val contentText = buildString {
             if (lastUpdate > 0) {
                 append(getString(
@@ -165,7 +196,6 @@ class WatchdogService : Service() {
             }
         }
 
-        // NOTIF-05: Elevate notification priority on Xiaomi/Redmi/POCO to reduce kill chance
         val notifPriority = if (isXiaomiDevice()) {
             NotificationCompat.PRIORITY_LOW
         } else {
@@ -174,7 +204,7 @@ class WatchdogService : Service() {
 
         return notificationBuilder(Notifications.CHANNEL_WATCHDOG) {
             setSmallIcon(R.drawable.ic_running_in_background)
-            setContentTitle(getString(R.string.notification_channel_watchdog))
+            setContentTitle(getString(R.string.watchdog_notification_title))
             setContentText(contentText)
             setOngoing(true)
             setShowWhen(false)
@@ -187,15 +217,19 @@ class WatchdogService : Service() {
      * Called after each heartbeat or when WeatherUpdateJob signals completion.
      */
     fun updateNotification() {
+        // When piggybacking on widget notification, don't overwrite it —
+        // WidgetNotificationIMP handles updates with the rich weather notification.
+        if (foregroundNotifId == Notifications.ID_WIDGET) return
+
         val notification = buildNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
-                Notifications.ID_WATCHDOG_KEEPALIVE,
+                foregroundNotifId,
                 notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
             )
         } else {
-            startForeground(Notifications.ID_WATCHDOG_KEEPALIVE, notification)
+            startForeground(foregroundNotifId, notification)
         }
     }
 
