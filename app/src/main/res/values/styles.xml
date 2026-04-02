@@ -66,6 +66,15 @@
         <item name="android:windowContentTransitions">true</item>
     </style>
 
+    <!-- Invisible anchor activity for OOM adj elevation (PROC-01) -->
+    <style name="BreezyWeatherTheme.Transparent" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
     <style name="BreezyWeatherTheme.AppBarTheme">
         <item name="android:background">?attr/colorSurface</item>
         <item name="elevation">0dp</item>

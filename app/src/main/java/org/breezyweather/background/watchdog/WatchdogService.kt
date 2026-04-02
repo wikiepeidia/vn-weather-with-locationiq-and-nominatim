@@ -16,6 +16,7 @@
 
 package org.breezyweather.background.watchdog
 
+import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.Notification
 import android.app.PendingIntent
@@ -23,6 +24,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -54,6 +56,12 @@ import org.json.JSONObject
  * Phase 8 wires BootReceiver to restart this service on device reboot.
  */
 class WatchdogService : Service() {
+
+    inner class LocalBinder : Binder() {
+        fun getService(): WatchdogService = this@WatchdogService
+    }
+
+    private val binder = LocalBinder()
 
     private var alarmManager: AlarmManager? = null
     private var alarmPendingIntent: PendingIntent? = null
@@ -102,6 +110,9 @@ class WatchdogService : Service() {
         // Arm next alarm for self-healing
         scheduleNextAlarm()
 
+        // PROC-01/02: Launch invisible anchor Activity on Xiaomi to elevate OOM adj
+        launchAnchorIfNeeded()
+
         // START_STICKY: OS restarts service with null intent if killed
         return START_STICKY
     }
@@ -113,7 +124,7 @@ class WatchdogService : Service() {
         cancelAlarm()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: Intent?): IBinder = binder
 
     /**
      * Builds the keepalive notification showing relative time since last weather update.
@@ -188,6 +199,9 @@ class WatchdogService : Service() {
         writeDiagnostic(jobStatus)
 
         updateNotification()
+
+        // PROC-01: Re-launch anchor if system killed it between heartbeats
+        launchAnchorIfNeeded()
     }
 
     /**
@@ -204,6 +218,15 @@ class WatchdogService : Service() {
             put("heartbeat_count", heartbeatCount)
             put("uptime_ms", uptimeMs)
             put("job_status", jobStatus)
+            // PROC-03: Include process importance and anchor status on Xiaomi devices
+            if (isXiaomiDevice()) {
+                val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                val importance = am?.runningAppProcesses
+                    ?.firstOrNull { it.pid == android.os.Process.myPid() }
+                    ?.importance ?: -1
+                put("process_importance", importance)
+                put("anchor_active", WatchdogAnchorActivity.isActive)
+            }
         }
 
         prefs.edit()
@@ -276,6 +299,24 @@ class WatchdogService : Service() {
         alarmPendingIntent = null
     }
 
+    /**
+     * PROC-02: Launches invisible WatchdogAnchorActivity on Xiaomi/Redmi/POCO devices
+     * to bind with BIND_IMPORTANT and elevate OOM adj. No-ops on other manufacturers.
+     */
+    private fun launchAnchorIfNeeded() {
+        if (!isXiaomiDevice()) return
+        if (WatchdogAnchorActivity.isActive) return
+        try {
+            val intent = Intent(this, WatchdogAnchorActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+            Log.d(TAG, "Launched WatchdogAnchorActivity for OOM adj elevation")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to launch WatchdogAnchorActivity: ${e.message}")
+        }
+    }
+
     companion object {
         private const val TAG = "WatchdogService"
 
@@ -285,6 +326,13 @@ class WatchdogService : Service() {
         @Volatile
         var isRunning = false
             private set
+
+        /**
+         * PROC-02: Checks if the device manufacturer is Xiaomi, Redmi, or POCO.
+         */
+        internal fun isXiaomiDevice(): Boolean {
+            return Build.MANUFACTURER.lowercase() in listOf("xiaomi", "redmi", "poco")
+        }
 
         /**
          * Starts the WatchdogService and enqueues the WorkManager backup restart job.
@@ -305,6 +353,8 @@ class WatchdogService : Service() {
          * Stops the WatchdogService, cancels the WorkManager backup, and cancels any pending alarm.
          */
         fun stop(context: Context) {
+            // PROC-01: Dismiss anchor Activity before stopping service
+            WatchdogAnchorActivity.finish(context)
             context.stopService(Intent(context, WatchdogService::class.java))
             WatchdogRestartWorker.cancel(context)
             // Cancel alarm independently — covers case where service process was already killed
