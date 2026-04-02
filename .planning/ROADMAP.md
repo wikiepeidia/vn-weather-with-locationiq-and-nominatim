@@ -56,7 +56,10 @@ See: `.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREM
 **Success Criteria** (what must be TRUE):
   1. `WEATHER_UPDATE_WORK_NAME` is defined as a single shared constant and referenced from both WatchdogService and WeatherUpdateJob — no hardcoded `"WeatherUpdate-auto"` strings remain in the codebase
   2. VERIFICATION.md exists in `.planning/` documenting what was verified in v1.1 phases 6-8 and known gaps
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md — Extract shared WORK_NAME_AUTO constant + create retroactive v1.1 VERIFICATION.md
 
 #### Phase 10: Heartbeat Hardening
 **Goal**: Heartbeat execution is CPU-sleep-proof, user-tunable, and self-documenting
