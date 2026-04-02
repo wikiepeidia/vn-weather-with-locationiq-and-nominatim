@@ -178,6 +178,13 @@ class SettingsManager private constructor(
         }
         get() = config.getBoolean("watchdog_enabled", false)
 
+    var watchdogHeartbeatInterval: Int
+        set(value) {
+            config.edit().putInt("watchdog_heartbeat_interval", value).apply()
+            notifySettingsChanged()
+        }
+        get() = config.getInt("watchdog_heartbeat_interval", 15)
+
     var darkMode: DarkMode
         set(value) {
             config.edit().putString("dark_mode", value.id).apply()

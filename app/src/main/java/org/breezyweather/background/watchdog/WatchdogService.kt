@@ -25,6 +25,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.os.SystemClock
 import android.text.format.DateUtils
 import android.util.Log
@@ -38,6 +39,7 @@ import org.breezyweather.common.extensions.notificationBuilder
 import org.breezyweather.common.extensions.workManager
 import org.breezyweather.domain.settings.SettingsManager
 import org.breezyweather.remoteviews.Notifications
+import org.json.JSONObject
 
 /**
  * Persistent foreground service that monitors WeatherUpdateJob health.
@@ -55,11 +57,13 @@ class WatchdogService : Service() {
 
     private var alarmManager: AlarmManager? = null
     private var alarmPendingIntent: PendingIntent? = null
+    private var serviceStartTime = 0L
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "WatchdogService created")
         alarmManager = getSystemService()
+        serviceStartTime = SystemClock.elapsedRealtime()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -77,8 +81,18 @@ class WatchdogService : Service() {
             startForeground(Notifications.ID_WATCHDOG_KEEPALIVE, notification)
         }
 
-        // Check job health and re-enqueue if dead
-        performHeartbeat()
+        // HEART-01: WakeLock prevents CPU sleep during heartbeat check
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "BreezyWeather:WatchdogHeartbeat"
+        )
+        wakeLock.acquire(30_000L) // 30-second timeout
+        try {
+            performHeartbeat()
+        } finally {
+            if (wakeLock.isHeld) wakeLock.release()
+        }
 
         // Arm next alarm for self-healing
         scheduleNextAlarm()
@@ -154,14 +168,45 @@ class WatchdogService : Service() {
 
         val healthyWorks = workManager.getWorkInfos(workQuery).get()
 
+        val jobStatus: String
         if (healthyWorks.isEmpty()) {
             Log.d(TAG, "Re-enqueued WeatherUpdateJob — was not found in RUNNING/ENQUEUED state")
             WeatherUpdateJob.setupTask(this)
+            jobStatus = "re-enqueued"
         } else {
             Log.d(TAG, "WeatherUpdateJob is healthy (RUNNING or ENQUEUED)")
+            jobStatus = "healthy"
         }
 
+        // HEART-03: Write diagnostic entry
+        writeDiagnostic(jobStatus)
+
         updateNotification()
+    }
+
+    /**
+     * HEART-03: Writes timestamped diagnostic entry to SharedPreferences.
+     * Data is read by the health dashboard (Phase 14).
+     */
+    private fun writeDiagnostic(jobStatus: String) {
+        val prefs = getSharedPreferences("watchdog_diagnostics", Context.MODE_PRIVATE)
+        val heartbeatCount = prefs.getInt("heartbeat_count", 0) + 1
+        val uptimeMs = SystemClock.elapsedRealtime() - serviceStartTime
+
+        val diagnostic = JSONObject().apply {
+            put("timestamp", System.currentTimeMillis())
+            put("heartbeat_count", heartbeatCount)
+            put("uptime_ms", uptimeMs)
+            put("job_status", jobStatus)
+        }
+
+        prefs.edit()
+            .putString("last_diagnostic", diagnostic.toString())
+            .putInt("heartbeat_count", heartbeatCount)
+            .putLong("last_heartbeat_timestamp", System.currentTimeMillis())
+            .apply()
+
+        Log.d(TAG, "Diagnostic #$heartbeatCount: $diagnostic")
     }
 
     /**
@@ -181,7 +226,8 @@ class WatchdogService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerAtMillis = SystemClock.elapsedRealtime() + HEARTBEAT_INTERVAL_MS
+        val intervalMs = SettingsManager.getInstance(this).watchdogHeartbeatInterval.toLong() * 60 * 1000L
+        val triggerAtMillis = SystemClock.elapsedRealtime() + intervalMs
 
         try {
             am.setExactAndAllowWhileIdle(
@@ -189,7 +235,7 @@ class WatchdogService : Service() {
                 triggerAtMillis,
                 alarmPendingIntent!!
             )
-            Log.d(TAG, "Scheduled exact alarm in ${HEARTBEAT_INTERVAL_MS / 1000 / 60} minutes")
+            Log.d(TAG, "Scheduled exact alarm in ${intervalMs / 1000 / 60} minutes")
         } catch (e: SecurityException) {
             Log.d(TAG, "setExactAndAllowWhileIdle restricted, falling back to setAndAllowWhileIdle: ${e.message}")
             am.setAndAllowWhileIdle(
@@ -212,7 +258,6 @@ class WatchdogService : Service() {
     companion object {
         private const val TAG = "WatchdogService"
 
-        private const val HEARTBEAT_INTERVAL_MS = 15 * 60 * 1000L
         private const val REQUEST_CODE_WATCHDOG_ALARM = 1001
 
         /**

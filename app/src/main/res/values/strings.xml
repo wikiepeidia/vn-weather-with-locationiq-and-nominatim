@@ -686,6 +686,8 @@
     <string name="settings_background_updates_watchdog_hyperios_autostart">Enable HyperOS/MIUI Autostart</string>
     <string name="settings_background_updates_watchdog_hyperios_autostart_summary">Required on Xiaomi/Redmi/POCO devices to prevent the app from being killed</string>
     <string name="settings_background_updates_watchdog_hyperios_autostart_not_found">Could not open Autostart settings. Go to Security app - Permissions - Autostart manually.</string>
+    <string name="settings_background_updates_watchdog_heartbeat_interval">Heartbeat interval</string>
+    <string name="settings_background_updates_watchdog_heartbeat_interval_summary">Every %d minutes</string>
     <!-- “Location” here means “Locating you”, check your Android settings to know the correct word -->
     <string name="settings_location">Location</string>
     <string name="settings_location_summary">Location services settings</string>
