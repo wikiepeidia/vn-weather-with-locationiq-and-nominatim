@@ -1,27 +1,19 @@
 # VN Weather — Vietnamese Address Quality Fork
 
-## Current Milestone: v1.1 Background Watchdog
+## Current State
 
-**Goal:** Weather updates run reliably on aggressive-kill ROMs (HyperOS, MIUI) via a persistent foreground Watchdog service with AlarmManager heartbeat backup.
-
-**Target features:**
-- `WatchdogService`: persistent foreground service with minimal-priority "keepalive" notification
-- AlarmManager `setExactAndAllowWhileIdle()` heartbeat re-arms service after ROM kills it
-- Job monitor: detects dead `WeatherUpdateJob` and re-enqueues it
-- Settings toggle to enable/disable Watchdog mode
-- Notification shows "last updated X min ago" with current conditions
-- HyperOS/MIUI autostart deep-link in BackgroundUpdates settings screen
-- `BootReceiver` starts Watchdog on device reboot (when enabled)
+**Shipped:** v1.1 Background Watchdog (2026-04-02)
+**Next:** Planning — `/gsd-new-milestone` for v1.2
 
 ---
 
 ## What This Is
 
-A fork of a popular open-source Android weather app optimized for Vietnamese administrative addresses (wards, communes, special zones). It uses LocationIQ and Nominatim APIs in tandem to deliver clean, accurate sub-province address names (e.g. "Phường Phú Lương" instead of "Ủy ban nhân dân Phường Phú Lương") for Vietnamese users, with smart cross-validation, lazy fallback, and "giggles" — delightful feedback when the fallback saves a bad result. Now with a Background Watchdog to ensure weather refreshes actually happen on aggressive Android ROMs.
+A fork of a popular open-source Android weather app optimized for Vietnamese administrative addresses (wards, communes, special zones). It uses LocationIQ and Nominatim APIs in tandem to deliver clean, accurate sub-province address names (e.g. "Phường Phú Lương" instead of "Ủy ban nhân dân Phường Phú Lương") for Vietnamese users, with smart cross-validation, lazy fallback, and "giggles" — delightful feedback when the fallback saves a bad result. Includes a Background Watchdog service that ensures weather refreshes actually happen on aggressive Android ROMs (HyperOS, MIUI).
 
 ## Core Value
 
-Vietnamese users see a clean ward/commune name — never a POI or government-office prefix — even when LocationIQ or Nominatim individually return garbage.
+Vietnamese users see a clean ward/commune name — never a POI or government-office prefix — and weather updates reliably happen on background-aggressive ROMs like HyperOS.
 
 ## Requirements
 
@@ -49,57 +41,58 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 - ✓ "Giggles" rescue feedback (debug log + playful settings description) — Phase 4
 - ✓ Kotlin unit tests for all VN address parsing logic in Gradle test suite — Phase 5
 
-### Active (v1.1 — Background Watchdog)
+### Validated (v1.1 — Background Watchdog)
 
-- [ ] `WatchdogService` foreground service with persistent minimal-priority notification
-- [ ] AlarmManager `setExactAndAllowWhileIdle()` heartbeat re-arms Watchdog after ROM kill
-- [ ] Job monitor: re-enqueues `WeatherUpdateJob` when it is no longer scheduled
-- [ ] Settings toggle to enable/disable Watchdog mode (default: off)
-- [ ] Watchdog notification shows last-update timestamp and current weather conditions summary
-- [ ] HyperOS/MIUI autostart deep-link shown in Background Updates settings
-- [ ] `BootReceiver` starts `WatchdogService` after device reboot when Watchdog is enabled
-- [ ] Battery optimization prompt shown when user enables Watchdog mode
+- ✓ `WatchdogService` foreground service with persistent minimal-priority notification — Phase 6
+- ✓ AlarmManager `setExactAndAllowWhileIdle()` heartbeat re-arms Watchdog after ROM kill — Phase 6
+- ✓ Job monitor: re-enqueues `WeatherUpdateJob` when it is no longer scheduled — Phase 6
+- ✓ Settings toggle to enable/disable Watchdog mode (default: off) — Phase 7
+- ✓ Watchdog notification shows last-update timestamp — Phase 6
+- ✓ HyperOS/MIUI autostart deep-link shown in Background Updates settings — Phase 7
+- ✓ `BootReceiver` starts `WatchdogService` after device reboot when Watchdog is enabled — Phase 8
+- ✓ Battery optimization prompt shown when user enables Watchdog mode — Phase 7
+- ✓ Graceful degradation: exact alarm → inexact fallback when ROM restricts — Phase 6
+- ✓ Clean disable: service stop + alarm cancel + notification dismiss — Phase 7 + audit fix
+
+### Active
+
+*(None — next milestone not started)*
 
 ### Out of Scope
 
-- RxJava → Coroutines full migration — large refactor, orthogonal to VN address quality; defer
-- Nominatim rate limiter (Semaphore) — lazy fallback strategy already eliminates concurrent traffic
-- `UpdateStrategy` commenting — unrelated to this feature area
-- `ConfigStore` → DataStore migration — orthogonal; defer
-- Astro/timezone bug fixes — unrelated to VN address
-- `Release.getDownloadLink` fix — unrelated to VN address
-- EncryptedSharedPreferences for API key — good idea but out of scope for this focus milestone
+- RxJava → Coroutines full migration — large refactor, orthogonal to feature work
+- Nominatim rate limiter (Semaphore) — lazy fallback strategy eliminates concurrent traffic
+- `ConfigStore` → DataStore migration — orthogonal
+- EncryptedSharedPreferences for API key — good idea but defer
 
 ## Context
 
 - **Forked from:** Breezy Weather (open source Android weather app)
-- **Target users:** Vietnamese Android users; device locale = `vn`; primary pain point for this milestone is HyperOS/MIUI aggressive background-kill (Xiaomi, Redmi, POCO devices)
-- **The core problem (v1.0):** Vietnamese administrative address reorganization effective July 1, 2025 creates mismatches between what APIs return and what users expect (clean ward names). LocationIQ zoom=18 often returns POI-prefixed strings. Nominatim returns structured data under `suburb` which isn't mapped. *(Delivered in v1.0)*
-- **The core problem (v1.1):** WorkManager periodic tasks are silently cancelled on HyperOS/MIUI by the ROM's app lifecycle manager. Users configured a 30-min refresh but see weather last updated 6 hours ago because the OS killed the worker. A persistent foreground service + AlarmManager heartbeat is the proven mitigation pattern (as used by AdGuard, NetSpeedMonitor, system-utility apps).
-- **Architecture:** Clean Architecture + MVVM, multi-module (app/data/domain). RxJava3 HTTP stack. Key background files: `WeatherUpdateJob`, `BootReceiver`, `BackgroundUpdatesSettingsScreen`, `Notifications`.
-- **AlarmManager vs WorkManager:** WorkManager is recommended by Google but routinely killed on MIUI/HyperOS. `AlarmManager.setExactAndAllowWhileIdle()` is more reliable on these ROMs. The Watchdog service uses AlarmManager as its own heartbeat while delegating actual weather-fetch to `WeatherUpdateJob`.
-- **"Giggles":** When cross-validation detects that Nominatim rescued a bad LocationIQ result, show a brief Snackbar message or debug toast so developers and users notice the system working as intended. *(Delivered in v1.0)*
+- **Target users:** Vietnamese Android users; device locale = `vn`; special attention to HyperOS/MIUI (Xiaomi, Redmi, POCO devices)
+- **Architecture:** Clean Architecture + MVVM, multi-module (app/data/domain). RxJava3 HTTP stack.
+- **v1.0 delivered:** VN address quality — cross-validation, lazy Nominatim, structured fields, giggles feedback, Kotlin tests
+- **v1.1 delivered:** Background Watchdog — persistent foreground service, AlarmManager heartbeat, settings toggle, HyperOS autostart, boot resume
+- **Known issue (ROM-V2-03):** HyperOS kills the app even with battery-opt disabled + autostart + memory exclusion. Users report needing 2-3 refreshes. Future hardening needed.
 
 ## Constraints
 
-- **Compatibility:** Must not affect weather update behavior when Watchdog is disabled (feature-flagged)
-- **Battery:** Foreground service + AlarmManager will consume more battery; Watchdog must be opt-in, not default
 - **Kotlin:** All new code in Kotlin; no new Java
-- **No breaking changes:** Existing `WeatherUpdateJob`, `BootReceiver`, `Notifications` API surface must remain stable
-- **HyperOS policy:** Some MIUI/HyperOS versions restrict `setExactAndAllowWhileIdle()`; the implementation must degrade gracefully (fall back to inexact alarm or WorkManager-only) rather than crash
+- **No breaking changes:** Existing API surfaces must remain stable
+- **Battery:** New features with battery impact must be opt-in
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Lazy Nominatim (conditional, not always-parallel) | Eliminates rate limit risk; faster happy path; Nominatim only fires when LocationIQ regex fails | ✓ Accepted |
-| Cross-validation: prefer clean regex match over API priority | The "correct" result is whichever has a clean VN token, not which API responded first | ✓ Accepted |
-| `firstOrNull` for LocationIQ, `lastOrNull` for Nominatim | LocationIQ zoom=18 has ward as FIRST segment; Nominatim zoom=13 has it LAST | ✓ Accepted |
-| Add `suburb`/`hamlet` to `NominatimAddress` | Nominatim returns VN ward under `suburb` key; currently unmapped, causing regex fallback brittleness | ✓ Accepted |
-| Skip RxJava migration | High-risk refactor; independent of address quality goal | ✓ Accepted |
-| Watchdog opt-in (default off) | Foreground service + AlarmManager drains battery; should only activate when user needs it (aggressive ROM) | — Pending |
-| AlarmManager heartbeat for Watchdog self-heal | WorkManager cannot reliably reschedule itself after HyperOS kills it; AlarmManager survives better | — Pending |
-| Delegate weather-fetch to existing WeatherUpdateJob | Watchdog monitors and re-enqueues jobs; doesn't duplicate weather-fetch logic | — Pending |
+| Lazy Nominatim (conditional, not always-parallel) | Eliminates rate limit risk; faster happy path | ✓ Good |
+| Cross-validation: prefer clean regex match over API priority | Correct result = clean VN token regardless of source | ✓ Good |
+| `firstOrNull` for LocationIQ, `lastOrNull` for Nominatim | Zoom-level-dependent token ordering | ✓ Good |
+| Add `suburb`/`hamlet` to `NominatimAddress` | Nominatim returns VN ward under `suburb` | ✓ Good |
+| Watchdog opt-in (default off) | Foreground service + AlarmManager drains battery | ✓ Good |
+| AlarmManager heartbeat for Watchdog self-heal | WorkManager killed by HyperOS; AlarmManager survives | ✓ Good |
+| Delegate weather-fetch to existing WeatherUpdateJob | Watchdog monitors; doesn't duplicate logic | ✓ Good |
+| `watchdogEnabled` guard in AlarmReceiver | Prevents zombie resurrection after user disables | ✓ Good (found in audit) |
+| Defensive alarm cancel in `stop()` | Covers process-kill scenario where onDestroy never fires | ✓ Good (found in audit) |
 
 ---
-*Last updated: 2026-04-02 after milestone v1.1 Background Watchdog started*
+*Last updated: 2026-04-02 after v1.1 Background Watchdog milestone completed*
