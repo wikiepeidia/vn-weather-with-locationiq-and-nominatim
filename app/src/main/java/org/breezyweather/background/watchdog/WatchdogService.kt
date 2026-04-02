@@ -61,6 +61,7 @@ class WatchdogService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         Log.d(TAG, "WatchdogService created")
         alarmManager = getSystemService()
         serviceStartTime = SystemClock.elapsedRealtime()
@@ -68,6 +69,10 @@ class WatchdogService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "WatchdogService onStartCommand")
+
+        // RESTART-02/03: Track restart count and source
+        val source = intent?.getStringExtra(EXTRA_RESTART_SOURCE) ?: "sticky"
+        incrementRestartCount(source)
 
         // Promote to foreground immediately — Android requires this within 5 seconds
         val notification = buildNotification()
@@ -103,6 +108,7 @@ class WatchdogService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        isRunning = false
         Log.d(TAG, "WatchdogService destroyed")
         cancelAlarm()
     }
@@ -210,6 +216,21 @@ class WatchdogService : Service() {
     }
 
     /**
+     * RESTART-02: Increments cumulative restart count and records source.
+     * Data persists across process death in SharedPreferences.
+     */
+    private fun incrementRestartCount(source: String) {
+        val prefs = getSharedPreferences("watchdog_diagnostics", Context.MODE_PRIVATE)
+        val count = prefs.getInt("restart_count", 0) + 1
+        prefs.edit()
+            .putInt("restart_count", count)
+            .putString("last_restart_source", source)
+            .putLong("last_restart_timestamp", System.currentTimeMillis())
+            .apply()
+        Log.d(TAG, "Restart #$count (source: $source)")
+    }
+
+    /**
      * Arms the next AlarmManager alarm for self-healing after process kill.
      * Tries exact alarm first; falls back to inexact if restricted by ROM.
      */
@@ -259,27 +280,33 @@ class WatchdogService : Service() {
         private const val TAG = "WatchdogService"
 
         private const val REQUEST_CODE_WATCHDOG_ALARM = 1001
+        internal const val EXTRA_RESTART_SOURCE = "restart_source"
+
+        @Volatile
+        var isRunning = false
+            private set
 
         /**
-         * Starts the WatchdogService.
-         * Called by Phase 7 Settings toggle or Phase 8 BootReceiver.
+         * Starts the WatchdogService and enqueues the WorkManager backup restart job.
          */
-        fun start(context: Context) {
-            val intent = Intent(context, WatchdogService::class.java)
+        fun start(context: Context, source: String = "manual") {
+            val intent = Intent(context, WatchdogService::class.java).apply {
+                putExtra(EXTRA_RESTART_SOURCE, source)
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {
                 context.startService(intent)
             }
+            WatchdogRestartWorker.enqueue(context)
         }
 
         /**
-         * Stops the WatchdogService and cancels any pending alarm.
-         * Defensively cancels the alarm PendingIntent even if the service
-         * process was already killed (onDestroy may not have fired).
+         * Stops the WatchdogService, cancels the WorkManager backup, and cancels any pending alarm.
          */
         fun stop(context: Context) {
             context.stopService(Intent(context, WatchdogService::class.java))
+            WatchdogRestartWorker.cancel(context)
             // Cancel alarm independently — covers case where service process was already killed
             val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
             val pi = PendingIntent.getBroadcast(

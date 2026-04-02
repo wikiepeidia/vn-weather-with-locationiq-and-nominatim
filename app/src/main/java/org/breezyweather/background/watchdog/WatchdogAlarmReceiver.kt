@@ -19,7 +19,6 @@ package org.breezyweather.background.watchdog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import org.breezyweather.domain.settings.SettingsManager
 
@@ -38,13 +37,7 @@ class WatchdogAlarmReceiver : BroadcastReceiver() {
         }
 
         Log.d(TAG, "Alarm received — restarting WatchdogService")
-
-        val serviceIntent = Intent(context, WatchdogService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
-        }
+        WatchdogService.start(context, "alarm")
     }
 
     companion object {

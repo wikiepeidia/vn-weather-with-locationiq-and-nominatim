@@ -67,7 +67,7 @@ class BootReceiver : BroadcastReceiver() {
                 // WatchdogService.onStartCommand performs an immediate heartbeat (BOOT-02)
                 // which re-enqueues WeatherUpdateJob if not already scheduled.
                 if (SettingsManager.getInstance(context).watchdogEnabled) {
-                    WatchdogService.start(context)
+                    WatchdogService.start(context, "boot")
                 }
             }
         }
