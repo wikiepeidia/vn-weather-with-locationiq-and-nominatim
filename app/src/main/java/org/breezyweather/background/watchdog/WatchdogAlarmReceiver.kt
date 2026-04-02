@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import org.breezyweather.domain.settings.SettingsManager
 
 /**
  * Receives AlarmManager alarm to restart WatchdogService after process kill.
@@ -30,6 +31,12 @@ import android.util.Log
 class WatchdogAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        // Guard: don't restart if user disabled Watchdog (DEGRADE-02)
+        if (!SettingsManager.getInstance(context).watchdogEnabled) {
+            Log.d(TAG, "Alarm received but watchdog disabled — ignoring")
+            return
+        }
+
         Log.d(TAG, "Alarm received — restarting WatchdogService")
 
         val serviceIntent = Intent(context, WatchdogService::class.java)

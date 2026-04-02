@@ -230,11 +230,24 @@ class WatchdogService : Service() {
         }
 
         /**
-         * Stops the WatchdogService.
-         * Called by Phase 7 Settings toggle.
+         * Stops the WatchdogService and cancels any pending alarm.
+         * Defensively cancels the alarm PendingIntent even if the service
+         * process was already killed (onDestroy may not have fired).
          */
         fun stop(context: Context) {
             context.stopService(Intent(context, WatchdogService::class.java))
+            // Cancel alarm independently — covers case where service process was already killed
+            val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+            val pi = PendingIntent.getBroadcast(
+                context,
+                REQUEST_CODE_WATCHDOG_ALARM,
+                Intent(context, WatchdogAlarmReceiver::class.java).apply {
+                    action = WatchdogAlarmReceiver.ACTION_WATCHDOG_ALARM
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            am?.cancel(pi)
+            pi.cancel()
         }
     }
 }
