@@ -113,7 +113,7 @@ Plans:
 | 3. Performance & Reliability | 0/? | Not started | — |
 | 4. Giggles Feedback & Settings | 0/? | Not started | — |
 | 5. Kotlin Unit Tests | 0/? | Not started | — |
-| 6. WatchdogService Core | 0/? | Not started | — |
+| 6. WatchdogService Core | 0/3 | Planning complete | — |
 | 7. Settings & Teardown | 0/? | Not started | — |
 | 8. Boot & Manifest Wiring | 0/? | Not started | — |
 
@@ -134,7 +134,13 @@ Plans:
   4. On a device where `setExactAndAllowWhileIdle()` is permitted, an exact alarm is armed before the service sleeps; on a device where it is restricted, the service falls back to `setInexactRepeating()` and writes a `Log.d` warning — no crash or ANR
   5. Killing the `WatchdogService` process between heartbeats (via `adb shell am kill`) causes the AlarmManager alarm to restart the service within the next alarm interval
 
-**Plans**: TBD  
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Add CHANNEL_WATCHDOG and ID_WATCHDOG_KEEPALIVE to Notifications.kt
+- [ ] 06-02-PLAN.md — Add WAKE_LOCK permission, WatchdogService and WatchdogAlarmReceiver to AndroidManifest
+- [ ] 06-03-PLAN.md — Implement WatchdogService and WatchdogAlarmReceiver core functionality
+
 **UI hint**: yes
 
 ---
