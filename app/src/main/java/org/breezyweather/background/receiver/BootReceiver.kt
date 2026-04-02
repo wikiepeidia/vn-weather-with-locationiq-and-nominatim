@@ -26,7 +26,9 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.breezyweather.background.watchdog.WatchdogService
 import org.breezyweather.common.extensions.workManager
+import org.breezyweather.domain.settings.SettingsManager
 import org.breezyweather.remoteviews.presenters.notification.WidgetNotificationIMP
 import org.breezyweather.sources.RefreshHelper
 import javax.inject.Inject
@@ -59,6 +61,13 @@ class BootReceiver : BroadcastReceiver() {
                     GlobalScope.launch(Dispatchers.IO) {
                         refreshHelper.updateNotificationIfNecessary(context)
                     }
+                }
+
+                // BOOT-01: Resume WatchdogService if user had it enabled before reboot.
+                // WatchdogService.onStartCommand performs an immediate heartbeat (BOOT-02)
+                // which re-enqueues WeatherUpdateJob if not already scheduled.
+                if (SettingsManager.getInstance(context).watchdogEnabled) {
+                    WatchdogService.start(context)
                 }
             }
         }
