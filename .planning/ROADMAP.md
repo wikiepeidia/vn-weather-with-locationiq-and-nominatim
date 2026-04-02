@@ -96,7 +96,10 @@ Plans:
   1. On Xiaomi/Redmi/POCO devices with Watchdog enabled, WatchdogService binds to a transparent zero-pixel Activity that raises the process OOM adj from "service" to "visible"
   2. The Activity binding only activates when manufacturer matches Xiaomi/Redmi/POCO — does nothing on Samsung, Pixel, or other OEMs
   3. Process importance level is logged in each heartbeat's diagnostic entry when the Activity binding is active
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 12-01-PLAN.md — WatchdogAnchorActivity + Service Binder + manufacturer gate + process importance logging
 
 #### Phase 13: Notification Enhancement
 **Goal**: Watchdog notification gives users confidence the system is working with timing information
