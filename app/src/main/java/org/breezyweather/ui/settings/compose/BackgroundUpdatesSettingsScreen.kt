@@ -421,6 +421,111 @@ fun BackgroundSettingsScreen(
 
             sectionFooterItem(R.string.settings_background_updates_section_watchdog)
 
+            // HEALTH-01/02/03: Watchdog health dashboard (visible only when watchdog is enabled)
+            if (SettingsManager.getInstance(context).watchdogEnabled) {
+                largeSeparatorItem()
+                sectionHeaderItem(R.string.settings_background_updates_section_watchdog_health)
+
+                item {
+                    val prefs = context.getSharedPreferences("watchdog_diagnostics", Context.MODE_PRIVATE)
+                    var lastHeartbeat by remember { mutableStateOf(prefs.getLong("last_heartbeat_timestamp", 0L)) }
+                    var heartbeatCount by remember { mutableIntStateOf(prefs.getInt("heartbeat_count", 0)) }
+                    var restartCount by remember { mutableIntStateOf(prefs.getInt("restart_count", 0)) }
+                    var lastRestart by remember { mutableStateOf(prefs.getLong("last_restart_timestamp", 0L)) }
+                    var serviceRunning by remember { mutableStateOf(WatchdogService.isRunning) }
+
+                    // HEALTH-02: Periodic poll every 5s for live refresh
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            delay(5000)
+                            lastHeartbeat = prefs.getLong("last_heartbeat_timestamp", 0L)
+                            heartbeatCount = prefs.getInt("heartbeat_count", 0)
+                            restartCount = prefs.getInt("restart_count", 0)
+                            lastRestart = prefs.getLong("last_restart_timestamp", 0L)
+                            serviceRunning = WatchdogService.isRunning
+                        }
+                    }
+
+                    val statusText = if (serviceRunning) {
+                        stringResource(R.string.watchdog_health_status_running)
+                    } else {
+                        stringResource(R.string.watchdog_health_status_stopped)
+                    }
+
+                    val heartbeatText = if (lastHeartbeat > 0) {
+                        android.text.format.DateUtils.getRelativeTimeSpanString(
+                            lastHeartbeat,
+                            System.currentTimeMillis(),
+                            android.text.format.DateUtils.MINUTE_IN_MILLIS,
+                            android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE
+                        ).toString()
+                    } else {
+                        stringResource(R.string.watchdog_health_never)
+                    }
+
+                    val restartText = if (lastRestart > 0) {
+                        "$restartCount (${android.text.format.DateUtils.getRelativeTimeSpanString(
+                            lastRestart,
+                            System.currentTimeMillis(),
+                            android.text.format.DateUtils.MINUTE_IN_MILLIS,
+                            android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE
+                        )})"
+                    } else {
+                        restartCount.toString()
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = dimensionResource(R.dimen.normal_margin))
+                    ) {
+                        PreferenceViewWithCard(
+                            title = stringResource(R.string.watchdog_health_status),
+                            summary = statusText,
+                            isFirst = true,
+                        ) { /* no-op */ }
+                        Spacer(modifier = Modifier.height(1.dp))
+                        PreferenceViewWithCard(
+                            title = stringResource(R.string.watchdog_health_last_heartbeat),
+                            summary = heartbeatText,
+                        ) { /* no-op */ }
+                        Spacer(modifier = Modifier.height(1.dp))
+                        PreferenceViewWithCard(
+                            title = stringResource(R.string.watchdog_health_heartbeat_count),
+                            summary = heartbeatCount.toString(),
+                        ) { /* no-op */ }
+                        Spacer(modifier = Modifier.height(1.dp))
+                        PreferenceViewWithCard(
+                            title = stringResource(R.string.watchdog_health_restart_count),
+                            summary = restartText,
+                            isLast = true,
+                        ) { /* no-op */ }
+                    }
+                }
+
+                // HEALTH-03: Reset stats action
+                clickablePreferenceItem(R.string.watchdog_health_reset_stats) { id ->
+                    PreferenceViewWithCard(
+                        titleId = id,
+                        summaryId = R.string.watchdog_health_reset_stats_summary,
+                        isLast = true
+                    ) {
+                        context.getSharedPreferences("watchdog_diagnostics", Context.MODE_PRIVATE)
+                            .edit()
+                            .putInt("heartbeat_count", 0)
+                            .putInt("restart_count", 0)
+                            .putLong("last_restart_timestamp", 0L)
+                            .putLong("last_heartbeat_timestamp", 0L)
+                            .remove("last_diagnostic")
+                            .remove("last_restart_source")
+                            .apply()
+                        SnackbarHelper.showSnackbar("Stats reset")
+                    }
+                }
+
+                sectionFooterItem(R.string.settings_background_updates_section_watchdog_health)
+            }
+
             largeSeparatorItem()
 
             sectionHeaderItem(R.string.settings_background_updates_section_troubleshoot)

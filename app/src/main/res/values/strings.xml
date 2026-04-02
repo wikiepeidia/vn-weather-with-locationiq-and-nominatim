@@ -689,6 +689,17 @@
     <string name="settings_background_updates_watchdog_heartbeat_interval">Heartbeat interval</string>
     <string name="settings_background_updates_watchdog_heartbeat_interval_summary">Every %d minutes</string>
     <string name="watchdog_next_refresh">Next: ~%d min</string>
+    <string name="settings_background_updates_section_watchdog_health">Watchdog health</string>
+    <string name="watchdog_health_status">Status</string>
+    <string name="watchdog_health_status_running">Running</string>
+    <string name="watchdog_health_status_stopped">Stopped</string>
+    <string name="watchdog_health_last_heartbeat">Last heartbeat</string>
+    <string name="watchdog_health_heartbeat_count">Heartbeat count</string>
+    <string name="watchdog_health_restart_count">Restart count</string>
+    <string name="watchdog_health_last_restart">Last restart</string>
+    <string name="watchdog_health_reset_stats">Reset stats</string>
+    <string name="watchdog_health_reset_stats_summary">Clear heartbeat and restart counters</string>
+    <string name="watchdog_health_never">Never</string>
     <!-- “Location” here means “Locating you”, check your Android settings to know the correct word -->
     <string name="settings_location">Location</string>
     <string name="settings_location_summary">Location services settings</string>
