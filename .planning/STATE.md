@@ -2,22 +2,22 @@
 
 ## Project Reference
 
-**Core Value:** Vietnamese users see a clean ward/commune name — never a POI or government-office prefix — even when LocationIQ or Nominatim individually return garbage.
+**Core Value:** Vietnamese users see a clean ward/commune name — never a POI or government-office prefix — even when LocationIQ or Nominatim individually return garbage. Weather updates reliably happen on background-aggressive ROMs like HyperOS.
 
-**Milestone:** v1 — VN Address Quality  
-**Milestone Goal:** All 19 requirements covering token extraction, cross-validation, lazy Nominatim, reliability, giggles feedback, and Kotlin unit tests delivered and passing.
+**Milestone:** v1.1 — Background Watchdog  
+**Milestone Goal:** Deliver a persistent foreground Watchdog service with AlarmManager heartbeat so weather updates run reliably on HyperOS/MIUI, with a settings toggle, HyperOS autostart guidance, and boot-resume support.
 
 ---
 
 ## Current Position
 
-**Active Phase:** *(none — milestone complete)*  
+**Active Phase:** *(none — defining requirements)*  
 **Active Plan:** none  
-**Status:** All 5 phases complete ✓  
+**Status:** Milestone started — requirements definition in progress  
 
-```
-Progress: [██████████] 100% (5/5 phases complete)
-```
+---
+
+## v1.0 Archive (VN Address Quality)
 
 ### Phase Checklist
 
@@ -29,43 +29,30 @@ Progress: [██████████] 100% (5/5 phases complete)
 
 ---
 
-## Performance Metrics
-
-| Metric | Value |
-|--------|-------|
-| Phases defined | 5 |
-| Requirements total | 19 |
-| Requirements mapped | 19 |
-| Phases complete | 5 |
-| Plans executed | 5 |
-
----
-
 ## Accumulated Context
 
 ### Key Decisions (from PROJECT.md)
 
 | Decision | Rationale |
 |----------|-----------|
-| Lazy Nominatim (conditional, not always-parallel) | Eliminates rate limit risk; faster happy path |
-| Cross-validation: prefer clean regex match over API priority | Correct result = whichever has a clean VN token |
-| `firstOrNull` for LocationIQ, `lastOrNull` for Nominatim | LocationIQ zoom=18: ward is FIRST; Nominatim zoom=13: ward is LAST |
-| Add `suburb`/`hamlet` to `NominatimAddress` | Nominatim returns VN ward under `suburb` — currently unmapped |
-| Skip RxJava migration | High-risk refactor; independent of address quality goal |
+| Watchdog opt-in (default off) | Foreground service + AlarmManager drains battery; must be user-initiated |
+| AlarmManager heartbeat for Watchdog self-heal | WorkManager can't reliably reschedule after HyperOS kills it |
+| Delegate weather-fetch to existing WeatherUpdateJob | Watchdog monitors and re-enqueues; doesn't duplicate logic |
 
-### Key Files to Touch
+### Key Existing Files
 
-- `app/src/main/java/org/breezyweather/sources/nominatim/json/NominatimAddress.kt` — Phase 1
-- `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` — Phases 1–4
-- `app/src/main/res/` (strings) + settings preference XML — Phase 4
-- `app/src/test/java/org/breezyweather/sources/` — Phase 5
+- `app/src/main/java/org/breezyweather/background/weather/WeatherUpdateJob.kt` — CoroutineWorker, periodic weather refresh
+- `app/src/main/java/org/breezyweather/background/receiver/BootReceiver.kt` — restores workers after reboot
+- `app/src/main/java/org/breezyweather/remoteviews/Notifications.kt` — notification channels
+- `app/src/main/java/org/breezyweather/ui/settings/compose/BackgroundUpdatesSettingsScreen.kt` — settings UI
+- `app/src/main/java/org/breezyweather/domain/settings/SettingsManager.kt` — settings properties
 
 ### Constraints to Remember
 
-- All VN-specific logic MUST be gated on `countryCode == "vn"` — non-VN locations must be unchanged
-- Nominatim 1 req/sec policy — lazy strategy is the mitigation (no rate limiter needed)
-- Keep `NominatimService` API surface stable — other callers depend on it
+- Watchdog feature must be fully opt-in; default off to preserve battery
+- `setExactAndAllowWhileIdle()` may be restricted on some HyperOS versions — degrade gracefully
 - All new code in Kotlin; no new Java
+- Existing `WeatherUpdateJob` and `BootReceiver` API surfaces must stay stable
 
 ### Todos
 
@@ -79,9 +66,9 @@ Progress: [██████████] 100% (5/5 phases complete)
 
 ## Session Continuity
 
-**Last updated:** 2026-03-23  
-**Last action:** Phase 1 planned — 2 PLAN.md files written to .planning/phases/01-data-model-foundation/  
-**Next action:** Run `/gsd-execute-phase 1` to execute Phase 1 — Data Model Foundation
+**Last updated:** 2026-04-02  
+**Last action:** Milestone v1.1 started — updating PROJECT.md and STATE.md  
+**Next action:** Run roadmapper to create phased execution plan
 
 ---
-*STATE.md initialized: 2026-03-23*
+*STATE.md updated: 2026-04-02*
