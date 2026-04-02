@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: (between milestones)
-status: idle
-last_updated: "2026-04-02T21:00:00.000Z"
+milestone: v1.2
+milestone_name: ROM Hardening
+status: defining_requirements
+last_updated: "2026-04-02T14:28:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -18,9 +18,16 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 **Core value:** Vietnamese users see clean ward/commune names and reliable weather updates on background-aggressive ROMs.
-**Current focus:** Between milestones — run `/gsd-new-milestone` for v1.2
+**Current focus:** v1.2 ROM Hardening — defining requirements
 
 ---
+
+## Current Position
+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-02 — Milestone v1.2 started
 
 ## Completed Milestones
 
@@ -32,9 +39,6 @@ Phases 1-5: Structured Nominatim fields, cross-validation, lazy Nominatim, giggl
 
 Phases 6-8: WatchdogService foreground service, AlarmManager heartbeat, settings toggle + battery-opt + HyperOS autostart, BootReceiver integration.
 
-**Key commits:** `3d7c34645..87ba3dcd2` (7 commits, 477 LOC)
-**Audit:** 15/15 requirements, tech_debt status (7 items)
-
 See: `.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREMENTS.md`
 
 ---
@@ -42,8 +46,8 @@ See: `.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREM
 ## Session Continuity
 
 **Last updated:** 2026-04-02
-**Last action:** v1.1 milestone completed and archived
-**Next action:** `/gsd-new-milestone` to start v1.2
+**Last action:** Milestone v1.2 started — defining requirements
+**Next action:** Complete requirements → roadmap → `/gsd-plan-phase 9`
 
 ---
-*STATE.md updated: 2026-04-02 — v1.1 milestone complete*
+*STATE.md updated: 2026-04-02 — v1.2 milestone started*

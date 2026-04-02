@@ -1,9 +1,16 @@
 # VN Weather — Vietnamese Address Quality Fork
 
-## Current State
+## Current Milestone: v1.2 ROM Hardening
 
-**Shipped:** v1.1 Background Watchdog (2026-04-02)
-**Next:** Planning — `/gsd-new-milestone` for v1.2
+**Goal:** Harden WatchdogService survival on HyperOS/MIUI through multiple restart vectors, WakeLock during heartbeat, process importance elevation, and user-visible health diagnostics.
+
+**Target features:**
+- WakeLock during heartbeat execution to prevent CPU sleep during weather check
+- Redundant restart vectors: WorkManager periodic backup alongside AlarmManager
+- Process importance elevation via invisible Activity binding (raise OOM adj score)
+- Watchdog health dashboard in settings (last heartbeat time, restart count, service status)
+- Enhanced keepalive notification with last-update time + next scheduled refresh
+- v1.1 tech debt cleanup: extract `WEATHER_UPDATE_WORK_NAME` constant, add verification
 
 ---
 
@@ -54,9 +61,14 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 - ✓ Graceful degradation: exact alarm → inexact fallback when ROM restricts — Phase 6
 - ✓ Clean disable: service stop + alarm cancel + notification dismiss — Phase 7 + audit fix
 
-### Active
+### Active (v1.2 — ROM Hardening)
 
-*(None — next milestone not started)*
+- [ ] WakeLock acquired during heartbeat execution to prevent CPU sleep
+- [ ] Redundant restart vector: WorkManager periodic job as backup to AlarmManager
+- [ ] Process importance elevation via invisible Activity binding on aggressive ROMs
+- [ ] Watchdog health dashboard in Background Updates settings (status, last heartbeat, restarts)
+- [ ] Enhanced keepalive notification with last-update + next-scheduled info
+- [ ] Extract `WEATHER_UPDATE_WORK_NAME` from hardcoded string literal to shared constant
 
 ### Out of Scope
 
@@ -72,7 +84,9 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 - **Architecture:** Clean Architecture + MVVM, multi-module (app/data/domain). RxJava3 HTTP stack.
 - **v1.0 delivered:** VN address quality — cross-validation, lazy Nominatim, structured fields, giggles feedback, Kotlin tests
 - **v1.1 delivered:** Background Watchdog — persistent foreground service, AlarmManager heartbeat, settings toggle, HyperOS autostart, boot resume
-- **Known issue (ROM-V2-03):** HyperOS kills the app even with battery-opt disabled + autostart + memory exclusion. Users report needing 2-3 refreshes. Future hardening needed.
+- **Known issue (ROM-V2-03):** HyperOS kills the app even with battery-opt disabled + autostart + memory exclusion. Users report needing 2-3 refreshes. **v1.2 target.**
+- **AlarmManager vs WorkManager:** WorkManager killed by HyperOS; AlarmManager survives better but alone is not enough. v1.2 adds redundant restart vectors.
+- **OOM adj:** Android assigns OOM adjustment scores to processes. Binding to an Activity raises the score, making the process less likely to be killed. AdGuard and similar apps use this technique.
 
 ## Constraints
 
@@ -95,4 +109,4 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 | Defensive alarm cancel in `stop()` | Covers process-kill scenario where onDestroy never fires | ✓ Good (found in audit) |
 
 ---
-*Last updated: 2026-04-02 after v1.1 Background Watchdog milestone completed*
+*Last updated: 2026-04-02 after v1.2 ROM Hardening milestone started*
