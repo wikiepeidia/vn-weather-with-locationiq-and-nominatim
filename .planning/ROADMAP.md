@@ -83,7 +83,10 @@ Plans:
   1. A WorkManager periodic job independently verifies WatchdogService is running and restarts it within 30 minutes if the AlarmManager heartbeat fails to fire
   2. Cumulative restart count is persisted to SharedPreferences, survives process death, and is accessible for the health dashboard
   3. On each restart (boot, alarm, or WorkManager), WatchdogService immediately performs a heartbeat before scheduling the next alarm
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 11-01-PLAN.md — WatchdogRestartWorker + restart counter + source tracking (RESTART-01, RESTART-02, RESTART-03)
 
 #### Phase 12: Process Importance Elevation
 **Goal**: WatchdogService process is harder to kill on HyperOS/MIUI by elevating its OOM adjustment score
