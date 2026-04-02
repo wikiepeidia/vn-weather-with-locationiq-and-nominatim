@@ -3,7 +3,7 @@
 **Milestones:**
 - ✅ **v1.0 — VN Address Quality** (Phases 1-5) — Shipped 2026-03-23
 - ✅ **v1.1 — Background Watchdog** (Phases 6-8) — Shipped 2026-04-02
-- 🔄 **v1.2 — ROM Hardening** (Phases 9-14) — Active
+- ✅ **v1.2 — ROM Hardening** (Phases 9-14) — Shipped
 
 ---
 
