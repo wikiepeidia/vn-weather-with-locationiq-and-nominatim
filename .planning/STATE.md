@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: — Background Watchdog
+status: active
+last_updated: "2026-04-02"
+progress:
+  total_phases: 8
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+---
+
 # STATE.md — VN Weather
 
 ## Project Reference
@@ -11,16 +24,7 @@
 
 ## Current Position
 
-**Active Phase:** Phase 6 — WatchdogService Core  
-**Active Plan:** none  
-**Status:** Roadmap created — ready to plan Phase 6
-
-**Progress:**
-```
-v1.1: [░░░░░░░░] 0 of 3 phases complete
-```
-
----
+Phase: 07 (settings-teardown) — PENDING
 
 ## v1.0 Archive (VN Address Quality)
 
@@ -34,7 +38,7 @@ v1.1: [░░░░░░░░] 0 of 3 phases complete
 
 ## v1.1 Phase Checklist
 
-- [ ] Phase 6: WatchdogService Core
+- [x] Phase 6: WatchdogService Core — commit `c7185e2e2`
 - [ ] Phase 7: Settings & Teardown
 - [ ] Phase 8: Boot & Manifest Wiring
 
@@ -76,8 +80,8 @@ v1.1: [░░░░░░░░] 0 of 3 phases complete
 ## Session Continuity
 
 **Last updated:** 2026-04-02  
-**Last action:** v1.1 roadmap created — Phases 6, 7, 8 defined  
-**Next action:** `/gsd-plan-phase 6` to plan WatchdogService Core
+**Last action:** Phase 6 complete — WatchdogService + WatchdogAlarmReceiver implemented, compiled, committed  
+**Next action:** `/gsd-discuss-phase 7` or `/gsd-plan-phase 7` — Settings & Teardown
 
 ---
-*STATE.md updated: 2026-04-02 — v1.1 roadmap created*
+*STATE.md updated: 2026-04-02 — Phase 6 complete*
