@@ -19,6 +19,7 @@ package org.breezyweather.background.watchdog
 import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.Notification
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -29,7 +30,6 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
-import android.text.format.DateUtils
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
@@ -85,15 +85,15 @@ class WatchdogService : Service() {
         val source = intent?.getStringExtra(EXTRA_RESTART_SOURCE) ?: "sticky"
         incrementRestartCount(source)
 
-        // Promote to foreground immediately — Android requires this within 5 seconds
-        // Piggyback on the weather widget notification when it's enabled, so the user
-        // sees only ONE notification (the useful weather one) instead of a separate keepalive.
+        // Promote to foreground immediately — Android requires this within 5 seconds.
+        // When the weather widget notification is enabled, piggyback on it (ID_WIDGET)
+        // so the user sees ONE useful notification instead of a separate keepalive.
         foregroundNotifId = if (WidgetNotificationIMP.isEnabled(this)) {
             Notifications.ID_WIDGET
         } else {
             Notifications.ID_WATCHDOG_KEEPALIVE
         }
-        val notification = buildNotification()
+        val notification = getForegroundNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
                 foregroundNotifId,
@@ -141,87 +141,63 @@ class WatchdogService : Service() {
     override fun onBind(intent: Intent?): IBinder = binder
 
     /**
-     * Builds the foreground notification.
+     * Gets the notification for startForeground().
      *
-     * When the weather widget notification is enabled, this builds a placeholder on
-     * CHANNEL_WIDGET that gets immediately replaced by the rich weather notification
-     * on the next weather update. When disabled, builds a minimal keepalive.
+     * When piggybacking on the weather widget (ID_WIDGET): grabs the EXISTING rich
+     * weather notification from NotificationManager so we never overwrite it with
+     * garbage. Only builds a minimal placeholder if the weather notification hasn't
+     * been posted yet (cold start — WidgetNotificationIMP replaces it on first update).
+     *
+     * When standalone: builds the "Background guard" notification.
      */
-    private fun buildNotification(): Notification {
-        val settingsManager = SettingsManager.getInstance(this)
-
-        // When piggybacking on widget notification, build on CHANNEL_WIDGET
-        // so the rich weather notification naturally replaces this placeholder.
+    private fun getForegroundNotification(): Notification {
         if (foregroundNotifId == Notifications.ID_WIDGET) {
+            // Reuse the existing weather notification — never overwrite it
+            getExistingNotification(Notifications.ID_WIDGET)?.let { return it }
+
+            // Cold start fallback: minimal placeholder until first weather update
             return notificationBuilder(Notifications.CHANNEL_WIDGET) {
                 setSmallIcon(R.drawable.ic_running_in_background)
-                setContentTitle(getString(R.string.notification_channel_watchdog))
-                setContentText(getString(R.string.notification_running_in_background))
+                setContentTitle(getString(R.string.notification_running_in_background))
                 setOngoing(true)
                 setShowWhen(false)
                 priority = NotificationCompat.PRIORITY_MIN
             }.build()
         }
 
-        // Standalone watchdog notification (widget notification disabled)
-        val showNotification = settingsManager.watchdogNotificationVisible
-
-        if (!showNotification) {
-            return notificationBuilder(Notifications.CHANNEL_WATCHDOG) {
-                setSmallIcon(R.drawable.ic_running_in_background)
-                setOngoing(true)
-                setShowWhen(false)
-                priority = NotificationCompat.PRIORITY_MIN
-            }.build()
-        }
-
-        val lastUpdate = settingsManager.weatherUpdateLastTimestamp
-        val intervalMin = settingsManager.watchdogHeartbeatInterval
-
-        val contentText = buildString {
-            if (lastUpdate > 0) {
-                append(getString(
-                    R.string.location_last_updated_x,
-                    DateUtils.getRelativeTimeSpanString(
-                        lastUpdate,
-                        System.currentTimeMillis(),
-                        DateUtils.MINUTE_IN_MILLIS,
-                        DateUtils.FORMAT_ABBREV_RELATIVE
-                    )
-                ))
-                append(" · ")
-                append(getString(R.string.watchdog_next_refresh, intervalMin))
-            } else {
-                append(getString(R.string.notification_running_in_background))
-            }
-        }
-
-        val notifPriority = if (isXiaomiDevice()) {
-            NotificationCompat.PRIORITY_LOW
-        } else {
-            NotificationCompat.PRIORITY_MIN
-        }
-
+        // Standalone "Background guard" notification
         return notificationBuilder(Notifications.CHANNEL_WATCHDOG) {
             setSmallIcon(R.drawable.ic_running_in_background)
             setContentTitle(getString(R.string.watchdog_notification_title))
-            setContentText(contentText)
+            setContentText(getString(R.string.notification_running_in_background))
             setOngoing(true)
             setShowWhen(false)
-            priority = notifPriority
+            priority = if (isXiaomiDevice()) {
+                NotificationCompat.PRIORITY_LOW
+            } else {
+                NotificationCompat.PRIORITY_MIN
+            }
         }.build()
     }
 
     /**
-     * Refreshes the foreground notification with the latest "last updated" time.
-     * Called after each heartbeat or when WeatherUpdateJob signals completion.
+     * Grabs an existing notification from the system by ID.
+     * Returns null if not currently posted.
+     */
+    private fun getExistingNotification(id: Int): Notification? {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        return nm?.activeNotifications?.firstOrNull { it.id == id }?.notification
+    }
+
+    /**
+     * Refreshes the foreground notification.
+     * When piggybacking on the weather widget, this is a no-op —
+     * WidgetNotificationIMP owns that notification's content.
      */
     fun updateNotification() {
-        // When piggybacking on widget notification, don't overwrite it —
-        // WidgetNotificationIMP handles updates with the rich weather notification.
         if (foregroundNotifId == Notifications.ID_WIDGET) return
 
-        val notification = buildNotification()
+        val notification = getForegroundNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
                 foregroundNotifId,

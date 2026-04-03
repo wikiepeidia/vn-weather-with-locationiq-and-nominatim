@@ -185,13 +185,6 @@ class SettingsManager private constructor(
         }
         get() = config.getInt("watchdog_heartbeat_interval", 15)
 
-    var watchdogNotificationVisible: Boolean
-        set(value) {
-            config.edit().putBoolean("watchdog_notification_visible", value).apply()
-            notifySettingsChanged()
-        }
-        get() = config.getBoolean("watchdog_notification_visible", true)
-
     var darkMode: DarkMode
         set(value) {
             config.edit().putString("dark_mode", value.id).apply()
