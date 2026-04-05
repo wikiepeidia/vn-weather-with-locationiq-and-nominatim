@@ -352,14 +352,6 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
-        <!-- Invisible anchor Activity for OOM adj elevation on Xiaomi/MIUI (PROC-01) -->
-        <activity
-            android:name=".background.watchdog.WatchdogAnchorActivity"
-            android:theme="@style/BreezyWeatherTheme.Transparent"
-            android:taskAffinity=""
-            android:excludeFromRecents="true"
-            android:exported="false" />
-
         <receiver
             android:name=".background.watchdog.WatchdogAlarmReceiver"
             android:exported="false" />

@@ -17,10 +17,19 @@
 - Reclarify to the devs: Hobby project for fun, powered ® by Claude
 - remove Releases to incoperate with LICENSE and reduce my stress and giggles
 
-## BUGS
+## features new
 
-- USER_AGENT issue,NominatimService   #2 <https://github.com/wikiepeidia/vn-weather-with-locationiq-and-nominatim/issues/2> **fixed**
+- LocationIQ + Nominatim dual geocoding with regex-based VN token extraction , heavily finetuned for almost all kind of JSON responses from both APIs, with smart cross-validation
 
-## todo
+### xiaomi stuff related
 
-- continue to improve the app to get higher accurancy on Regex!
+- hyperos goofyahh ưatchdog because i hate it when it kill my app
+- command to get weather app prisority has to be on the ADB shell (CMD)
+
+```bash
+cmd appops set io.github.wikiepeidia.vnweather RUN_IN_BACKGROUND allow
+dumpsys deviceidle whitelist +io.github.wikiepeidia.vnweather
+cmd appops set io.github.wikiepeidia.vnweather RUN_ANY_IN_BACKGROUND allow
+cmd appops set io.github.wikiepeidia.vnweather WAKE_LOCK allow
+cmd appops set io.github.wikiepeidia.vnweather SYSTEM_ALERT_WINDOW allow
+```

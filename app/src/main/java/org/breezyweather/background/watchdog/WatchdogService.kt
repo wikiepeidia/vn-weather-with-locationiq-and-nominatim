@@ -16,7 +16,6 @@
 
 package org.breezyweather.background.watchdog
 
-import android.app.ActivityManager
 import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationManager
@@ -25,7 +24,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -57,12 +55,6 @@ import org.json.JSONObject
  * Phase 8 wires BootReceiver to restart this service on device reboot.
  */
 class WatchdogService : Service() {
-
-    inner class LocalBinder : Binder() {
-        fun getService(): WatchdogService = this@WatchdogService
-    }
-
-    private val binder = LocalBinder()
 
     private var alarmManager: AlarmManager? = null
     private var alarmPendingIntent: PendingIntent? = null
@@ -104,27 +96,29 @@ class WatchdogService : Service() {
             startForeground(foregroundNotifId, notification)
         }
 
-        // HEART-01: WakeLock prevents CPU sleep during heartbeat check
+        // HEART-01: Acquire WakeLock to prevent CPU sleep during heartbeat.
+        // Run all blocking I/O on a background thread — workManager.getWorkInfos().get() can
+        // block for several seconds on cold WorkManager init (Room DB on HyperOS cold-start),
+        // which would ANR the main thread if left here.
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         val wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "BreezyWeather:WatchdogHeartbeat"
         )
         wakeLock.acquire(30_000L) // 30-second timeout
-        try {
-            performHeartbeat()
-        } finally {
-            if (wakeLock.isHeld) wakeLock.release()
-        }
+        Thread {
+            try {
+                performHeartbeat()
+            } finally {
+                if (wakeLock.isHeld) wakeLock.release()
+            }
+            // Arm next alarm for self-healing BEFORE stopping
+            scheduleNextAlarm()
+            // Ephemeral: process exits after heartbeat; AlarmManager fires next wakeup
+            stopSelf()
+        }.start()
 
-        // Arm next alarm for self-healing
-        scheduleNextAlarm()
-
-        // PROC-01/02: Launch invisible anchor Activity on Xiaomi to elevate OOM adj
-        launchAnchorIfNeeded()
-
-        // START_STICKY: OS restarts service with null intent if killed
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
@@ -135,10 +129,15 @@ class WatchdogService : Service() {
             stopForeground(STOP_FOREGROUND_DETACH)
         }
         Log.d(TAG, "WatchdogService destroyed")
-        cancelAlarm()
+        // NOTE: cancelAlarm() is intentionally NOT called here.
+        // For ephemeral runs (stopSelf after heartbeat) the scheduled alarm MUST survive —
+        // it is the self-healing heartbeat loop. Cancelling it here was silently breaking
+        // the loop on every normal run.
+        // For intentional shutdown, WatchdogService.stop() companion cancels the alarm
+        // independently before stopService() is even called.
     }
 
-    override fun onBind(intent: Intent?): IBinder = binder
+    override fun onBind(intent: Intent?): IBinder? = null
 
     /**
      * Gets the notification for startForeground().
@@ -237,8 +236,6 @@ class WatchdogService : Service() {
 
         updateNotification()
 
-        // PROC-01: Re-launch anchor if system killed it between heartbeats
-        launchAnchorIfNeeded()
     }
 
     /**
@@ -255,15 +252,6 @@ class WatchdogService : Service() {
             put("heartbeat_count", heartbeatCount)
             put("uptime_ms", uptimeMs)
             put("job_status", jobStatus)
-            // PROC-03: Include process importance and anchor status on Xiaomi devices
-            if (isXiaomiDevice()) {
-                val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-                val importance = am?.runningAppProcesses
-                    ?.firstOrNull { it.pid == android.os.Process.myPid() }
-                    ?.importance ?: -1
-                put("process_importance", importance)
-                put("anchor_active", WatchdogAnchorActivity.isActive)
-            }
         }
 
         prefs.edit()
@@ -310,6 +298,8 @@ class WatchdogService : Service() {
         val intervalMs = SettingsManager.getInstance(this).watchdogHeartbeatInterval.toLong() * 60 * 1000L
         val triggerAtMillis = SystemClock.elapsedRealtime() + intervalMs
 
+        val nextAlarmWallClock = System.currentTimeMillis() + intervalMs
+
         try {
             am.setExactAndAllowWhileIdle(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
@@ -325,6 +315,11 @@ class WatchdogService : Service() {
                 alarmPendingIntent!!
             )
         }
+
+        // Persist wall-clock next alarm time for the Health Dashboard (HEALTH-01)
+        getSharedPreferences("watchdog_diagnostics", Context.MODE_PRIVATE).edit()
+            .putLong("next_alarm_timestamp", nextAlarmWallClock)
+            .apply()
     }
 
     private fun cancelAlarm() {
@@ -334,24 +329,6 @@ class WatchdogService : Service() {
             Log.d(TAG, "Watchdog alarm cancelled")
         }
         alarmPendingIntent = null
-    }
-
-    /**
-     * PROC-02: Launches invisible WatchdogAnchorActivity on Xiaomi/Redmi/POCO devices
-     * to bind with BIND_IMPORTANT and elevate OOM adj. No-ops on other manufacturers.
-     */
-    private fun launchAnchorIfNeeded() {
-        if (!isXiaomiDevice()) return
-        if (WatchdogAnchorActivity.isActive) return
-        try {
-            val intent = Intent(this, WatchdogAnchorActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(intent)
-            Log.d(TAG, "Launched WatchdogAnchorActivity for OOM adj elevation")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to launch WatchdogAnchorActivity: ${e.message}")
-        }
     }
 
     companion object {
@@ -378,10 +355,18 @@ class WatchdogService : Service() {
             val intent = Intent(context, WatchdogService::class.java).apply {
                 putExtra(EXTRA_RESTART_SOURCE, source)
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                // ForegroundServiceStartNotAllowedException (extends IllegalStateException, API 31+)
+                // or SecurityException — HyperOS midnight-kill can leave the process in a
+                // restricted background state where startForegroundService() is blocked.
+                Log.w(TAG, "startForegroundService blocked (source=$source): ${e.javaClass.simpleName}: ${e.message}")
+                // Still enqueue WorkManager backup so WeatherUpdateJob health is checked.
             }
             WatchdogRestartWorker.enqueue(context)
         }
@@ -390,8 +375,6 @@ class WatchdogService : Service() {
          * Stops the WatchdogService, cancels the WorkManager backup, and cancels any pending alarm.
          */
         fun stop(context: Context) {
-            // PROC-01: Dismiss anchor Activity before stopping service
-            WatchdogAnchorActivity.finish(context)
             context.stopService(Intent(context, WatchdogService::class.java))
             WatchdogRestartWorker.cancel(context)
             // Cancel alarm independently — covers case where service process was already killed

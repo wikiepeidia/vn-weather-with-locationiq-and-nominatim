@@ -2,12 +2,12 @@
 
 ## Current Milestone: v1.2 ROM Hardening
 
-**Goal:** Harden WatchdogService survival on HyperOS/MIUI through multiple restart vectors, WakeLock during heartbeat, process importance elevation, and user-visible health diagnostics.
+**Goal:** Harden WatchdogService survival on HyperOS/MIUI through multiple restart vectors, WakeLock, and user-visible health diagnostics.
 
 **Target features:**
+
 - WakeLock during heartbeat execution to prevent CPU sleep during weather check
 - Redundant restart vectors: WorkManager periodic backup alongside AlarmManager
-- Process importance elevation via invisible Activity binding (raise OOM adj score)
 - Watchdog health dashboard in settings (last heartbeat time, restart count, service status)
 - Enhanced keepalive notification with last-update time + next scheduled refresh
 - v1.1 tech debt cleanup: extract `WEATHER_UPDATE_WORK_NAME` constant, add verification
@@ -65,13 +65,13 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 
 - [ ] WakeLock acquired during heartbeat execution to prevent CPU sleep
 - [ ] Redundant restart vector: WorkManager periodic job as backup to AlarmManager
-- [ ] Process importance elevation via invisible Activity binding on aggressive ROMs
 - [ ] Watchdog health dashboard in Background Updates settings (status, last heartbeat, restarts)
 - [ ] Enhanced keepalive notification with last-update + next-scheduled info
 - [ ] Extract `WEATHER_UPDATE_WORK_NAME` from hardcoded string literal to shared constant
 
 ### Out of Scope
 
+- Invisible Activity binding (OOM adj elevation for HyperOS) — Android 14+ BAL restrictions block it from background; MIUI Security flags it as adware; WorkManager hybrid restart negates need
 - RxJava → Coroutines full migration — large refactor, orthogonal to feature work
 - Nominatim rate limiter (Semaphore) — lazy fallback strategy eliminates concurrent traffic
 - `ConfigStore` → DataStore migration — orthogonal
@@ -102,11 +102,12 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 | Cross-validation: prefer clean regex match over API priority | Correct result = clean VN token regardless of source | ✓ Good |
 | `firstOrNull` for LocationIQ, `lastOrNull` for Nominatim | Zoom-level-dependent token ordering | ✓ Good |
 | Add `suburb`/`hamlet` to `NominatimAddress` | Nominatim returns VN ward under `suburb` | ✓ Good |
-| Watchdog opt-in (default off) | Foreground service + AlarmManager drains battery | ✓ Good |
+| Drop Phase 12 (invisible Activity OOM trick) | Android 14+ BAL restrictions + MIUI Security adware flag; WorkManager hybrid restart (Phase 11) already reduces kill risk; zero-pixel trick actively counterproductive | ✓ Good |
+| WakeLock in WatchdogService heartbeat | WorkManager handles WakeLock for its own workers, but the AlarmManager-triggered heartbeat path (WatchdogService.performHeartbeat) runs in a Service, not a Worker — manual WakeLock still needed there | ✓ Good |
 | AlarmManager heartbeat for Watchdog self-heal | WorkManager killed by HyperOS; AlarmManager survives | ✓ Good |
 | Delegate weather-fetch to existing WeatherUpdateJob | Watchdog monitors; doesn't duplicate logic | ✓ Good |
 | `watchdogEnabled` guard in AlarmReceiver | Prevents zombie resurrection after user disables | ✓ Good (found in audit) |
 | Defensive alarm cancel in `stop()` | Covers process-kill scenario where onDestroy never fires | ✓ Good (found in audit) |
 
 ---
-*Last updated: 2026-04-02 after v1.2 ROM Hardening milestone started*
+*Last updated: 2026-04-05 after Phase 12 dropped and phases 9-11 marked complete*

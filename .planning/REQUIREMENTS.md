@@ -1,7 +1,7 @@
 # Requirements: v1.2 ROM Hardening
 
 **Milestone:** v1.2 — ROM Hardening
-**Goal:** Harden WatchdogService survival on HyperOS/MIUI through multiple restart vectors, WakeLock, process importance elevation, and health diagnostics.
+**Goal:** Harden WatchdogService survival on HyperOS/MIUI through multiple restart vectors, WakeLock, and health diagnostics. (Process importance elevation via invisible Activity dropped — see Out of Scope.)
 **Created:** 2026-04-02
 
 ---
@@ -20,12 +20,6 @@
 - [x] **RESTART-02**: WatchdogService tracks cumulative restart count (persisted across process deaths) and surfaces it in the health dashboard
 - [x] **RESTART-03**: On each restart, WatchdogService immediately performs a heartbeat (checks + re-enqueues WeatherUpdateJob if missing) before scheduling the next alarm
 
-### Process Importance
-
-- [x] **PROC-01**: On HyperOS/MIUI devices, WatchdogService binds to a transparent, zero-pixel Activity to elevate OOM adjustment score from "service" to "visible" — reducing kill probability
-- [x] **PROC-02**: The invisible Activity binding is opt-in (behind the existing Watchdog toggle) and only activates on Xiaomi/Redmi/POCO manufacturer strings
-- [x] **PROC-03**: When the Activity binding is active, the app's process importance is logged at each heartbeat for diagnostics
-
 ### Health Dashboard
 
 - [x] **HEALTH-01**: Background Updates settings shows a "Watchdog Health" section (visible only when Watchdog is enabled) displaying: service status (Running/Stopped), last heartbeat time, restart count, and next scheduled refresh
@@ -34,7 +28,7 @@
 
 ### Notification Enhancement
 
-- [x] **NOTIF-04**: Watchdog keepalive notification shows both "Last updated: X min ago" and "Next refresh: ~Y min" — giving users confidence the system is working
+- [x] **NOTIF-04**: WatchdogRestartWorker calls `setForegroundSafely()` anchored to `ID_WATCHDOG_KEEPALIVE` (IMPORTANCE_MIN, `CHANNEL_WATCHDOG`) for the brief execution window only; no permanent standalone watchdog notification — the weather notification (`ID_WIDGET`) is the sole persistent status indicator
 - [x] **NOTIF-05**: Notification priority is elevated from IMPORTANCE_MIN to IMPORTANCE_LOW on HyperOS/MIUI devices (makes it slightly more visible, reduces kill chance)
 
 ### Tech Debt Cleanup
@@ -52,6 +46,7 @@
 
 ## Out of Scope
 
+- **PROC-01 / PROC-02 / PROC-03 — Invisible Activity OOM elevation** — Android 14+ Background Activity Launch (BAL) restrictions block background-service-to-Activity `startActivity` calls from background; MIUI Security Center flags transparent overlays as adware; Phase 11's WorkManager hybrid restart makes constant OOM elevation redundant — the process sleeps between scheduled wake-ups
 - RxJava → Coroutines full migration — large refactor, orthogonal
 - Full MIUI/HyperOS ROM compatibility layer — too broad, focus on specific kill mitigation
 - User-facing "kill protection" tutorial/wizard — defer to UX milestone
@@ -70,9 +65,9 @@
 | RESTART-01 | Phase 11 |
 | RESTART-02 | Phase 11 |
 | RESTART-03 | Phase 11 |
-| PROC-01 | Phase 12 |
-| PROC-02 | Phase 12 |
-| PROC-03 | Phase 12 |
+| ~~PROC-01~~ | ~~Phase 12~~ DROPPED |
+| ~~PROC-02~~ | ~~Phase 12~~ DROPPED |
+| ~~PROC-03~~ | ~~Phase 12~~ DROPPED |
 | HEALTH-01 | Phase 14 |
 | HEALTH-02 | Phase 14 |
 | HEALTH-03 | Phase 14 |
@@ -83,3 +78,4 @@
 
 ---
 *Requirements created: 2026-04-02*
+*Last updated: 2026-04-05 — PROC-01/02/03 moved to Out of Scope (Phase 12 dropped); phases 9-11 complete*

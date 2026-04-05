@@ -42,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -428,11 +429,11 @@ fun BackgroundSettingsScreen(
 
                 item {
                     val prefs = context.getSharedPreferences("watchdog_diagnostics", Context.MODE_PRIVATE)
-                    var lastHeartbeat by remember { mutableStateOf(prefs.getLong("last_heartbeat_timestamp", 0L)) }
+                    var lastHeartbeat by remember { mutableLongStateOf(prefs.getLong("last_heartbeat_timestamp", 0L)) }
                     var heartbeatCount by remember { mutableIntStateOf(prefs.getInt("heartbeat_count", 0)) }
                     var restartCount by remember { mutableIntStateOf(prefs.getInt("restart_count", 0)) }
-                    var lastRestart by remember { mutableStateOf(prefs.getLong("last_restart_timestamp", 0L)) }
-                    var serviceRunning by remember { mutableStateOf(WatchdogService.isRunning) }
+                    var lastRestart by remember { mutableLongStateOf(prefs.getLong("last_restart_timestamp", 0L)) }
+                    var nextAlarmTimestamp by remember { mutableLongStateOf(prefs.getLong("next_alarm_timestamp", 0L)) }
 
                     // HEALTH-02: Periodic poll every 5s for live refresh
                     LaunchedEffect(Unit) {
@@ -442,20 +443,24 @@ fun BackgroundSettingsScreen(
                             heartbeatCount = prefs.getInt("heartbeat_count", 0)
                             restartCount = prefs.getInt("restart_count", 0)
                             lastRestart = prefs.getLong("last_restart_timestamp", 0L)
-                            serviceRunning = WatchdogService.isRunning
+                            nextAlarmTimestamp = prefs.getLong("next_alarm_timestamp", 0L)
                         }
                     }
 
-                    val statusText = if (serviceRunning) {
-                        stringResource(R.string.watchdog_health_status_running)
-                    } else {
-                        stringResource(R.string.watchdog_health_status_stopped)
+                    // Status derived from next alarm timestamp — isRunning is unreliable in ephemeral model
+                    // (WatchdogService exits after each heartbeat, so isRunning is almost always false)
+                    val now = System.currentTimeMillis()
+                    val gracePeriodMs = 5 * 60 * 1000L // 5 min grace for ROM scheduling delays
+                    val statusText = when {
+                        nextAlarmTimestamp == 0L -> stringResource(R.string.watchdog_health_status_starting)
+                        now <= nextAlarmTimestamp + gracePeriodMs -> stringResource(R.string.watchdog_health_status_scheduled)
+                        else -> stringResource(R.string.watchdog_health_status_overdue)
                     }
 
-                    val heartbeatText = if (lastHeartbeat > 0) {
+                    val heartbeatText = if (lastHeartbeat > 0L) {
                         android.text.format.DateUtils.getRelativeTimeSpanString(
                             lastHeartbeat,
-                            System.currentTimeMillis(),
+                            now,
                             android.text.format.DateUtils.MINUTE_IN_MILLIS,
                             android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE
                         ).toString()
@@ -463,10 +468,21 @@ fun BackgroundSettingsScreen(
                         stringResource(R.string.watchdog_health_never)
                     }
 
-                    val restartText = if (lastRestart > 0) {
+                    val nextRefreshText = if (nextAlarmTimestamp > 0L) {
+                        android.text.format.DateUtils.getRelativeTimeSpanString(
+                            nextAlarmTimestamp,
+                            now,
+                            android.text.format.DateUtils.MINUTE_IN_MILLIS,
+                            android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE
+                        ).toString()
+                    } else {
+                        stringResource(R.string.watchdog_health_never)
+                    }
+
+                    val restartText = if (lastRestart > 0L) {
                         "$restartCount (${android.text.format.DateUtils.getRelativeTimeSpanString(
                             lastRestart,
-                            System.currentTimeMillis(),
+                            now,
                             android.text.format.DateUtils.MINUTE_IN_MILLIS,
                             android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE
                         )})"
@@ -488,6 +504,11 @@ fun BackgroundSettingsScreen(
                         PreferenceViewWithCard(
                             title = stringResource(R.string.watchdog_health_last_heartbeat),
                             summary = heartbeatText,
+                        ) { /* no-op */ }
+                        Spacer(modifier = Modifier.height(1.dp))
+                        PreferenceViewWithCard(
+                            title = stringResource(R.string.watchdog_health_next_refresh),
+                            summary = nextRefreshText,
                         ) { /* no-op */ }
                         Spacer(modifier = Modifier.height(1.dp))
                         PreferenceViewWithCard(

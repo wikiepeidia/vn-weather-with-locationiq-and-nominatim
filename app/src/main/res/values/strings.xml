@@ -699,6 +699,10 @@
     <string name="watchdog_health_reset_stats">Reset stats</string>
     <string name="watchdog_health_reset_stats_summary">Clear heartbeat and restart counters</string>
     <string name="watchdog_health_never">Never</string>
+    <string name="watchdog_health_next_refresh">Next scheduled refresh</string>
+    <string name="watchdog_health_status_scheduled">Scheduled</string>
+    <string name="watchdog_health_status_overdue">Alarm overdue</string>
+    <string name="watchdog_health_status_starting">Starting up</string>
     <!-- “Location” here means “Locating you”, check your Android settings to know the correct word -->
     <string name="settings_location">Location</string>
     <string name="settings_location_summary">Location services settings</string>

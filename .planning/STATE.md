@@ -5,10 +5,10 @@ milestone_name: ROM Hardening
 status: roadmap_complete
 last_updated: "2026-04-02T15:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 4
+  completed_plans: 4
 ---
 
 # STATE.md — VN Weather
@@ -24,12 +24,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-02)
 
 ## Current Position
 
-Phase: Phase 9 (Tech Debt Cleanup) — not yet planned
+Phase: v1.2 COMPLETE
 Plan: —
-Status: Roadmap complete — awaiting `/gsd-plan-phase 9`
-Last activity: 2026-04-02 — v1.2 roadmap created (6 phases, 16 requirements)
+Status: All phases complete — ready for milestone audit and v1.2 close
+Last activity: 2026-04-05 — Phase 14 complete (Health Dashboard: alarm-based status, next refresh, 5s poll, Reset Stats)
 
-Progress: ░░░░░░░░░░ 0/6 phases
+Progress: ██████████ 5/5 phases (Phase 12 excluded from count)
 
 ## Completed Milestones
 
@@ -48,25 +48,24 @@ See: `.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREM
 ## Accumulated Context
 
 ### Key Decisions
-- Tech debt (DEBT-01, DEBT-02) first — unblocks RESTART-01 (needs shared constant) and establishes verification baseline
-- Process importance (PROC-01..03) gets own phase — highest complexity/risk, OOM adj manipulation
-- Health dashboard (HEALTH-01..03) last — depends on data produced by Phases 10 and 11
-- 6 phases for 16 requirements at standard granularity — natural category boundaries
+
+- Phases 9, 10, 11, 13, 14 complete
+- Phase 12 (Process Importance / invisible Activity) DROPPED
+- Remaining: none — v1.2 is feature-complete
 
 ### Dependencies
-- Phase 10 depends on Phase 9 (shared constant for job-status checks)
-- Phase 11 depends on Phase 10 (heartbeat logic for immediate-on-restart)
-- Phase 12 depends on Phase 10 (diagnostic logging for PROC-03)
-- Phase 13 depends on Phase 10 (heartbeat timing data for notification)
-- Phase 14 depends on Phase 10 + Phase 11 (diagnostic logs + restart count)
+
+- Phase 13 depends on Phase 10 (heartbeat timing data for notification content) ✓ satisfied
+- Phase 14 depends on Phase 10 (HEART-03 diagnostic logging) ✓ satisfied
+- Phase 14 depends on Phase 11 (RESTART-02 restart count) ✓ satisfied
 
 ---
 
 ## Session Continuity
 
-**Last updated:** 2026-04-02
-**Last action:** v1.2 roadmap created — 6 phases (9-14), 16 requirements mapped
-**Next action:** `/gsd-plan-phase 9` to plan Tech Debt Cleanup
+**Last updated:** 2026-04-05
+**Last action:** Phase 14 complete — Health Dashboard (alarm-based status, next scheduled refresh, 5s live poll, Reset Stats, BUILD SUCCESSFUL)
+**Next action:** `/gsd-audit-milestone` then `/gsd-complete-milestone`
 
 ---
 *STATE.md updated: 2026-04-02 — v1.2 roadmap created*

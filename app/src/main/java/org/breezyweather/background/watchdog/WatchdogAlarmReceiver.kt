@@ -37,7 +37,14 @@ class WatchdogAlarmReceiver : BroadcastReceiver() {
         }
 
         Log.d(TAG, "Alarm received — restarting WatchdogService")
-        WatchdogService.start(context, "alarm")
+        try {
+            WatchdogService.start(context, "alarm")
+        } catch (e: Exception) {
+            // ForegroundServiceStartNotAllowedException (extends IllegalStateException, API 31+),
+            // SecurityException, or other OEM restrictions from HyperOS background-state kills.
+            // Log and swallow — WatchdogRestartWorker (30-min) will re-check WeatherUpdateJob health.
+            Log.w(TAG, "Failed to start WatchdogService from alarm: ${e.javaClass.simpleName}: ${e.message}")
+        }
     }
 
     companion object {
