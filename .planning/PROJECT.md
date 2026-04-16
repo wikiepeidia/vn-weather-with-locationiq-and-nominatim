@@ -1,16 +1,14 @@
 # VN Weather — Vietnamese Address Quality Fork
 
-## Current Milestone: v1.2 ROM Hardening
+## Current Milestone: v1.3 LocationIQ Recovery & Key Validation
 
-**Goal:** Harden WatchdogService survival on HyperOS/MIUI through multiple restart vectors, WakeLock, and user-visible health diagnostics.
+**Goal:** Restore LocationIQ as an active, reliable API source and prevent invalid LocationIQ keys from being saved.
 
 **Target features:**
 
-- WakeLock during heartbeat execution to prevent CPU sleep during weather check
-- Redundant restart vectors: WorkManager periodic backup alongside AlarmManager
-- Watchdog health dashboard in settings (last heartbeat time, restart count, service status)
-- Enhanced keepalive notification with last-update time + next scheduled refresh
-- v1.1 tech debt cleanup: extract `WEATHER_UPDATE_WORK_NAME` constant, add verification
+- Fix bug where LocationIQ API key/path is ignored by the app flow
+- Validate LocationIQ API key on Save by pinging server and checking invalid JSON response
+- Improve settings UX with validation state + error feedback; block saving invalid key
 
 ---
 
@@ -61,13 +59,19 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 - ✓ Graceful degradation: exact alarm → inexact fallback when ROM restricts — Phase 6
 - ✓ Clean disable: service stop + alarm cancel + notification dismiss — Phase 7 + audit fix
 
-### Active (v1.2 — ROM Hardening)
+### Validated (v1.2 — ROM Hardening)
 
-- [ ] WakeLock acquired during heartbeat execution to prevent CPU sleep
-- [ ] Redundant restart vector: WorkManager periodic job as backup to AlarmManager
-- [ ] Watchdog health dashboard in Background Updates settings (status, last heartbeat, restarts)
-- [ ] Enhanced keepalive notification with last-update + next-scheduled info
-- [ ] Extract `WEATHER_UPDATE_WORK_NAME` from hardcoded string literal to shared constant
+- ✓ WakeLock acquired during heartbeat execution to prevent CPU sleep — Phase 10
+- ✓ Redundant restart vector: WorkManager periodic job backup to AlarmManager — Phase 11
+- ✓ Watchdog health dashboard in Background Updates settings — Phase 14
+- ✓ Enhanced watchdog behavior: ephemeral service model and transient worker foreground notification — Phase 13
+- ✓ Extract `WEATHER_UPDATE_WORK_NAME` from hardcoded literal to shared constant — Phase 9
+
+### Active (v1.3 — LocationIQ Recovery & Key Validation)
+
+- [ ] LocationIQ API key and request path are actually honored in reverse geocoding flow
+- [ ] Saving LocationIQ key triggers server ping validation (detect invalid JSON response)
+- [ ] Settings UX blocks invalid key save and shows explicit validation result to user
 
 ### Out of Scope
 
@@ -84,7 +88,8 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 - **Architecture:** Clean Architecture + MVVM, multi-module (app/data/domain). RxJava3 HTTP stack.
 - **v1.0 delivered:** VN address quality — cross-validation, lazy Nominatim, structured fields, giggles feedback, Kotlin tests
 - **v1.1 delivered:** Background Watchdog — persistent foreground service, AlarmManager heartbeat, settings toggle, HyperOS autostart, boot resume
-- **Known issue (ROM-V2-03):** HyperOS kills the app even with battery-opt disabled + autostart + memory exclusion. Users report needing 2-3 refreshes. **v1.2 target.**
+- **v1.2 delivered:** ROM hardening — WakeLock heartbeat, restart resilience, notification architecture cleanup, health dashboard
+- **Known issue (v1.3 target):** LocationIQ key/API path is ignored in parts of current flow, causing LocationIQ settings to appear non-functional
 - **AlarmManager vs WorkManager:** WorkManager killed by HyperOS; AlarmManager survives better but alone is not enough. v1.2 adds redundant restart vectors.
 - **OOM adj:** Android assigns OOM adjustment scores to processes. Binding to an Activity raises the score, making the process less likely to be killed. AdGuard and similar apps use this technique.
 
@@ -109,5 +114,22 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 | `watchdogEnabled` guard in AlarmReceiver | Prevents zombie resurrection after user disables | ✓ Good (found in audit) |
 | Defensive alarm cancel in `stop()` | Covers process-kill scenario where onDestroy never fires | ✓ Good (found in audit) |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? -> Move to Out of Scope with reason
+2. Requirements validated? -> Move to Validated with phase reference
+3. New requirements emerged? -> Add to Active
+4. Decisions to log? -> Add to Key Decisions
+5. "What This Is" still accurate? -> Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check -> still the right priority?
+3. Audit Out of Scope -> reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-04-05 after Phase 12 dropped and phases 9-11 marked complete*
+*Last updated: 2026-04-16 after milestone v1.3 start*

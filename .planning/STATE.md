@@ -1,35 +1,35 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: ROM Hardening
-status: roadmap_complete
-last_updated: "2026-04-02T15:00:00.000Z"
+milestone: v1.3
+milestone_name: LocationIQ Recovery & Key Validation
+status: requirements_definition
+last_updated: "2026-04-16T00:00:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 3
-  total_plans: 4
-  completed_plans: 4
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # STATE.md — VN Weather
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-04-02)
+See: `.planning/PROJECT.md` (updated 2026-04-16)
 
 **Core value:** Vietnamese users see clean ward/commune names and reliable weather updates on background-aggressive ROMs.
-**Current focus:** v1.2 ROM Hardening — roadmap complete, ready for phase planning
+**Current focus:** v1.3 LocationIQ Recovery & Key Validation — defining requirements
 
 ---
 
 ## Current Position
 
-Phase: v1.2 COMPLETE
+Phase: Not started (defining requirements)
 Plan: —
-Status: All phases complete — ready for milestone audit and v1.2 close
-Last activity: 2026-04-05 — Phase 14 complete (Health Dashboard: alarm-based status, next refresh, 5s poll, Reset Stats)
+Status: Defining requirements
+Last activity: 2026-04-16 — Milestone v1.3 started
 
-Progress: ██████████ 5/5 phases (Phase 12 excluded from count)
+Progress: ░░░░░░░░░░ 0/0 phases
 
 ## Completed Milestones
 
@@ -63,9 +63,9 @@ See: `.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREM
 
 ## Session Continuity
 
-**Last updated:** 2026-04-05
-**Last action:** Phase 14 complete — Health Dashboard (alarm-based status, next scheduled refresh, 5s live poll, Reset Stats, BUILD SUCCESSFUL)
-**Next action:** `/gsd-audit-milestone` then `/gsd-complete-milestone`
+**Last updated:** 2026-04-16
+**Last action:** Milestone v1.3 initialized (scope confirmation complete)
+**Next action:** Define `REQUIREMENTS.md` then generate v1.3 roadmap
 
 ---
-*STATE.md updated: 2026-04-02 — v1.2 roadmap created*
+*STATE.md updated: 2026-04-16 — v1.3 milestone started*
