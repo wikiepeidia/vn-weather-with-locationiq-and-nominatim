@@ -24,10 +24,10 @@ See: `.planning/PROJECT.md` (updated 2026-04-16)
 
 ## Current Position
 
-Phase: Roadmap complete (ready for Phase 15 planning)
-Plan: —
-Status: Milestone initialized and waiting for phase planning
-Last activity: 2026-04-16 — Roadmap approved (Phases 15-17)
+Phase: 15 — LocationIQ Call-Path Recovery (in progress)
+Plan: 15-01-PLAN.md (execution active)
+Status: Resumed from incomplete plan; LocationIQ 404 path normalization fix implemented and unit-tested
+Last activity: 2026-04-16 — Canonicalized LocationIQ base URL handling to prevent malformed reverse path
 
 Progress: ░░░░░░░░░░ 0/3 phases
 
@@ -64,8 +64,8 @@ See: `.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREM
 ## Session Continuity
 
 **Last updated:** 2026-04-16
-**Last action:** Phase 15 context captured (call-path guard decisions locked)
-**Next action:** `/gsd-plan-phase 15`
+**Last action:** Resume fallback completed (TTY-safe), patched LocationIQ URL normalization, and passed targeted NominatimService tests
+**Next action:** Write 15-01 summary and run in-app manual reverse checks with us1/eu1 endpoint inputs
 
 ---
-*STATE.md updated: 2026-04-16 — phase 15 context captured*
+State updated: 2026-04-16 — phase 15 execution resumed with LocationIQ 404 fix validated.

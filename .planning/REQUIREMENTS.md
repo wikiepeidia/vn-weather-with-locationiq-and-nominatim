@@ -62,6 +62,7 @@
 | REG-02 | Phase 17 | Pending |
 
 **Coverage:**
+
 - v1.3 requirements: 9 total
 - Mapped to phases: 9
 - Unmapped: 0

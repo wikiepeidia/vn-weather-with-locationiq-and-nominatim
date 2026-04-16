@@ -19,9 +19,14 @@ package org.breezyweather.sources.nominatim
 import breezyweather.domain.location.model.LocationAddressInfo
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.breezyweather.sources.nominatim.json.NominatimAddress
 import org.breezyweather.sources.nominatim.json.NominatimLocationResult
 import org.junit.jupiter.api.Test
+import retrofit2.HttpException
+import retrofit2.Response
+import java.io.IOException
 
 /**
  * Unit tests for VN address logic in NominatimService.
@@ -44,6 +49,174 @@ class NominatimServiceTest {
         countryCode = countryCode,
         city = city,
     )
+
+    // TODO.md integration vectors for manual reverse geocode checks (no API key embedded).
+    private val manualReverseRegressionCoordinates = listOf(
+        21.11157 to 105.79121,
+        21.10908 to 105.70573,
+        21.09866 to 105.67899,
+        21.051040 to 105.807282,
+        21.82616 to 106.76509,
+    )
+
+    private fun httpException(code: Int, message: String): HttpException {
+        val response = Response.error<String>(
+            code,
+            message.toResponseBody("text/plain".toMediaType()),
+        )
+        return HttpException(response)
+    }
+
+    // ─── Phase 15 key gate and diagnostics seams ──────────────────────────────────
+    @Test
+    fun `isLocationIqKey - pk prefix is accepted`() {
+        NominatimService.isLocationIqKey("pk.demo-key") shouldBe true
+    }
+    @Test
+    fun `classifyLocationIqKeyState - missing key detected`() {
+        NominatimService.classifyLocationIqKeyState(null) shouldBe NominatimService.Companion.LocationIqKeyState.MISSING
+        NominatimService.classifyLocationIqKeyState("") shouldBe NominatimService.Companion.LocationIqKeyState.MISSING
+    }
+    @Test
+    fun `classifyLocationIqKeyState - malformed key detected`() {
+        NominatimService.classifyLocationIqKeyState("https://nominatim.openstreetmap.org/") shouldBe NominatimService.Companion.LocationIqKeyState.MALFORMED
+    }
+    @Test
+    fun `classifyLocationIqKeyState - valid key detected`() {
+        NominatimService.classifyLocationIqKeyState("pk.123456") shouldBe NominatimService.Companion.LocationIqKeyState.VALID
+    }
+
+    @Test
+    fun `normalizeLocationIqBaseUrl - host only becomes https v1`() {
+        NominatimService.normalizeLocationIqBaseUrl("us1.locationiq.com") shouldBe "https://us1.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `normalizeLocationIqBaseUrl - keeps explicit v1 endpoint`() {
+        NominatimService.normalizeLocationIqBaseUrl("https://eu1.locationiq.com/v1/") shouldBe "https://eu1.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `normalizeLocationIqBaseUrl - full reverse url is canonicalized to v1 base`() {
+        NominatimService.normalizeLocationIqBaseUrl(
+            "https://us1.locationiq.com/v1/reverse?key=pk.demo&lat=21.046394&lon=105.78790&format=json"
+        ) shouldBe "https://us1.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `normalizeLocationIqBaseUrl - full reverse php url is canonicalized to v1 base`() {
+        NominatimService.normalizeLocationIqBaseUrl(
+            "https://eu1.locationiq.com/v1/reverse.php?key=pk.demo"
+        ) shouldBe "https://eu1.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `resolveLocationIqBaseUrl - falls back to default when override missing`() {
+        NominatimService.resolveLocationIqBaseUrl(null) shouldBe "https://eu1.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `resolveLocationIqBaseUrl - uses normalized override`() {
+        NominatimService.resolveLocationIqBaseUrl("http://api.locationiq.com") shouldBe "https://api.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `resolveLocationIqBaseUrl - deprecated ap1 override falls back to default`() {
+        NominatimService.resolveLocationIqBaseUrl("http://ap1.locationiq.com") shouldBe "https://eu1.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `normalizeLegacyLocationIqOverride - locationiq host is accepted for migration`() {
+        NominatimService.normalizeLegacyLocationIqOverride("https://us1.locationiq.com/v1/search") shouldBe "https://us1.locationiq.com/v1/"
+    }
+
+    @Test
+    fun `normalizeLegacyLocationIqOverride - pk key is not treated as endpoint override`() {
+        NominatimService.normalizeLegacyLocationIqOverride("pk.demo-key") shouldBe null
+    }
+
+    @Test
+    fun `normalizeLegacyLocationIqOverride - non locationiq host is ignored`() {
+        NominatimService.normalizeLegacyLocationIqOverride("https://nominatim.openstreetmap.org") shouldBe null
+    }
+
+    @Test
+    fun `resolveNominatimBaseUrl - null uses default nominatim`() {
+        NominatimService.resolveNominatimBaseUrl(null) shouldBe "https://nominatim.openstreetmap.org/"
+    }
+
+    @Test
+    fun `resolveNominatimBaseUrl - custom nominatim instance is preserved`() {
+        NominatimService.resolveNominatimBaseUrl("https://nominatim.myserver.example/") shouldBe "https://nominatim.myserver.example/"
+    }
+
+    @Test
+    fun `resolveNominatimBaseUrl - locationiq endpoint does not become nominatim base`() {
+        NominatimService.resolveNominatimBaseUrl("https://us1.locationiq.com/v1/") shouldBe "https://nominatim.openstreetmap.org/"
+    }
+
+    @Test
+    fun `resolveNominatimBaseUrl - pk key does not become nominatim base`() {
+        NominatimService.resolveNominatimBaseUrl("pk.demo-key") shouldBe "https://nominatim.openstreetmap.org/"
+    }
+
+    @Test
+    fun `resolveLocationIqBaseUrlCandidates - default includes eu then us fallback`() {
+        NominatimService.resolveLocationIqBaseUrlCandidates(null) shouldBe listOf(
+            "https://eu1.locationiq.com/v1/",
+            "https://us1.locationiq.com/v1/",
+        )
+    }
+
+    @Test
+    fun `resolveLocationIqBaseUrlCandidates - us override keeps us first then eu fallback`() {
+        NominatimService.resolveLocationIqBaseUrlCandidates("https://us1.locationiq.com/v1/") shouldBe listOf(
+            "https://us1.locationiq.com/v1/",
+            "https://eu1.locationiq.com/v1/",
+        )
+    }
+
+    @Test
+    fun `resolveLocationIqBaseUrlCandidates - custom host keeps custom then regional fallbacks`() {
+        NominatimService.resolveLocationIqBaseUrlCandidates("https://api.locationiq.com") shouldBe listOf(
+            "https://api.locationiq.com/v1/",
+            "https://eu1.locationiq.com/v1/",
+            "https://us1.locationiq.com/v1/",
+        )
+    }
+
+    @Test
+    fun `resolveLocationIqBaseUrlCandidates - deprecated ap1 override skips dead host`() {
+        NominatimService.resolveLocationIqBaseUrlCandidates("https://ap1.locationiq.com") shouldBe listOf(
+            "https://eu1.locationiq.com/v1/",
+            "https://us1.locationiq.com/v1/",
+        )
+    }
+
+    @Test
+    fun `classifyLocationIqFailureReason - network failure bucket`() {
+        NominatimService.classifyLocationIqFailureReason(IOException("timeout")) shouldBe "request/network failure"
+    }
+    @Test
+    fun `classifyLocationIqFailureReason - invalid key bucket`() {
+        val error = httpException(401, "Invalid key")
+        NominatimService.classifyLocationIqFailureReason(error) shouldBe "invalid key response hint"
+    }
+    @Test
+    fun `classifyLocationIqFailureReason - non success http bucket`() {
+        val error = httpException(429, "Too many requests")
+        NominatimService.classifyLocationIqFailureReason(error) shouldBe "non-success HTTP response (HTTP 429)"
+    }
+    @Test
+    fun `manual reverse regression coordinates include all TODO vectors`() {
+        manualReverseRegressionCoordinates shouldBe listOf(
+            21.11157 to 105.79121,
+            21.10908 to 105.70573,
+            21.09866 to 105.67899,
+            21.051040 to 105.807282,
+            21.82616 to 106.76509,
+        )
+    }
 
     // ─── TEST-01: pickBestVietnamSubProvincePart ──────────────────────────────────
 

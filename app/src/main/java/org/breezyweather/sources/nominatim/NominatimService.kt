@@ -37,7 +37,10 @@ import org.breezyweather.common.source.ReverseGeocodingSource
 import org.breezyweather.domain.settings.SourceConfigStore
 import org.breezyweather.sources.nominatim.json.NominatimAddress
 import org.breezyweather.sources.nominatim.json.NominatimLocationResult
+import retrofit2.HttpException
 import retrofit2.Retrofit
+import java.io.IOException
+import java.net.URI
 import java.util.regex.Pattern
 import javax.inject.Inject
 import javax.inject.Named
@@ -73,25 +76,56 @@ class NominatimService @Inject constructor(
     // Use NominatimService.vnSubProvinceRegex for tests
 
     private fun isLocationIqKey(value: String?): Boolean {
-        return value?.startsWith("pk.") == true
+        return Companion.isLocationIqKey(value)
+    }
+
+    private fun classifyLocationIqKeyState(value: String?): LocationIqKeyState {
+        return Companion.classifyLocationIqKeyState(value)
     }
 
     override fun requestLocationSearch(
         context: Context,
         query: String,
     ): Observable<List<LocationAddressInfo>> {
-        val key = if (isLocationIqKey(instance)) instance else null
-        // REL-01: fresh client per call — no stale lazy reference after config changes
-        val url = if (key != null) LOCATIONIQ_BASE_URL else (instance ?: NOMINATIM_BASE_URL)
-        val api = client.baseUrl(url).build().create(NominatimApi::class.java)
+        migrateLegacyLocationIqEndpointOverrideIfNeeded()
+        val configuredInstance = config.getString("instance", null)
+        val key = if (isLocationIqKey(configuredInstance)) configuredInstance else null
+        val locationIqBaseUrls = getEffectiveLocationIqBaseUrlCandidates()
+        val nominatimBaseUrl = resolveNominatimBaseUrl(configuredInstance)
 
-        return api.searchLocations(
-            acceptLanguage = context.currentLocale.toLanguageTag(),
-            userAgent = BreezyWeather.instance.userAgent,
-            q = query,
-            limit = 20,
-            key = key
-        ).map { results ->
+        val nominatimSearchFallback: () -> Observable<List<NominatimLocationResult>> = {
+            val api = client.baseUrl(nominatimBaseUrl).build().create(NominatimApi::class.java)
+            api.searchLocations(
+                acceptLanguage = context.currentLocale.toLanguageTag(),
+                userAgent = BreezyWeather.instance.userAgent,
+                q = query,
+                limit = 20,
+                key = null
+            )
+        }
+
+        val searchRequest: Observable<List<NominatimLocationResult>> = if (key != null) {
+            requestLocationIqWithEndpointFallback(locationIqBaseUrls) { _, api ->
+                api.searchLocations(
+                    acceptLanguage = context.currentLocale.toLanguageTag(),
+                    userAgent = BreezyWeather.instance.userAgent,
+                    q = query,
+                    limit = 20,
+                    key = key
+                )
+            }.onErrorResumeNext { error: Throwable ->
+                val reason = classifyLocationIqFailureReason(error)
+                Log.d(
+                    "NominatimService",
+                    "LocationIQ search failure [$reason] endpoints=${locationIqBaseUrls.joinToString()} detail=${error.message ?: error::class.java.simpleName}; falling back to Nominatim"
+                )
+                nominatimSearchFallback()
+            }
+        } else {
+            nominatimSearchFallback()
+        }
+
+        return searchRequest.map { results ->
             results.mapNotNull {
                 convertLocation(it)
             }
@@ -103,14 +137,26 @@ class NominatimService @Inject constructor(
         latitude: Double,
         longitude: Double,
     ): Observable<List<LocationAddressInfo>> {
-        val key = if (isLocationIqKey(instance)) instance else null
-        
+        migrateLegacyLocationIqEndpointOverrideIfNeeded()
+        val configuredInstance = config.getString("instance", null)
+        val keyState = classifyLocationIqKeyState(configuredInstance)
+        val key = if (keyState == LocationIqKeyState.VALID) configuredInstance else null
+        val locationIqBaseUrls = getEffectiveLocationIqBaseUrlCandidates()
+
+        when (keyState) {
+            LocationIqKeyState.MISSING ->
+                Log.d("NominatimService", "LocationIQ skipped: missing key (reverse)")
+            LocationIqKeyState.MALFORMED ->
+                Log.d("NominatimService", "LocationIQ skipped: malformed key (reverse)")
+            LocationIqKeyState.VALID ->
+                Log.d(
+                    "NominatimService",
+                    "LocationIQ enabled: reverse request will be attempted (endpoints=${locationIqBaseUrls.joinToString()})"
+                )
+        }
+
         if (key != null) {
-            // REL-03: LocationIQ and Nominatim clients explicitly separated
-            val liqApi = client
-                .baseUrl(LOCATIONIQ_BASE_URL)
-                .build()
-                .create(NominatimApi::class.java)
+            // REL-03: Nominatim client explicitly separated from LocationIQ retry clients
             val nomApi = client
                 .baseUrl(NOMINATIM_BASE_URL)
                 .build()
@@ -133,15 +179,17 @@ class NominatimService @Inject constructor(
                 emptyList()
             }
 
-            return liqApi.getReverseLocation(
-                acceptLanguage = context.currentLocale.toLanguageTag(),
-                userAgent = BreezyWeather.instance.userAgent,
-                lat = latitude,
-                lon = longitude,
-                zoom = 18,
-                format = "json",
-                key = key
-            ).flatMap { liqResult ->
+            return requestLocationIqWithEndpointFallback(locationIqBaseUrls) { _, api ->
+                api.getReverseLocation(
+                    acceptLanguage = context.currentLocale.toLanguageTag(),
+                    userAgent = BreezyWeather.instance.userAgent,
+                    lat = latitude,
+                    lon = longitude,
+                    zoom = 18,
+                    format = "json",
+                    key = key
+                )
+            }.flatMap { liqResult ->
                 val liqInfo = convertLocation(liqResult, isLocationIQSource = true)
                 val isVN = liqInfo?.countryCode?.equals("vn", ignoreCase = true) == true
 
@@ -165,15 +213,19 @@ class NominatimService @Inject constructor(
                     }
                 }
             }.onErrorResumeNext { e: Throwable ->
-                // REL-02: log LocationIQ failures; fall through to Nominatim-only path
-                Log.d("NominatimService", "LocationIQ reverse geocoding error: ${e.message}")
+                // REL-02: classify LocationIQ failures with endpoint context; then fall through to Nominatim-only path
+                val reason = classifyLocationIqFailureReason(e)
+                Log.d(
+                    "NominatimService",
+                    "LocationIQ reverse failure [$reason] endpoints=${locationIqBaseUrls.joinToString()} detail=${e.message ?: e::class.java.simpleName}"
+                )
                 nominatimFetch
             }.map { result ->
                 if (result.isEmpty()) throw InvalidLocationException()
                 result
             }
         } else {
-            val url = instance ?: NOMINATIM_BASE_URL
+            val url = resolveNominatimBaseUrl(configuredInstance)
             val api = client.baseUrl(url).build().create(NominatimApi::class.java)
 
             return api.getReverseLocation(
@@ -259,6 +311,57 @@ class NominatimService @Inject constructor(
         liqInfo: LocationAddressInfo?,
         nomList: List<LocationAddressInfo>,
     ): List<LocationAddressInfo> = Companion.mergeVnResults(liqInfo, nomList)
+
+    private fun migrateLegacyLocationIqEndpointOverrideIfNeeded() {
+        val configuredInstance = config.getString("instance", null)
+        val legacyOverride = Companion.normalizeLegacyLocationIqOverride(configuredInstance) ?: return
+        if (config.getString(LOCATIONIQ_BASE_URL_PREF_KEY, null).isNullOrBlank()) {
+            locationIqBaseUrlOverride = legacyOverride
+        }
+        config.edit().remove("instance").apply()
+        Log.d(
+            "NominatimService",
+            "Migrated legacy LocationIQ endpoint from instance to dedicated endpoint setting: $legacyOverride"
+        )
+    }
+
+    private fun getEffectiveLocationIqBaseUrlCandidates(): List<String> =
+        Companion.resolveLocationIqBaseUrlCandidates(locationIqBaseUrlOverride)
+
+    private fun <T : Any> requestLocationIqWithEndpointFallback(
+        endpointCandidates: List<String>,
+        request: (endpoint: String, api: NominatimApi) -> Observable<T>,
+    ): Observable<T> {
+        val endpoints = endpointCandidates.distinct()
+        if (endpoints.isEmpty()) {
+            return Observable.error(IllegalStateException("No LocationIQ endpoint configured"))
+        }
+
+        fun attempt(index: Int): Observable<T> {
+            val endpoint = endpoints[index]
+            val api = client.baseUrl(endpoint).build().create(NominatimApi::class.java)
+            return request(endpoint, api).onErrorResumeNext { error ->
+                val reason = classifyLocationIqFailureReason(error)
+                Log.d(
+                    "NominatimService",
+                    "LocationIQ endpoint attempt failed [$reason] endpoint=$endpoint detail=${error.message ?: error::class.java.simpleName}"
+                )
+                if (index + 1 < endpoints.size) {
+                    attempt(index + 1)
+                } else {
+                    Observable.error(error)
+                }
+            }
+        }
+
+        return attempt(0)
+    }
+
+    private fun classifyLocationIqFailureReason(error: Throwable): String =
+        Companion.classifyLocationIqFailureReason(error)
+
+    private fun resolveNominatimBaseUrl(instanceValue: String?): String =
+        Companion.resolveNominatimBaseUrl(instanceValue)
 
     private fun getAdmin1CodeForCountry(
         address: NominatimAddress,
@@ -384,6 +487,16 @@ class NominatimService @Inject constructor(
             } ?: config.edit().remove("instance").apply()
         }
         get() = config.getString("instance", null) ?: NOMINATIM_BASE_URL
+
+    private var locationIqBaseUrlOverride: String?
+        set(value) {
+            val normalized = normalizeLocationIqBaseUrl(value)
+            normalized?.let {
+                config.edit().putString(LOCATIONIQ_BASE_URL_PREF_KEY, it).apply()
+            } ?: config.edit().remove(LOCATIONIQ_BASE_URL_PREF_KEY).apply()
+        }
+        get() = normalizeLocationIqBaseUrl(config.getString(LOCATIONIQ_BASE_URL_PREF_KEY, null))
+
     override fun getPreferences(context: Context): List<Preference> {
         return listOf(
             EditTextPreference(
@@ -392,7 +505,7 @@ class NominatimService @Inject constructor(
                     when {
                         // GIGL-02: playful description so users/devs see when the rescue system is active
                         isLocationIqKey(content) ->
-                            "LocationIQ \u2022 Backup address detective on standby"
+                            "LocationIQ • Backup address detective on standby"
                         content.isEmpty() ->
                             "Backup address detective (fires when LocationIQ returns garbage)"
                         else -> content
@@ -405,6 +518,25 @@ class NominatimService @Inject constructor(
                 keyboardType = KeyboardType.Text,
                 onValueChanged = {
                     instance = if (it == NOMINATIM_BASE_URL) null else it.ifEmpty { null }
+                }
+            ),
+            EditTextPreference(
+                titleId = R.string.settings_weather_source_nominatim_locationiq_endpoint,
+                summary = { _, content ->
+                    val normalized = normalizeLocationIqBaseUrl(content)
+                    when {
+                        normalized == null -> "Default endpoint: $LOCATIONIQ_BASE_URL"
+                        isLocationIqKey(instance) -> "Active endpoint: $normalized"
+                        else -> "Endpoint for pk.* keys: $normalized"
+                    }
+                },
+                content = locationIqBaseUrlOverride,
+                placeholder = LOCATIONIQ_BASE_URL,
+                regex = null,
+                regexError = null,
+                keyboardType = KeyboardType.Uri,
+                onValueChanged = {
+                    locationIqBaseUrlOverride = it.ifEmpty { null }
                 }
             )
         )
@@ -419,7 +551,152 @@ class NominatimService @Inject constructor(
     companion object {
         private val COMMA_SPLIT_REGEX = Regex("[,，]")
         private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/"
-        private const val LOCATIONIQ_BASE_URL = "https://ap1.locationiq.com/v1/"
+        private const val LOCATIONIQ_BASE_URL = "https://eu1.locationiq.com/v1/"
+        private const val LOCATIONIQ_US_BASE_URL = "https://us1.locationiq.com/v1/"
+        private const val LOCATIONIQ_BASE_URL_PREF_KEY = "locationiq_base_url"
+        private val LOCATIONIQ_DEPRECATED_HOSTS = setOf("ap1.locationiq.com")
+
+        internal enum class LocationIqKeyState {
+            MISSING,
+            MALFORMED,
+            VALID,
+        }
+
+        internal fun isLocationIqKey(value: String?): Boolean {
+            return value?.startsWith("pk.") == true
+        }
+
+        internal fun classifyLocationIqKeyState(value: String?): LocationIqKeyState {
+            return when {
+                value.isNullOrBlank() -> LocationIqKeyState.MISSING
+                isLocationIqKey(value) -> LocationIqKeyState.VALID
+                else -> LocationIqKeyState.MALFORMED
+            }
+        }
+
+        internal fun classifyLocationIqFailureReason(error: Throwable): String {
+            val detail = error.message.orEmpty().lowercase()
+            return when {
+                error is HttpException &&
+                    (
+                        error.code() == 401 ||
+                            error.code() == 403 ||
+                            (detail.contains("invalid") && detail.contains("key"))
+                        ) -> "invalid key response hint"
+                error is HttpException -> "non-success HTTP response (HTTP ${error.code()})"
+                error is IOException ||
+                    detail.contains("timeout") ||
+                    detail.contains("network") ||
+                    detail.contains("unable to resolve host") -> "request/network failure"
+                detail.contains("invalid") && detail.contains("key") -> "invalid key response hint"
+                else -> "request/network failure"
+            }
+        }
+
+        internal fun normalizeLocationIqBaseUrl(value: String?): String? {
+            val trimmed = value?.trim().orEmpty()
+            if (trimmed.isEmpty()) return null
+
+            val httpsUrl = when {
+                trimmed.startsWith("https://", ignoreCase = true) -> trimmed
+                trimmed.startsWith("http://", ignoreCase = true) -> "https://${trimmed.substring(7)}"
+                else -> "https://$trimmed"
+            }
+
+            val parsed = try {
+                URI(httpsUrl)
+            } catch (_: Exception) {
+                return null
+            }
+
+            val host = parsed.host ?: return null
+            val port = when (parsed.port) {
+                -1, 443 -> ""
+                else -> ":${parsed.port}"
+            }
+
+            val canonicalPath = canonicalizeLocationIqBasePath(parsed.path.orEmpty())
+            return "https://$host$port$canonicalPath"
+        }
+
+        internal fun normalizeLegacyLocationIqOverride(instanceValue: String?): String? {
+            if (instanceValue.isNullOrBlank() || isLocationIqKey(instanceValue)) return null
+            val normalized = normalizeLocationIqBaseUrl(instanceValue) ?: return null
+            return if (isLocationIqHost(normalized)) normalized else null
+        }
+
+        internal fun resolveNominatimBaseUrl(instanceValue: String?): String {
+            val trimmed = instanceValue?.trim().orEmpty()
+            if (trimmed.isEmpty()) return NOMINATIM_BASE_URL
+            if (isLocationIqKey(trimmed)) return NOMINATIM_BASE_URL
+            if (normalizeLegacyLocationIqOverride(trimmed) != null) return NOMINATIM_BASE_URL
+            return trimmed
+        }
+
+        private fun isLocationIqHost(value: String): Boolean {
+            val host = try {
+                URI(value).host?.lowercase()
+            } catch (_: Exception) {
+                null
+            }
+            return host == "locationiq.com" || host?.endsWith(".locationiq.com") == true
+        }
+
+        private fun canonicalizeLocationIqBasePath(path: String): String {
+            val normalized = path.replace('\\', '/')
+            val segments = normalized.split('/').filter { it.isNotBlank() }
+            if (segments.isEmpty()) return "/v1/"
+
+            val v1Index = segments.indexOfFirst { it.equals("v1", ignoreCase = true) }
+            if (v1Index >= 0) {
+                val kept = segments.subList(0, v1Index + 1)
+                return "/${kept.joinToString("/")}/"
+            }
+
+            val endpointTailIndex = segments.indexOfFirst {
+                it.equals("reverse", ignoreCase = true) ||
+                    it.equals("reverse.php", ignoreCase = true) ||
+                    it.equals("search", ignoreCase = true) ||
+                    it.equals("search.php", ignoreCase = true)
+            }
+
+            return if (endpointTailIndex >= 0) {
+                "/v1/"
+            } else {
+                "/${segments.joinToString("/")}/v1/"
+            }
+        }
+
+        internal fun resolveLocationIqBaseUrl(overrideValue: String?): String {
+            val normalized = normalizeLocationIqBaseUrl(overrideValue) ?: return LOCATIONIQ_BASE_URL
+            val normalizedHost = try {
+                URI(normalized).host?.lowercase()
+            } catch (_: Exception) {
+                null
+            }
+            return if (normalizedHost != null && LOCATIONIQ_DEPRECATED_HOSTS.contains(normalizedHost)) {
+                LOCATIONIQ_BASE_URL
+            } else {
+                normalized
+            }
+        }
+
+        internal fun resolveLocationIqBaseUrlCandidates(overrideValue: String?): List<String> {
+            val primary = resolveLocationIqBaseUrl(overrideValue)
+            val primaryHost = try {
+                URI(primary).host?.lowercase()
+            } catch (_: Exception) {
+                null
+            }
+
+            val fallbackEndpoints = when (primaryHost) {
+                "eu1.locationiq.com" -> listOf(LOCATIONIQ_US_BASE_URL)
+                "us1.locationiq.com" -> listOf(LOCATIONIQ_BASE_URL)
+                else -> listOf(LOCATIONIQ_BASE_URL, LOCATIONIQ_US_BASE_URL)
+            }
+
+            return (listOf(primary) + fallbackEndpoints).distinct()
+        }
 
         // VN sub-province regex: matches strings strictly starting with Phường/Xã/Đặc Khu prefix
         // Internal so unit tests can reference it directly
