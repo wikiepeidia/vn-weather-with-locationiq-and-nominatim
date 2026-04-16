@@ -51,21 +51,21 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LOCIQ-01 | TBD | Pending |
-| LOCIQ-02 | TBD | Pending |
-| LOCIQ-03 | TBD | Pending |
-| KEYVAL-01 | TBD | Pending |
-| KEYVAL-02 | TBD | Pending |
-| KEYVAL-03 | TBD | Pending |
-| KEYVAL-04 | TBD | Pending |
-| REG-01 | TBD | Pending |
-| REG-02 | TBD | Pending |
+| LOCIQ-01 | Phase 15 | Pending |
+| LOCIQ-02 | Phase 17 | Pending |
+| LOCIQ-03 | Phase 15 | Pending |
+| KEYVAL-01 | Phase 16 | Pending |
+| KEYVAL-02 | Phase 16 | Pending |
+| KEYVAL-03 | Phase 16 | Pending |
+| KEYVAL-04 | Phase 16 | Pending |
+| REG-01 | Phase 17 | Pending |
+| REG-02 | Phase 17 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after milestone scope clarification*
+*Last updated: 2026-04-16 after roadmap approval and traceability mapping*
