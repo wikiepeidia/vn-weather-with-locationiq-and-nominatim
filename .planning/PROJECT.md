@@ -98,6 +98,7 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 - **Kotlin:** All new code in Kotlin; no new Java
 - **No breaking changes:** Existing API surfaces must remain stable
 - **Battery:** New features with battery impact must be opt-in
+- **Algorithm freeze:** Keep VN address parsing/cross-validation algorithm unchanged; fix LocationIQ call-path and settings validation wiring only
 
 ## Key Decisions
 

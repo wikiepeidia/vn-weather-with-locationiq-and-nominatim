@@ -1,81 +1,71 @@
-# Requirements: v1.2 ROM Hardening
+# Requirements: v1.3 LocationIQ Recovery & Key Validation
 
-**Milestone:** v1.2 — ROM Hardening
-**Goal:** Harden WatchdogService survival on HyperOS/MIUI through multiple restart vectors, WakeLock, and health diagnostics. (Process importance elevation via invisible Activity dropped — see Out of Scope.)
-**Created:** 2026-04-02
+**Milestone:** v1.3 — LocationIQ Recovery & Key Validation
+**Goal:** Fix the bug where LocationIQ is ignored and add save-time key validation UX without changing the existing VN address algorithm.
+**Defined:** 2026-04-16
+**Core Value:** Vietnamese users see a clean ward/commune name and weather updates remain reliable.
 
 ---
 
-## v1.2 Requirements
+## v1.3 Requirements
 
-### Heartbeat Hardening
+### LocationIQ Call Path Recovery
 
-- [x] **HEART-01**: WatchdogService acquires a partial WakeLock before executing heartbeat logic and releases it after completion, preventing CPU sleep during weather-job health checks
-- [x] **HEART-02**: Heartbeat interval is configurable between 10-30 minutes via a settings slider (default: 15 minutes)
-- [x] **HEART-03**: Each heartbeat logs a timestamped diagnostic entry (heartbeat count, service uptime, job status) accessible from the health dashboard
+- [ ] **LOCIQ-01**: When a LocationIQ key is configured and VN reverse geocoding runs, the app must issue LocationIQ HTTP requests (not silently skip LocationIQ)
+- [ ] **LOCIQ-02**: Fix is limited to call-path/wiring; VN parsing and cross-validation algorithm behavior must remain unchanged
+- [ ] **LOCIQ-03**: Debug logs must clearly report why LocationIQ was not called or failed (missing key, invalid key, request failure, non-success response)
 
-### Restart Resilience
+### LocationIQ Key Validation UX
 
-- [x] **RESTART-01**: A WorkManager periodic job runs independently of AlarmManager as a redundant restart vector — if AlarmManager fails to fire, WorkManager re-starts WatchdogService within 30 minutes
-- [x] **RESTART-02**: WatchdogService tracks cumulative restart count (persisted across process deaths) and surfaces it in the health dashboard
-- [x] **RESTART-03**: On each restart, WatchdogService immediately performs a heartbeat (checks + re-enqueues WeatherUpdateJob if missing) before scheduling the next alarm
+- [ ] **KEYVAL-01**: When user taps Save in settings, app pings LocationIQ to validate the entered API key
+- [ ] **KEYVAL-02**: If response indicates invalid key, app shows explicit invalid-key message and blocks saving
+- [ ] **KEYVAL-03**: If key is valid, app shows success feedback and persists the new key
+- [ ] **KEYVAL-04**: If validation cannot complete (network/server error), app shows retryable error and does not overwrite existing valid key
 
-### Health Dashboard
+### Regression Safety
 
-- [x] **HEALTH-01**: Background Updates settings shows a "Watchdog Health" section (visible only when Watchdog is enabled) displaying: service status (Running/Stopped), last heartbeat time, restart count, and next scheduled refresh
-- [x] **HEALTH-02**: Health data refreshes in real-time when the settings screen is open (via SharedPreferences listener or periodic poll)
-- [x] **HEALTH-03**: A "Reset Stats" action clears the restart count and heartbeat log
-
-### Notification Enhancement
-
-- [x] **NOTIF-04**: WatchdogRestartWorker calls `setForegroundSafely()` anchored to `ID_WATCHDOG_KEEPALIVE` (IMPORTANCE_MIN, `CHANNEL_WATCHDOG`) for the brief execution window only; no permanent standalone watchdog notification — the weather notification (`ID_WIDGET`) is the sole persistent status indicator
-- [x] **NOTIF-05**: Notification priority is elevated from IMPORTANCE_MIN to IMPORTANCE_LOW on HyperOS/MIUI devices (makes it slightly more visible, reduces kill chance)
-
-### Tech Debt Cleanup
-
-- [x] **DEBT-01**: Extract `"WeatherUpdate-auto"` hardcoded string from WatchdogService into a shared constant accessible from both WatchdogService and WeatherUpdateJob
-- [x] **DEBT-02**: Add VERIFICATION.md for v1.1 phases 6-8 retroactively documenting what was verified and known gaps
+- [ ] **REG-01**: Existing VN regex/token extraction and cross-validation flow remains intact (no algorithm rewrite)
+- [ ] **REG-02**: Nominatim fallback behavior remains functional when LocationIQ is unavailable or invalid
 
 ---
 
 ## Future Requirements (Deferred)
 
-- Dual-process guardian architecture (separate process monitors primary) — high complexity, defer to v1.3 if v1.2 mitigations insufficient
-- EncryptedSharedPreferences for API keys — orthogonal to ROM hardening
-- ConfigStore → DataStore migration — orthogonal
+- Optional live key validation while typing (debounced)
+- Provider diagnostics screen with per-provider success/failure counters
+- EncryptedSharedPreferences for API key storage
 
 ## Out of Scope
 
-- **PROC-01 / PROC-02 / PROC-03 — Invisible Activity OOM elevation** — Android 14+ Background Activity Launch (BAL) restrictions block background-service-to-Activity `startActivity` calls from background; MIUI Security Center flags transparent overlays as adware; Phase 11's WorkManager hybrid restart makes constant OOM elevation redundant — the process sleeps between scheduled wake-ups
-- RxJava → Coroutines full migration — large refactor, orthogonal
-- Full MIUI/HyperOS ROM compatibility layer — too broad, focus on specific kill mitigation
-- User-facing "kill protection" tutorial/wizard — defer to UX milestone
+| Feature | Reason |
+|---------|--------|
+| Rewriting VN address extraction algorithm | Explicitly excluded by milestone scope; current algorithm is heavily tuned |
+| Removing "giggles" behavior | Not part of bug-fix objective |
+| Watchdog/ROM hardening changes | Separate concern from LocationIQ bug |
 
 ---
 
 ## Traceability
 
-*(Filled by roadmapper)*
+*(Filled by roadmapper after phase planning.)*
 
-| Requirement | Phase |
-|-------------|-------|
-| HEART-01 | Phase 10 |
-| HEART-02 | Phase 10 |
-| HEART-03 | Phase 10 |
-| RESTART-01 | Phase 11 |
-| RESTART-02 | Phase 11 |
-| RESTART-03 | Phase 11 |
-| ~~PROC-01~~ | ~~Phase 12~~ DROPPED |
-| ~~PROC-02~~ | ~~Phase 12~~ DROPPED |
-| ~~PROC-03~~ | ~~Phase 12~~ DROPPED |
-| HEALTH-01 | Phase 14 |
-| HEALTH-02 | Phase 14 |
-| HEALTH-03 | Phase 14 |
-| NOTIF-04 | Phase 13 |
-| NOTIF-05 | Phase 13 |
-| DEBT-01 | Phase 9 |
-| DEBT-02 | Phase 9 |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| LOCIQ-01 | TBD | Pending |
+| LOCIQ-02 | TBD | Pending |
+| LOCIQ-03 | TBD | Pending |
+| KEYVAL-01 | TBD | Pending |
+| KEYVAL-02 | TBD | Pending |
+| KEYVAL-03 | TBD | Pending |
+| KEYVAL-04 | TBD | Pending |
+| REG-01 | TBD | Pending |
+| REG-02 | TBD | Pending |
+
+**Coverage:**
+- v1.3 requirements: 9 total
+- Mapped to phases: 0
+- Unmapped: 9
 
 ---
-*Requirements created: 2026-04-02*
-*Last updated: 2026-04-05 — PROC-01/02/03 moved to Out of Scope (Phase 12 dropped); phases 9-11 complete*
+*Requirements defined: 2026-04-16*
+*Last updated: 2026-04-16 after milestone scope clarification*
