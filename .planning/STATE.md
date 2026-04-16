@@ -64,8 +64,8 @@ See: `.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREM
 ## Session Continuity
 
 **Last updated:** 2026-04-16
-**Last action:** v1.3 requirements and roadmap approved; traceability mapped
-**Next action:** `/gsd-discuss-phase 15` (or `/gsd-plan-phase 15`)
+**Last action:** Phase 15 context captured (call-path guard decisions locked)
+**Next action:** `/gsd-plan-phase 15`
 
 ---
-*STATE.md updated: 2026-04-16 — v1.3 roadmap created*
+*STATE.md updated: 2026-04-16 — phase 15 context captured*
