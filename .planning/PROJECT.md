@@ -15,6 +15,7 @@
 ## What This Is
 
 A fork of a popular open-source Android weather app optimized for Vietnamese administrative addresses (wards, communes, special zones). It uses LocationIQ and Nominatim APIs in tandem to deliver clean, accurate sub-province address names (e.g. "Phường Phú Lương" instead of "Ủy ban nhân dân Phường Phú Lương") for Vietnamese users, with smart cross-validation, lazy fallback, and "giggles" — delightful feedback when the fallback saves a bad result. Includes a Background Watchdog service that ensures weather refreshes actually happen on aggressive Android ROMs (HyperOS, MIUI).
+How it work: LocationIQ is the primary geocoding source for Vietnam. If LocationIQ's result fails a regex check for clean ward/commune tokens, the app falls back to Nominatim's. This is because sometime LocationIQ acting garbage but recently being very good for Vietnam, but we still dont know whether any location, small location still have errors. THats why it fallback to nominatim. Instead of using old Observable.zip parallel API calls, it uses a lazy strategy where Nominatim is only called if LocationIQ fails the regex check. This eliminates unnecessary Nominatim traffic and rate limit risk when LocationIQ is working well. The Background Watchdog is implemented as a foreground service with an AlarmManager heartbeat to survive aggressive ROM killing, and includes a settings toggle and HyperOS autostart integration.
 
 ## Core Value
 
@@ -120,6 +121,7 @@ Vietnamese users see a clean ward/commune name — never a POI or government-off
 This document evolves at phase transitions and milestone boundaries.
 
 **After each phase transition** (via `/gsd-transition`):
+
 1. Requirements invalidated? -> Move to Out of Scope with reason
 2. Requirements validated? -> Move to Validated with phase reference
 3. New requirements emerged? -> Add to Active
@@ -127,6 +129,7 @@ This document evolves at phase transitions and milestone boundaries.
 5. "What This Is" still accurate? -> Update if drifted
 
 **After each milestone** (via `/gsd-complete-milestone`):
+
 1. Full review of all sections
 2. Core Value check -> still the right priority?
 3. Audit Out of Scope -> reasons still valid?
