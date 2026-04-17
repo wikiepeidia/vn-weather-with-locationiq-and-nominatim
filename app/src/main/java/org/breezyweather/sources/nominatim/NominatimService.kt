@@ -503,12 +503,10 @@ class NominatimService @Inject constructor(
                 titleId = R.string.settings_weather_source_nominatim_instance,
                 summary = { _, content ->
                     when {
-                        // GIGL-02: playful description so users/devs see when the rescue system is active
                         isLocationIqKey(content) ->
-                            "LocationIQ • Backup address detective on standby"
-                        content.isEmpty() ->
-                            "Backup address detective (fires when LocationIQ returns garbage)"
-                        else -> content
+                            "LocationIQ+Nominatim"
+                        else ->
+                            "Nominatim only"
                     }
                 },
                 content = if (instance != NOMINATIM_BASE_URL) instance else null,

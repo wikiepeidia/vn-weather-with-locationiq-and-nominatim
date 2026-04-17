@@ -8,6 +8,7 @@ build/
 scripts/
 ### IntelliJ IDEA ###
 signature/
+singature/
 .idea/*
 !.idea/icon.png
 *.iws
