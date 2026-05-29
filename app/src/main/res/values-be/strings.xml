@@ -402,7 +402,6 @@
     <string name="notification_channel_crash_logs">Журналы аварыйных спыненняў</string>
     <string name="notification_running_in_background">Запушчана ў фоне для сталага абнаўлення</string>
     <string name="notification_updating_weather_data">Абнаўленне даных надвор’я (%1$d/%2$d)</string>
-    <string name="notification_update_error">Збой %d абнаўлення(ў)</string>
     <string name="notification_precipitation_starting">Неўзабаве будуць ападкі</string>
     <string name="notification_style_cities">Гарады</string>
     <string name="about_app">Аб праграме</string>

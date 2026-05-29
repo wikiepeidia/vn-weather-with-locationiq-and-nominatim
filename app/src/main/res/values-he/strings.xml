@@ -543,7 +543,6 @@
     <string name="settings_modules_live_wallpaper_summary">הגדר אנימציית מזג אוויר כטפט</string>
     <string name="settings_follow_system">עקוב אחרי המערכת</string>
     <string name="settings_debug_dump_crash_logs_summary">שומר יומן שגיאות אל תוך קובץ לשיתוף עם המפתחים</string>
-    <string name="notification_update_error">%d עדכון/ים נכשלו</string>
     <string name="temperature_normal_short">נורמל</string>
     <string name="temperature_normals">נורמלי טמפרטורה</string>
     <string name="settings_modules_notification_feels_like_switch">השתמש בטמפרטורה ”המרגישה כמו‌”</string>
@@ -778,4 +777,6 @@
     <string name="pollen_primary">אבקה בוטנית</string>
     <string name="pollen_details">אודות אבקה בוטנית</string>
     <string name="pressure_standard">רגיל</string>
+    <string name="message_please_wait_refresh">נא להמתין עד להשלמת הרענון</string>
+    <string name="settings_main_background_title">רקע שמשתנה בהתאם למזג האוויר</string>
 </resources>

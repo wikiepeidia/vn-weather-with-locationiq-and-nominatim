@@ -409,7 +409,6 @@
     <string name="temperature_degree_day_cooling">Kühlgradtag</string>
     <string name="settings_source_api_key">API-Schlüssel</string>
     <string name="temperature_degree_day_heating">Heizgradtag</string>
-    <string name="notification_update_error">%d Aktualisierung(en) fehlgeschlagen</string>
     <string name="settings_background_updates_worker_info_summary">Letzte Ausführung: %s</string>
     <string name="pollen_artemisia">Beifuß</string>
     <string name="pollen_alnus">Erle</string>
@@ -790,4 +789,6 @@
     <string name="action_pull_down_to_refresh">Zum Aktualisieren nach unten ziehen</string>
     <string name="pressure_standard">Standard</string>
     <string name="settings_source_api_key_invalid">Der Wert hat nicht das erwartete Format</string>
+    <string name="message_please_wait_refresh">Bitte warten, bis die Aktualisierung abgeschlossen ist</string>
+    <string name="settings_main_background_title">Wetterbasierter Hintergrund</string>
 </resources>

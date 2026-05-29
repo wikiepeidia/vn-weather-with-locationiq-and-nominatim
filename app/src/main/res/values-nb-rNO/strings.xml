@@ -86,7 +86,6 @@
     <string name="air_quality_pm25_voice">PM to komma fem</string>
     <string name="air_quality_pm10">PM10</string>
     <string name="uv_index_short">UV</string>
-    <string name="notification_update_error">%d oppdatering(er) feilet</string>
     <string name="notification_channel_forecast">Værvarsel</string>
     <string name="notification_channel_widget">Modul</string>
     <string name="pollen">Pollen</string>

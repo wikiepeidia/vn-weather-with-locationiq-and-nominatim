@@ -14,8 +14,8 @@
     <string name="notification_channel_forecast">Previsão</string>
     <string name="daytime">Dia</string>
     <string name="nighttime">Noite</string>
-    <string name="temperature_feels_like">Parece</string>
-    <string name="temperature_feels_like_with_unit">Parece %s</string>
+    <string name="temperature_feels_like">Sensação</string>
+    <string name="temperature_feels_like_with_unit">Sensação %s</string>
     <string name="settings_follow_system">Igual ao sistema</string>
     <string name="pressure">Pressão</string>
     <string name="visibility">Visibilidade</string>
@@ -113,7 +113,7 @@
     <string name="widget_label_show_widget_card_alpha">Transparência</string>
     <string name="widget_trend_daily">Botões de ação diário</string>
     <string name="widget_trend_hourly">Botões de ação horário</string>
-    <string name="pollen">Alergéno</string>
+    <string name="pollen">Alergénios</string>
     <string name="alerts_to_follow">Próximos alertas, toque aqui para vê-los.</string>
     <string name="precipitation_thunderstorm">Tempestade</string>
     <string name="precipitation_rain">Chuva</string>
@@ -235,7 +235,6 @@
     <string name="settings_modules_monochrome_icons_title">Ícones monocromáticos</string>
     <string name="settings_modules_section_widgets_in_use">Widgets em uso</string>
     <string name="settings_items_drag_to_sort">Toque para arrastar os itens da lista para classificar</string>
-    <string name="notification_update_error">%d falha na(s) atualização(ões)</string>
     <string name="locations">Localizações</string>
     <string name="location_message_search_failed">A procura da localização falhou</string>
     <string name="action_edit">Editar</string>

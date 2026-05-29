@@ -496,7 +496,6 @@
     <string name="notification_channel_app_updates">應用程式更新</string>
     <string name="notification_running_in_background">正在背景執行，以保持更新</string>
     <string name="notification_updating_weather_data">正在更新天氣資料 (%1$d/%2$d)</string>
-    <string name="notification_update_error">%d 更新失敗</string>
     <string name="notification_precipitation_starting">即將降水</string>
     <string name="notification_precipitation_continuing">降水</string>
     <string name="notification_precipitation_continuing_desc">預計至少持續到 %s</string>
@@ -854,4 +853,5 @@
     <string name="pressure_standard">標準</string>
     <string name="settings_source_api_key_invalid">格式不符</string>
     <string name="message_please_wait_refresh">請等待更新完成</string>
+    <string name="settings_main_background_title">天氣為本的背景</string>
 </resources>

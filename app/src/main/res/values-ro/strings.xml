@@ -146,7 +146,7 @@
     <string name="location_message_added">Locație adăugată</string>
     <string name="location_message_deleted">Locație ștearsă</string>
     <string name="location_message_list_cannot_be_empty">Lista locațiilor nu poate fi goală</string>
-    <string name="location_search_placeholder">Se caută locația…</string>
+    <string name="location_search_placeholder">Caută o localitate…</string>
     <string name="location_current_not_found_yet">Nu s-a găsit locația curentă…</string>
     <string name="settings_changes_apply_after_restart">Modificările vor avea efect după repornire</string>
     <string name="notification_running_in_background">Datele se actualizează în fundal</string>
@@ -406,7 +406,6 @@
     <string name="air_quality_so2_full">Dioxid de sulf (%s)</string>
     <string name="action_show_errors">Apasă pentru a vedea detalii</string>
     <string name="location_search_no_results">%1$s nu poate găsi %2$s</string>
-    <string name="notification_update_error">%d actualizări eșuate</string>
     <string name="settings_background_updates_refresh_skip_when_battery_low">Ignorați când bateria este descărcată</string>
     <string name="settings_source_api_key">Cheie API</string>
     <string name="message_server_timeout">Cererea a expirat</string>
@@ -789,4 +788,6 @@
     <string name="action_pull_down_to_refresh">Trageți în jos pentru a reîmprospăta</string>
     <string name="pressure_standard">Standard</string>
     <string name="settings_source_api_key_invalid">Cheia nu este validă</string>
+    <string name="message_please_wait_refresh">Așteaptă finalizarea reîmprospătării</string>
+    <string name="settings_main_background_title">Fundal bazat pe vreme</string>
 </resources>

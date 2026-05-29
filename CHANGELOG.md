@@ -4,20 +4,39 @@
 - [Changelog for v4.x](docs/CHANGELOG_4.x.md)
 
 
-# Version 6.2.0 (not yet released)
+# Version 6.2.0 (2026-05-01)
+
+**New features**
+- Add ability to disable the weather condition background on main screen. You can find it in Settings > Main screen.
 
 **Improvements and fixes**
 - Fix failing to refresh some forecast sources in some cases when the source is not reporting total precipitation
 - Forbid editing locations when weather is refreshing to avoid race condition
+- Fix address lookup not working after changing a source on adding a new location with coordinates input manually (from `geo:` intent)
+- Fix some notifications marked as sensitive (will now show on lockscreen)
+- Fix notification-widget “Use feels like” option only available when using temperature in statusbar
+- Fix notification-widget not always using feels like temperature when the option is enabled
+- Fix crash when relative humidity is 0% and dewpoint is missing
 
 **Sources**
+- Atmo France - Use new geocoding services to fix refresh issue for some locations
 - China - Fix nowcasting refresh silently failing
+- ECCC - Fix missing alert title
 - FMI - Added as a new forecast, current, air quality, alert, normals source for Finland (@chunshek). Users on devices with hardened memory allocator (`hardened_malloc`) enabled, such as GrapheneOS may want to disable the feature for the app if they find the refresh to be too slow.
+- Gadgetbridge - Improved weather codes mapping
+- Gadgetbridge - Will now send again longitude, latitude and if it is current location with allowed apps
+- HKO - Add daily weather summary + add next hours summary + update existing ones (@chunshek)
 - Infoplaza - Added as a new worldwide forecast, current, minutely and normals source (@SKBotNL)
 - KNMI - Add textual representation of weather conditions (@willem640)
 - Météo-France/OpenWeather - Improve total precipitation computing (@chunshek)
+- MET Éireann - Fix all hours being shifted by 1 hour, and 23:00 missing or shifted by 1 day
+- Nominatim - Improve address lookup, and add support for districts for a more detailed result
+- NWS - Exclude test alerts
 - Pirate Weather - Fix weather texts showing temperatures in the wrong unit (@chunshek)
 - SMG - Fix missing current data (@chunshek)
+- SMG - Add daily min/max humidity (@chunshek)
+- SMG - Add/Update weekly/next hours summary + add daily summary (@chunshek)
+- SMHI - Fix failure to refresh by migrating to new API (@4eUeP)
 
 
 # Version 6.1.3 (2026-02-12)

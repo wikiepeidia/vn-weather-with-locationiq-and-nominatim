@@ -36,6 +36,7 @@ import io.reactivex.rxjava3.core.Observable
 import org.breezyweather.BuildConfig
 import org.breezyweather.R
 import org.breezyweather.common.exceptions.InvalidLocationException
+import org.breezyweather.common.extensions.getFormattedDate
 import org.breezyweather.common.extensions.toCalendarWithTimeZone
 import org.breezyweather.common.extensions.toDateNoHour
 import org.breezyweather.common.preference.EditTextPreference
@@ -152,16 +153,18 @@ class MetIeService @Inject constructor(
                 forecastResultJ5: MetIeForecastResult,
                 alertsResult: MetIeWarningResult,
             ->
-            val hourlyForecastResultMerged = forecastResultJ0.mergedForecast.orEmpty() +
-                forecastResultJ1.mergedForecast.orEmpty() +
-                forecastResultJ2.mergedForecast.orEmpty() +
-                forecastResultJ3.mergedForecast.orEmpty() +
-                forecastResultJ4.mergedForecast.orEmpty() +
+            val hourlyForecastResultMerged = listOf(
+                forecastResultJ0.mergedForecast.orEmpty(),
+                forecastResultJ1.mergedForecast.orEmpty(),
+                forecastResultJ2.mergedForecast.orEmpty(),
+                forecastResultJ3.mergedForecast.orEmpty(),
+                forecastResultJ4.mergedForecast.orEmpty(),
                 forecastResultJ5.mergedForecast.orEmpty()
+            )
 
             WeatherWrapper(
                 dailyForecast = if (SourceFeature.FORECAST in requestedFeatures) {
-                    getDailyForecast(location, hourlyForecastResultMerged)
+                    getDailyForecast(location, hourlyForecastResultMerged.flatten())
                 } else {
                     null
                 },
@@ -205,35 +208,54 @@ class MetIeService @Inject constructor(
      * Returns hourly forecast
      */
     private fun getHourlyForecast(
-        hourlyResult: List<MetIeForecastHourly>?,
-    ): List<HourlyWrapper>? {
+        hourlyResultByDay: List<List<MetIeForecastHourly>>?,
+    ): List<HourlyWrapper> {
+        val hourlyList = mutableListOf<HourlyWrapper>()
         val formatter = SimpleDateFormat("yyyy-MM-dd HHmm", Locale.ENGLISH)
-        formatter.timeZone = TimeZone.getTimeZone("Europe/Dublin")
+        // Don't use Europe/Dublin, the timezone is fixed all year, and doesn't handle DST
+        formatter.timeZone = TimeZone.getTimeZone("Etc/GMT")
 
-        return hourlyResult?.map { result ->
-            HourlyWrapper(
-                date = formatter.parse("${result.date} ${result.localTime}")!!,
-                weatherCode = getWeatherCode(result.symbol?.number),
-                weatherText = result.symbol?.description,
-                temperature = TemperatureWrapper(
-                    temperature = result.temperature?.value?.toDoubleOrNull()?.celsius,
-                    feelsLike = result.feelsLike?.celsius
-                ),
-                precipitation = Precipitation(
-                    total = result.precipitation?.value?.toDoubleOrNull()?.millimeters
-                ),
-                precipitationProbability = PrecipitationProbability(
-                    total = result.precipitation?.probability?.toDoubleOrNull()?.percent
-                ),
-                wind = Wind(
-                    degree = result.windDirection?.deg?.toDoubleOrNull(),
-                    speed = result.windSpeed?.kph?.kilometersPerHour
-                ),
-                relativeHumidity = result.humidity?.value?.toDoubleOrNull()?.percent,
-                pressure = result.pressure?.value?.toDoubleOrNull()?.hectopascals,
-                cloudCover = result.cloudiness?.percent?.toDoubleOrNull()?.percent
-            )
+        hourlyResultByDay?.forEach { hourlyResult ->
+            hourlyResult.forEachIndexed { i, result ->
+                val actualDay = if (i == 0 && result.localTime == "2300") {
+                    // If first hour of the list is 23:00, the day is wrong, and we need to compute the day before
+                    val cal = Calendar.getInstance().also {
+                        it.time = formatter.parse("${result.date} 0000")!!
+                    }
+                    cal.add(Calendar.DAY_OF_MONTH, -1)
+                    cal.time.getFormattedDate("yyyy-MM-dd", cal.timeZone, Locale.ENGLISH)
+                } else {
+                    result.date
+                }
+
+                hourlyList.add(
+                    HourlyWrapper(
+                        date = formatter.parse("$actualDay ${result.localTime}")!!,
+                        weatherCode = getWeatherCode(result.symbol?.number),
+                        weatherText = result.symbol?.description,
+                        temperature = TemperatureWrapper(
+                            temperature = result.temperature?.value?.toDoubleOrNull()?.celsius,
+                            feelsLike = result.feelsLike?.celsius
+                        ),
+                        precipitation = Precipitation(
+                            total = result.precipitation?.value?.toDoubleOrNull()?.millimeters
+                        ),
+                        precipitationProbability = PrecipitationProbability(
+                            total = result.precipitation?.probability?.toDoubleOrNull()?.percent
+                        ),
+                        wind = Wind(
+                            degree = result.windDirection?.deg?.toDoubleOrNull(),
+                            speed = result.windSpeed?.kph?.kilometersPerHour
+                        ),
+                        relativeHumidity = result.humidity?.value?.toDoubleOrNull()?.percent,
+                        pressure = result.pressure?.value?.toDoubleOrNull()?.hectopascals,
+                        cloudCover = result.cloudiness?.percent?.toDoubleOrNull()?.percent
+                    )
+                )
+            }
         }
+
+        return hourlyList
     }
 
     private fun getAlertList(location: Location, warnings: List<MetIeWarning>?): List<Alert>? {

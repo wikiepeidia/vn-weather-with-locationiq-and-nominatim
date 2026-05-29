@@ -487,7 +487,6 @@
     <string name="settings_weather_source_open_meteo_weather_models_seamless_description">همه مدل های آب و هوا را از این ارائه دهنده به یک پیش بینی یکپارچه ترکیب میکند</string>
     <string name="notification_precipitation_stopping_desc">انتظار میرود در %s به پایان برسد</string>
     <string name="common_weather_text_snow_grains">دانه های برف</string>
-    <string name="notification_update_error">%d به‌روزرسانی ناموفق</string>
     <string name="notification_updating_weather_data">به‌روزرسانی داده های هواشناسی (%1$d/%2$d)</string>
     <string name="about_contribution_WangDaYeeeeee">توسعه دهنده پروژه اصلی Geometric Weather</string>
     <string name="common_weather_text_rain_freezing_light">تگرگ سبک</string>

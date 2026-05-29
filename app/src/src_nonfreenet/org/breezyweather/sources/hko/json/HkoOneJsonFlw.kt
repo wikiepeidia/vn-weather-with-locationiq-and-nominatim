@@ -20,5 +20,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class HkoOneJsonFlw(
+    val GeneralSituation: String?,
+    val OutlookContent: String?,
     val Icon1: String?,
 )

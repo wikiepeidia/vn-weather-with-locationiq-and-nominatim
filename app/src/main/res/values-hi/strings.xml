@@ -490,7 +490,6 @@
     <string name="settings_enabled">सक्रिय</string>
     <string name="settings_unavailable_no_background_updates">अनुपलब्ध, पृष्ठभूमि अद्यतन पहले सक्षम करें</string>
     <string name="notification_refreshed_at">पर ताज़ा किया गया</string>
-    <string name="notification_update_error">%d अद्यतन विफल</string>
     <string name="notification_running_in_background">अद्यतन रखने के लिए पृष्ठभूमि में चल रहा है</string>
     <string name="common_weather_text_drizzle_moderate">मध्यम बूंदाबांदी</string>
     <string name="about_open_link_message">%s खोले?</string>

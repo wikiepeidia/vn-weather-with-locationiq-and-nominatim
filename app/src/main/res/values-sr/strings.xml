@@ -170,7 +170,6 @@
     <string name="settings_modules_notification_style_title">Стил</string>
     <string name="settings_debug_summary">Евиденције отказивања</string>
     <string name="settings_modules_section_notification_widget">Виџет у обавештењима</string>
-    <string name="notification_update_error">%d ажурирања није успело</string>
     <string name="common_weather_text_clear_sky">Ведро небо</string>
     <string name="common_weather_text_snow_showers_heavy">Јаки снежни пљускови</string>
     <string name="common_weather_text_drizzle_light">Слаба росуља</string>

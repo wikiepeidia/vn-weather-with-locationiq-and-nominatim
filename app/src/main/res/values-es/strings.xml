@@ -458,7 +458,6 @@
     <string name="common_weather_text_rain_moderate">Lluvia moderada</string>
     <string name="common_weather_text_rain_snow_mixed_showers_heavy">Chubascos de aguanieve fuertes</string>
     <string name="common_weather_text_rain_showers">Chubascos</string>
-    <string name="notification_update_error">%d actualización(es) fallida(s)</string>
     <string name="notification_channel_widget">Widget</string>
     <string name="common_weather_text_drizzle_light">Llovizna ligera</string>
     <string name="about_dependencies">Dependencias</string>
@@ -816,4 +815,5 @@
     <string name="pressure_standard">Estándar</string>
     <string name="settings_source_api_key_invalid">El valor no está en el formato esperado</string>
     <string name="message_please_wait_refresh">Espera a que finalice la actualización</string>
+    <string name="settings_main_background_title">Fondo basado en el tiempo</string>
 </resources>

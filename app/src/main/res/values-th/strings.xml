@@ -480,7 +480,6 @@
     <string name="settings_notifications_alerts_title">การแจ้งเตือนการเตือนภัยสภาพอากาศที่รุนแรง</string>
     <string name="settings_notifications_precipitations_title">การแจ้งเตือนหยาดน้ำฟ้า</string>
     <string name="settings_notifications_forecast_today_title">การแจ้งเตือนการพยากรณ์รายวัน</string>
-    <string name="notification_update_error">มีการอัปเดต %d รายการที่ไม่สำเร็จ</string>
     <string name="notification_precipitation_starting">หยาดน้ำฟ้าจะตกในอีกไม่นาน</string>
     <string name="notification_precipitation_continuing_desc">คาดว่าจะตกจนถึงเวลา %s เป็นอย่างน้อย</string>
     <string name="meteoam_weather_text_tornado_watersprout">มีทอร์เนโดหรือพวยน้ำ</string>

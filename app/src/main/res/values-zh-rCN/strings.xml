@@ -412,7 +412,6 @@
     <string name="location_search_no_results_advice">确保您的搜索拼写正确并且不要太具体。或者您可以尝试其他位置搜索源，这可能会产生不同的结果。</string>
     <string name="location_search_no_results">%1$s 找不到 %2$s</string>
     <string name="action_show_errors">点击以查看详情</string>
-    <string name="notification_update_error">%d 项更新失败</string>
     <string name="message_parsing_error_content">请确保您已更新到最新版本。服务器可能暂时不可用，请稍后重试。如果问题仍然存在，请点击设置 - 调试 - 分享崩溃日志，并在 GitHub 上报告问题。</string>
     <string name="message_server_timeout">请求超时</string>
     <string name="message_parsing_error_title">天气数据解析失败</string>
@@ -526,7 +525,7 @@
     <string name="pollen_carpinus">鹅耳枥属</string>
     <string name="pollen_cupressaceae_taxaceae">柏树</string>
     <string name="pollen_urticaceae">荨麻/墙草</string>
-    <string name="widget_custom_subtitle_keyword_xpis_description">花粉指数摘要：今天、明天、...、4天后</string>
+    <string name="widget_custom_subtitle_keyword_xpis_description">花粉指数摘要：今天、明天、…、4天后</string>
     <string name="about_open_link_message">要打开 %s 吗？</string>
     <string name="sunshine">日照</string>
     <string name="message_source_not_installed_error_content">更改此位置的天气数据源，或删除并重新添加此位置。</string>
@@ -866,4 +865,5 @@
     <string name="pressure_standard">标准</string>
     <string name="settings_source_api_key_invalid">值的格式不符预期</string>
     <string name="message_please_wait_refresh">请等待刷新完成</string>
+    <string name="settings_main_background_title">基于天气的背景</string>
 </resources>

@@ -459,7 +459,6 @@
     <string name="settings_disabled">Deaktivirano</string>
     <string name="common_weather_text_rain_snow_mixed_showers_heavy">Jaki pljuskovi sa susnježicom</string>
     <string name="common_weather_text_rain_showers">Pljuskovi</string>
-    <string name="notification_update_error">Neuspjela aktualiziranja: %d</string>
     <string name="notification_channel_widget">Widget</string>
     <string name="common_weather_text_drizzle_light">Blaga kišica</string>
     <string name="ephemeris_moon_phase_waning_crescent">Mlađak</string>

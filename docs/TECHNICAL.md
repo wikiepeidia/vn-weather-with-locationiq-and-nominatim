@@ -43,7 +43,7 @@ In Android Studio, this can be set up in the configuration of the `app` module, 
 4) Update versionCode and versionName in `app/build.gradle`.
 5) Write changelog in `CHANGELOG.md`.
 6) Commit all changes.
-7) Tag version beginning with a `v` (example: `git tag v6.1.4 -m "Version 6.1.4"`).
+7) Tag version beginning with a `v` (example: `git tag v6.2.1 -m "Version 6.2.1"`).
 8) Push with `git push --tags`
 9) GitHub action will run and sign the release.
 10) Update GitHub release notes draft and publish.
@@ -72,7 +72,8 @@ After merging a new source, the following things need to be done:
 1) Update `CHANGELOG.md`
 2) Update `docs/SOURCES.md`
 3) Update `docs/COVERAGE.md`
-4) Update `fastlane/metadata/android/{en-US,fr,it}/full_description.txt`
+4) Update `fastlane/metadata/android/{*}/full_description.txt` (bulk replace in all languages)
+5) Update the regex on Weblate
 
 
 # Decode crash logs from users
@@ -101,7 +102,7 @@ When a translation is added, add the CLDR data for this locale in the weather-un
 
 Gradle must always be updated that way (replace with new version number):
 ```
-./gradlew wrapper --gradle-version=9.4.1 --gradle-distribution-sha256-sum=2ab2958f2a1e51120c326cad6f385153bb11ee93b3c216c5fccebfdfbb7ec6cb
+./gradlew wrapper --gradle-version=9.5.0 --gradle-distribution-sha256-sum=553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746
 ```
 
 You can find the newer checksum of the binary-only (-bin) ZIP on https://gradle.org/release-checksums/

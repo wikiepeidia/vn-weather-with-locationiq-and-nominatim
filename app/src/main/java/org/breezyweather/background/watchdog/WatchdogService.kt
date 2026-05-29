@@ -17,6 +17,7 @@
 package org.breezyweather.background.watchdog
 
 import android.app.AlarmManager
+import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -86,14 +87,10 @@ class WatchdogService : Service() {
             Notifications.ID_WATCHDOG_KEEPALIVE
         }
         val notification = getForegroundNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                foregroundNotifId,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
-        } else {
-            startForeground(foregroundNotifId, notification)
+        if (!startWatchdogForeground(notification, source)) {
+            WatchdogRestartWorker.enqueue(this)
+            stopSelf(startId)
+            return START_NOT_STICKY
         }
 
         // HEART-01: Acquire WakeLock to prevent CPU sleep during heartbeat.
@@ -197,14 +194,30 @@ class WatchdogService : Service() {
         if (foregroundNotifId == Notifications.ID_WIDGET) return
 
         val notification = getForegroundNotification()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                foregroundNotifId,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
-        } else {
-            startForeground(foregroundNotifId, notification)
+        startWatchdogForeground(notification, "update")
+    }
+
+    private fun startWatchdogForeground(
+        notification: Notification,
+        source: String,
+    ): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    foregroundNotifId,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE,
+                )
+            } else {
+                startForeground(foregroundNotifId, notification)
+            }
+            true
+        } catch (e: ForegroundServiceStartNotAllowedException) {
+            Log.w(TAG, "Watchdog foreground promotion blocked (source=$source): ${e.message}")
+            false
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "Watchdog foreground promotion failed (source=$source): ${e.message}")
+            false
         }
     }
 

@@ -338,7 +338,6 @@
     <string name="widget_label_subtitle_data">Undertiteldata</string>
     <string name="settings_weather_source_open_meteo_weather_models_best_match_description">Kombinerer de bedste vejrmodeller til denne placering</string>
     <string name="settings_enabled">Aktiveret</string>
-    <string name="notification_update_error">%d opdatering(er) fejlede</string>
     <string name="about_translators">Oversættere</string>
     <string name="common_weather_text_rain_snow_mixed_light">Let slud</string>
     <string name="about_privacy_policy">Privatlivspolitik</string>

@@ -425,7 +425,6 @@
     <string name="settings_unavailable_no_background_updates">Μη διαθέσιμο, ενεργοποίησ πρώτα τις ενημερώσεις στο παρασκήνιο</string>
     <string name="notification_channel_background_services">Υπηρεσίες παρασκηνίου</string>
     <string name="notification_channel_crash_logs">Καταγραφές σφαλμάτων</string>
-    <string name="notification_update_error">%d ενημερώσεις απέτυχαν</string>
     <string name="common_weather_text_rain_showers">Μπόρα</string>
     <string name="common_weather_text_drizzle_heavy">Έντονες ψεκάδες</string>
     <string name="settings_notifications_forecast_time_tomorrow_title">Ώρα ειδοποίησης για την πρόβλεψη της επόμενης ημέρας</string>
@@ -726,7 +725,7 @@
     <string name="pressure_steady">Σταθερή</string>
     <string name="pressure_about">Σχετικά με την πίεση</string>
     <string name="pressure_about_description1">Η ατμοσφαιρική πίεση είναι η καθοδική πίεση που ασκείται από την ατμόσφαιρα της γης. Αυτή η εφαρμογή χρησιμοποιεί την μέση πίεση επιπέδου της θάλασσας για να επιτρέψει ευκολότερη σύγκριση της πίεσης από μέρη με διαφορετικά υψόμετρα.</string>
-    <string name="pressure_about_description2">Σημαντικές, γρήγορες αλλαγές στην πίεση χρησιμοποιούνται για την πρόβλεψη αλλαγών στον καιρό. Για παράδειγμα, μια πτώση της πίεσης μπορεί να σημαίνει ότι η βροχή ή το χιόνι είναι καθ\' οδόν και η αυξανόμενη πίεση μπορεί να σημαίνει ότι ο καιρός θα βελτιωθεί. Η μη φυσιολογική ατμοσφαιρική πίεση μπορεί να προκαλέσει πονοκεφάλους, πόνο στις αρθρώσεις, κούραση και άλλα συμπτώματα.</string>
+    <string name="pressure_about_description2">Σημαντικές, γρήγορες αλλαγές στην πίεση χρησιμοποιούνται για την πρόβλεψη αλλαγών στον καιρό. Για παράδειγμα, μια πτώση της πίεσης μπορεί να σημαίνει ότι η βροχή ή το χιόνι είναι καθ’ οδόν και η αυξανόμενη πίεση μπορεί να σημαίνει ότι ο καιρός θα βελτιωθεί. Η μη φυσιολογική ατμοσφαιρική πίεση μπορεί να προκαλέσει πονοκεφάλους, πόνο στις αρθρώσεις, κούραση και άλλα συμπτώματα.</string>
     <string name="visibility_about_description">Η ορατότητα σού λέει πόσο μακριά μπορείς να δεις αντικείμενα ξεκάθαρα όπως κτίρια και λόφους. Η ορατόητα μπορεί να επηρεαστεί από βροχόπτωση, ομίχλη, σκόνη, καπνό ή ξηρά αχλύ.</string>
     <string name="visibility_scale">Κλίμακα ορατότητας</string>
     <string name="visibility_from_to_number">%1$s με %2$s</string>
@@ -747,8 +746,8 @@
     <string name="weather_source_recommended">Προτεινόμενη</string>
     <string name="broadcast_source_breezy_weather_update_notifier">Ειδοποιητής Ενημέρωσης Τοποθεσίας %s</string>
     <string name="action_add_as_location">Προσθήκη ως τοποθεσία</string>
-    <string name="action_open_in_other_app">Άνοιγμα σ\' άλλη εφαρμογή</string>
-    <string name="action_open_in_other_app_description">Άνοιγμα αυτή την τοποθεσία σ\' άλλη εφαρμογή</string>
+    <string name="action_open_in_other_app">Άνοιγμα σ’ άλλη εφαρμογή</string>
+    <string name="action_open_in_other_app_description">Άνοιγμα αυτή την τοποθεσία σ’ άλλη εφαρμογή</string>
     <string name="action_open_in_other_app_no_app">Δεν υπάρχει εφαρμογή χαρτών</string>
     <string name="action_configure_item">Ρύθμιση %s</string>
     <string name="action_pull_down_to_refresh">Τράβηγμα κάτω για ανανέωση</string>

@@ -349,7 +349,7 @@
         <!-- Watchdog service for HyperOS/MIUI background-kill recovery -->
         <service
             android:name=".background.watchdog.WatchdogService"
-            android:foregroundServiceType="dataSync"
+            android:foregroundServiceType="shortService"
             android:exported="false" />
 
         <receiver

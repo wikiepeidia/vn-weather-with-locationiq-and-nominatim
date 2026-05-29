@@ -27,7 +27,7 @@ data class EcccAlert(
     val type: String?,
     @Serializable(DateSerializer::class) val issueTime: Date?,
     @Serializable(DateSerializer::class) val expiryTime: Date?,
-    val alertBannerText: String?,
+    val bannerText: String?,
     val bannerColour: String?,
     val text: String?,
     @SerialName("special_text") val specialText: List<EcccAlertSpecialText>?,

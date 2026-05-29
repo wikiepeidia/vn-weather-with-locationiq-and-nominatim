@@ -101,7 +101,7 @@
     <string name="precipitation_thunderstorm">Onweersbui</string>
     <string name="openmeteo_weather_text_thunderstorm_with_heavy_hail">Onweersbui met zware hagel</string>
     <string name="common_weather_text_rain_snow_mixed_showers_heavy">Zware regen- en sneeuwbuien</string>
-    <string name="temperature_degree_day_heating">Verhitting dag</string>
+    <string name="temperature_degree_day_heating">Opwarming (dag)</string>
     <string name="temperature_degree_day_cooling">Koeldag</string>
     <string name="precipitation_snow">Sneeuw</string>
     <string name="precipitation_ice">IJzel</string>
@@ -201,7 +201,6 @@
     <string name="setting_weather_source_accu_hours">Uren</string>
     <string name="weather_source_accu_preference_hours_240">240 uur</string>
     <string name="widget_subtitle_data_wind">Wind</string>
-    <string name="notification_update_error">%d update(s) mislukt</string>
     <string name="about_contact">Contact</string>
     <string name="about_matrix">Matrixkamer</string>
     <string name="common_weather_text_clear_sky">Onbewolkt</string>
@@ -652,7 +651,7 @@
     <string name="ephemeris_about_rise">De opkomsttijd is het moment dat de zon of maan volledig boven de horizon verschijnt.</string>
     <string name="ephemeris_about_set">De ondergangstijd is het moment dat de zon of maan volledig onder de horizon verdwijnt.</string>
     <string name="ephemeris_about_dawn">De dageraad is wanneer het eerste zichtbare licht van de dag vóór zonsopgang verschijnt.</string>
-    <string name="ephemeris_about_dusk">De schemering is het donkerste stadium van de schemering voordat het laatste zichtbare licht verdwijnt.</string>
+    <string name="ephemeris_about_dusk">Schemerdonker is het donkerste stadium van de schemering voordat het laatste zichtbare licht verdwijnt.</string>
     <string name="ephemeris_polar_day">Pooldag</string>
     <string name="ephemeris_polar_night">Poolnacht</string>
     <string name="clock">Klok</string>
@@ -718,7 +717,7 @@
     <string name="ephemeris_dusk_at">Schemering om %s</string>
     <string name="daytime_short">Dag</string>
     <string name="nighttime_short">Nacht</string>
-    <string name="nighttime_details">Begint ’s avonds en duurt de volgende dag tot zonsopgang</string>
+    <string name="nighttime_details">Begint ’s avonds en duurt tot de volgende dageraad</string>
     <string name="humidity_about">Over relatieve vochtigheid</string>
     <string name="humidity_about_description">Relatieve vochtigheid, beter bekend als vochtigheid, is het percentage waterdamp dat in de lucht aanwezig is vergeleken met de maximale hoeveelheid die de lucht bij een bepaalde temperatuur kan vasthouden.</string>
     <string name="humidity_from_to_number">%1$s tot %2$s</string>
@@ -812,4 +811,5 @@
     <string name="knmi_weather_text_fog">Mist</string>
     <string name="settings_source_api_key_invalid">De waarde is niet in de verwachte vorm</string>
     <string name="message_please_wait_refresh">Wacht tot de vernieuwing is voltooid</string>
+    <string name="settings_main_background_title">Weergebaseerde achtergrond</string>
 </resources>

@@ -247,7 +247,7 @@
     <string name="weather_source_accu_preference_hours_240">240 saatlik</string>
     <string name="weather_source_accu_preference_days_10">10 günlük</string>
     <string name="location_message_reverse_geocoding_failed">Hava durumu kaynağı eşleşen bir konum bulamadı</string>
-    <string name="location_message_permission_background_missing">Arkaplanda konum erişimi izni yok</string>
+    <string name="location_message_permission_background_missing">Arka planda konum erişimi izni yok</string>
     <string name="widget_multi_city">Birden fazla şehir</string>
     <string name="widget_custom_subtitle_keyword_cv_description">Şu anki görüş mesafesi</string>
     <string name="widget_custom_subtitle_keyword_al_description">Uyarılar</string>
@@ -371,15 +371,15 @@
     <string name="settings_appearance_dark_mode_locations_title">Konuma göre açık/koyu mod</string>
     <string name="settings_main_daily_trends_title">Günlük değişimler</string>
     <string name="settings_main_hourly_trends_title">Saatlik değişimler</string>
-    <string name="settings_modules_summary">Widget\'lar, bildirim widget\'ı, duvar kağıdı, diğer uygulamalarla veri paylaşımı</string>
+    <string name="settings_modules_summary">Widget’lar, bildirim widget’ı, duvar kağıdı, diğer uygulamalarla veri paylaşımı</string>
     <string name="settings_modules_week_icon_mode_title">Haftalık görünümlerde gösterilecek simge</string>
     <string name="settings_modules_section_notification_widget">Bildirim widget’ı</string>
     <string name="settings_modules_notification_temp_icon_switch">Durum çubuğu simgesinde sıcaklığı göster</string>
     <string name="settings_modules_broadcast_send_data_title">%s’e hava durumu bilgisini gönder</string>
     <string name="about_privacy_policy">Gizlilik sözleşmesi</string>
     <string name="settings_color_day_night">Gündüz / Gece</string>
-    <string name="notification_channel_background_services">Arkaplan servisleri</string>
-    <string name="notification_running_in_background">Güncel kalmak için arkaplanda çalışıyor</string>
+    <string name="notification_channel_background_services">Arka plan servisleri</string>
+    <string name="notification_running_in_background">Güncel kalmak için arka planda çalışıyor</string>
     <string name="notification_style_native">Yerel</string>
     <string name="common_weather_text_overcast">Kapalı</string>
     <string name="common_weather_text_rain_snow_mixed_showers_light">Karla karışık hafif sağanak yağış</string>
@@ -461,7 +461,6 @@
     <string name="weather_kind_thunderstorm">Gök gürültülü fırtına</string>
     <string name="settings_notifications_precipitations_title">Yağış bildirimleri</string>
     <string name="settings_notifications_forecast_time_tomorrow_title">Sonraki gün tahmin bildirimi zamanı</string>
-    <string name="notification_update_error">%d güncelleme başarısız oldu</string>
     <string name="notification_updating_weather_data">Hava durumu verisi güncelleniyor (%1$d/%2$d)</string>
     <string name="weather_api_unauthorized_content">Bazı hava durumu kaynakları için kendi API anahtarınızı girmeniz gerekir. Eğer önceden girdiyseniz, API anahtarınızı tekrar kontrol edin.</string>
     <string name="about_contact">İletişim</string>
@@ -680,7 +679,7 @@
     <string name="precipitation_snow_total_night">Gece kar yağışı</string>
     <string name="wind_origin">%s yönünden</string>
     <string name="uv_index_time_to_burn_explanations">Yanmanın tam zamanı rakıma, su veya kar gibi yansıtıcı zeminin varlığına, cilt tipinize ve güneş kremi kullanımına bağlıdır.</string>
-    <string name="air_quality_index_about_description_2">Bu uygulamada kullanılan ölçek, anlamlı kategoriler oluşturmak ve ülkeler arası kirlilik seviyelerini karşılaştırmayı kolaylaştırmak için yerel düzenlemeler yerine Dünya Sağlık Örgütü\'nün önerilerine dayanmaktadır.</string>
+    <string name="air_quality_index_about_description_2">Bu uygulamada kullanılan ölçek, anlamlı kategoriler oluşturmak ve ülkeler arası kirlilik seviyelerini karşılaştırmayı kolaylaştırmak için yerel düzenlemeler yerine Dünya Sağlık Örgütü’nün önerilerine dayanmaktadır.</string>
     <string name="air_quality_index_scale">Hava kalitesi endeksi ölçeği</string>
     <string name="air_quality_index_harmless_exposure">Zararsız maruz kalma</string>
     <string name="air_quality_level_1_harmless_exposure">&gt; 1 yıl</string>
@@ -752,7 +751,7 @@
     <string name="broadcast_source_breezy_weather_update_notifier">%s Konum Güncelleme Bildiricisi</string>
     <string name="action_add_as_location">Konum olarak ekle</string>
     <string name="action_open_in_other_app_no_app">Harita uygulaması bulunamadı</string>
-    <string name="action_configure_item">%s\'yi yapılandırın</string>
+    <string name="action_configure_item">%s’yi yapılandırın</string>
     <string name="action_pull_down_to_refresh">Yenilemek için aşağı çekin</string>
     <string name="action_change">Değiştir</string>
     <string name="action_close_menu">Menüyü kapat</string>
@@ -781,8 +780,10 @@
     <string name="settings_regional_preference">Bölgesel tercih</string>
     <string name="about_update_check_eol">Bu Android sürümü artık desteklenmiyor</string>
     <string name="content_provider_permission_label">Breezy Weather verilerini okuyun</string>
-    <string name="content_provider_permission_description">Breezy Weather\'dan, konumunuzun koordinatları da dahil olmak üzere hava durumu bilgilerini alın (eğer eklediyseniz mevcut konumunuz gibi)</string>
+    <string name="content_provider_permission_description">Breezy Weather’dan, konumunuzun koordinatları da dahil olmak üzere hava durumu bilgilerini alın (eğer eklediyseniz mevcut konumunuz gibi)</string>
     <string name="common_weather_text_mostly_cloudy">Çoğunlukla bulutlu</string>
     <string name="pressure_standard">Standart</string>
     <string name="settings_source_api_key_invalid">Değer beklenen biçimde değil</string>
+    <string name="message_please_wait_refresh">Lütfen yenileme işleminin tamamlanmasını bekleyin</string>
+    <string name="settings_main_background_title">Hava durumuna göre arka plan</string>
 </resources>

@@ -253,7 +253,6 @@
     <string name="weather_source_accu_preference_days_10">10 天</string>
     <string name="weather_source_accu_preference_hours_12">12 小時</string>
     <string name="locations">位置</string>
-    <string name="notification_update_error">%d 更新失敗</string>
     <string name="common_weather_text_snow_grains">雪粒</string>
     <string name="settings_modules_notification_style_title">樣式</string>
     <string name="message_network_unavailable">網路不可用</string>
@@ -863,4 +862,5 @@
     <string name="pressure_standard">標準</string>
     <string name="settings_source_api_key_invalid">值不符合預期的格式</string>
     <string name="message_please_wait_refresh">請等待重新整理完成</string>
+    <string name="settings_main_background_title">天氣為基的背景</string>
 </resources>

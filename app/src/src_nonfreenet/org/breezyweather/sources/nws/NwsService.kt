@@ -424,26 +424,31 @@ class NwsService @Inject constructor(
         if (alerts.isNullOrEmpty()) return null
         // Look for SINGLE line breaks surrounded by letters, numbers, and punctuation.
         val regex = Regex("""([0-9A-Za-z.,]) *\n([0-9A-Za-z])""")
-        return alerts.filter { it.properties != null }.map {
-            val severity = when (it.properties!!.severity?.lowercase()) {
-                "extreme" -> AlertSeverity.EXTREME
-                "severe" -> AlertSeverity.SEVERE
-                "moderate" -> AlertSeverity.MODERATE
-                "minor" -> AlertSeverity.MINOR
-                else -> AlertSeverity.UNKNOWN
+        return alerts
+            .filter {
+                it.properties != null &&
+                    it.properties.status?.contains("test", ignoreCase = true) != true
             }
-            Alert(
-                alertId = it.properties.id,
-                startDate = it.properties.onset,
-                endDate = it.properties.ends ?: it.properties.expires,
-                headline = it.properties.event ?: it.properties.headline,
-                description = it.properties.description?.let { d -> regex.replace(d, "$1 $2") },
-                instruction = it.properties.instruction?.let { d -> regex.replace(d, "$1 $2") },
-                source = it.properties.senderName?.ifEmpty { null } ?: it.properties.sender ?: "NWS",
-                severity = severity,
-                color = getAlertColor(it.properties.event) ?: Alert.colorFromSeverity(severity)
-            )
-        }
+            .map {
+                val severity = when (it.properties!!.severity?.lowercase()) {
+                    "extreme" -> AlertSeverity.EXTREME
+                    "severe" -> AlertSeverity.SEVERE
+                    "moderate" -> AlertSeverity.MODERATE
+                    "minor" -> AlertSeverity.MINOR
+                    else -> AlertSeverity.UNKNOWN
+                }
+                Alert(
+                    alertId = it.properties.id,
+                    startDate = it.properties.onset,
+                    endDate = it.properties.ends ?: it.properties.expires,
+                    headline = it.properties.event ?: it.properties.headline,
+                    description = it.properties.description?.let { d -> regex.replace(d, "$1 $2") },
+                    instruction = it.properties.instruction?.let { d -> regex.replace(d, "$1 $2") },
+                    source = it.properties.senderName?.ifEmpty { null } ?: it.properties.sender ?: "NWS",
+                    severity = severity,
+                    color = getAlertColor(it.properties.event) ?: Alert.colorFromSeverity(severity)
+                )
+            }
     }
 
     private fun getDoubleForecast(
@@ -795,20 +800,25 @@ class NwsService @Inject constructor(
                 (i > 0) && (i < weather.attributes.size - 1) -> {
                     context.getString(org.breezyweather.unit.R.string.locale_separator)
                 }
+
                 else -> context.getString(R.string.nws_weather_text_separator_and)
             }
             when (attr) {
                 "damaging_wind" ->
                     attributes += separator + context.getString(R.string.nws_weather_text_attribute_wind_damaging)
+
                 "dry_thunderstorms" -> attributes += separator + context.getString(R.string.weather_kind_thunder)
                 "flooding" -> attributes += separator + context.getString(R.string.nws_weather_text_attribute_flooding)
                 "gusty_wind" ->
                     attributes += separator + context.getString(R.string.nws_weather_text_attribute_wind_gusty)
+
                 "heavy_rain" -> attributes += separator + context.getString(R.string.common_weather_text_rain_heavy)
                 "large_hail" ->
                     attributes += separator + context.getString(R.string.nws_weather_text_attribute_hail_large)
+
                 "small_hail" ->
                     attributes += separator + context.getString(R.string.nws_weather_text_attribute_hail_small)
+
                 "tornadoes" -> attributes += separator + context.getString(R.string.common_weather_text_tornado)
             }
         }

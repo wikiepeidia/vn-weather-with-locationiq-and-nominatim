@@ -445,7 +445,6 @@
     <string name="common_weather_text_snow_moderate">Mērens sniegs</string>
     <string name="openmeteo_weather_text_depositing_rime_fog">Sarmas miglas nogulsnēšana</string>
     <string name="notification_running_in_background">Darbojas fonā, lai turpinātu atjaunināšanu</string>
-    <string name="notification_update_error">%d atjauninājums(i) neizdevās</string>
     <string name="notification_updating_weather_data">Atjaunina laikapstākļu datus (%1$d/%2$d)</string>
     <string name="notification_style_native">Parasts</string>
     <string name="about_contributors">Līdzstrādnieki</string>

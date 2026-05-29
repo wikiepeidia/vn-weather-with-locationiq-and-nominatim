@@ -477,7 +477,6 @@
     <string name="common_weather_text_rain_snow_mixed_showers_heavy">Campuran hujan dan salju bergerimis lebat</string>
     <string name="weather_api_key_required_missing_content">Untuk menggunakan sumber ini, Anda perlu menyediakan kunci API.</string>
     <string name="settings_location_access_permission_already_granted">Izin sudah diberikan</string>
-    <string name="notification_update_error">%d pembaruan gagal</string>
     <string name="settings_location_access_precise_summaryOn">Diaktifkan. Penyedia jaringan akan digunakan sepanjang waktu dan sebagai prioritas, tetapi GPS dapat digunakan sebagai cadangan.</string>
     <string name="common_weather_text_rain_showers_moderate">Hujan sedang</string>
     <string name="location_search_no_results">%1$s tidak dapat mencari %2$s</string>
@@ -853,4 +852,7 @@
     <string name="content_provider_permission_label">Baca data Breezy Weather</string>
     <string name="content_provider_permission_description">dapatkan informasi cuaca dari Breezy Weather, termasuk koordinat lokasi Anda, seperti lokasi Anda saat ini jika Anda menambahkannya</string>
     <string name="common_weather_text_mostly_cloudy">Sebagian besar berawan</string>
+    <string name="message_please_wait_refresh">Silakan tunggu sampai penyegaran selesai</string>
+    <string name="settings_source_api_key_invalid">Nilai bukan dalam format yang diharapkan</string>
+    <string name="settings_main_background_title">Latar belakang berbasis cuaca</string>
 </resources>

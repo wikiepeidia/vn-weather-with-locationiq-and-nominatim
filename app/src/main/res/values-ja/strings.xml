@@ -390,7 +390,6 @@
     <string name="settings_color_app">アプリの設定に従う</string>
     <string name="weather_api_key_required_missing_title">必要なAPIキーがありません</string>
     <string name="dialog_permissions_notification_title">気象警報を通知</string>
-    <string name="notification_update_error">%d件の更新に失敗しました</string>
     <string name="settings_location_access_permission_already_granted">権限は既に付与されています</string>
     <string name="settings_location_access_switch_summaryOn">許可されています。現在地を場所として追加できます。</string>
     <string name="settings_icon_packs_weather_icon_light">明るいアイコン</string>

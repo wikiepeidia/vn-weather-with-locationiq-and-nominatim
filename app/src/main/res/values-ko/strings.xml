@@ -658,8 +658,8 @@
     <string name="widget_label_hide_header">헤더 숨김</string>
     <string name="widget_label_align_end">오른쪽 정렬</string>
     <string name="widget_custom_subtitle_keyword_caqi_description">현재 대기질 지수</string>
-    <string name="widget_custom_subtitle_keyword_xaqi_description">오늘, 내일, ..., 4일 후 대기질 지수</string>
-    <string name="widget_custom_subtitle_keyword_xpis_description">오늘, 내일, ..., 4일 후 꽃가루 지수 요약</string>
+    <string name="widget_custom_subtitle_keyword_xaqi_description">오늘, 내일, …, 4일 후 대기질 지수</string>
+    <string name="widget_custom_subtitle_keyword_xpis_description">오늘, 내일, …, 4일 후 꽃가루 지수 요약</string>
     <string name="action_add_as_location">위치로 추가</string>
     <string name="label_expanded">펼침</string>
     <string name="label_collapsed">접힘</string>
@@ -717,7 +717,6 @@
     <string name="settings_color_app">앱 따름</string>
     <string name="settings_invalid_syntax">유효하지 않은 문법</string>
     <string name="notification_channel_app_updates">앱 업데이트</string>
-    <string name="notification_update_error">업데이트 %d건 실패</string>
     <string name="notification_precipitation_continuing">강수</string>
     <string name="notification_precipitation_starting">강수 예정</string>
     <string name="notification_precipitation_starting_desc">%s에 강수 시작 예상</string>
@@ -816,4 +815,5 @@
     <string name="widget_custom_subtitle_help_content_description">사용자 지정 부제목 키워드 도움말 표시</string>
     <string name="settings_source_api_key_invalid">값이 예상치 못한 형식입니다</string>
     <string name="message_please_wait_refresh">새로고침이 끝날 때까지 기다려 주세요</string>
+    <string name="settings_main_background_title">날씨 기반 배경</string>
 </resources>

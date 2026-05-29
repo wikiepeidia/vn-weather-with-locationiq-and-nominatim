@@ -301,10 +301,10 @@ class EcccService @Inject constructor(
                 else -> AlertSeverity.UNKNOWN
             }
             Alert(
-                alertId = alert.alertId ?: Objects.hash(alert.alertBannerText, alert.issueTime).toString(),
+                alertId = alert.alertId ?: Objects.hash(alert.bannerText, alert.issueTime).toString(),
                 startDate = alert.issueTime,
                 endDate = alert.expiryTime,
-                headline = alert.alertBannerText,
+                headline = alert.bannerText,
                 description = alert.text,
                 source = alert.specialText?.firstOrNull { it.type == "email" }?.link,
                 severity = severity,

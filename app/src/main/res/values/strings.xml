@@ -833,6 +833,7 @@
     <string name="settings_main_section_options">Options</string>
     <string name="settings_main_threshold_lines_on_charts">Threshold lines on charts</string>
     <string name="settings_main_section_animations">Animations</string>
+    <string name="settings_main_background_title">Weather-based background</string>
     <string name="settings_main_background_animation_title">Background animation</string>
     <string name="settings_main_background_animation_enabled">Enabled</string>
     <string name="settings_main_background_animation_disabled">Disabled</string>
@@ -926,7 +927,6 @@
     <string name="watchdog_notification_title">Background guard</string>
     <string name="notification_running_in_background">Running in background to keep updating</string>
     <string name="notification_updating_weather_data">Updating weather data (%1$d/%2$d)</string>
-    <string name="notification_update_error">%d update(s) failed</string>
     <string name="notification_precipitation_starting">Precipitation soon</string>
     <!-- Example: Expected to start at 09:00 AM -->
     <string name="notification_precipitation_starting_desc">Expected to start at %s</string>

@@ -435,7 +435,6 @@
     <string name="notification_channel_alerts">விழிப்பூட்டல்கள்</string>
     <string name="notification_channel_forecast">முன்னறிவிப்பு</string>
     <string name="notification_updating_weather_data">வானிலை தரவைப் புதுப்பித்தல் (%1$d/%2$d)</string>
-    <string name="notification_update_error">%d புதுப்பிப்பு (கள்) தோல்வியடைந்தது</string>
     <string name="notification_precipitation_starting">மழைப்பொழிவு விரைவில்</string>
     <string name="common_weather_text_snow">பனிபொழிவு</string>
     <string name="common_weather_text_drizzle_moderate">மிதமான தூறல்</string>

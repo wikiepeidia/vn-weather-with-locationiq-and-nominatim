@@ -90,11 +90,11 @@ class WatchdogRestartWorker(
             setShowWhen(false)
             priority = NotificationCompat.PRIORITY_MIN
         }.build()
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             ForegroundInfo(
                 Notifications.ID_WATCHDOG_KEEPALIVE,
                 notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE,
             )
         } else {
             ForegroundInfo(Notifications.ID_WATCHDOG_KEEPALIVE, notification)
