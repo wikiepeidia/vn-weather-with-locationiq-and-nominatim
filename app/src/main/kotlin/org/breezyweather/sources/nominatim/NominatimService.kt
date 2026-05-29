@@ -168,7 +168,6 @@ class NominatimService @Inject constructor(
                 userAgent = BreezyWeather.instance.userAgent,
                 lat = latitude,
                 lon = longitude,
-                zoom = 13,
                 format = "jsonv2",
                 key = null
             ).map { result ->
@@ -185,7 +184,6 @@ class NominatimService @Inject constructor(
                     userAgent = BreezyWeather.instance.userAgent,
                     lat = latitude,
                     lon = longitude,
-                    zoom = 18,
                     format = "json",
                     key = key
                 )
@@ -233,7 +231,6 @@ class NominatimService @Inject constructor(
                 userAgent = BreezyWeather.instance.userAgent,
                 lat = latitude,
                 lon = longitude,
-                zoom = 13,
                 format = "jsonv2",
                 key = null
             ).map { result ->
