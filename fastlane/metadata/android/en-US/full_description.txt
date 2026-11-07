@@ -1,4 +1,4 @@
-Breezy Weather is a feature-rich free and open source Material 3 Expressive weather app with well-though-out visualizations, supporting forecast, real-time weather conditions, nowcasting, air quality, pollen, alerts, from more than 50 weather sources, such as NWS, Met Office UK, Met Éireann, ECCC and Open-Meteo.
+Breezy Weather is a feature-rich free and open source Material 3 Expressive weather app with well-thought-out visualizations, supporting forecast, real-time weather conditions, nowcasting, air quality, pollen, alerts, from more than 50 weather sources, such as NWS, Met Office UK, Met Éireann, ECCC and Open-Meteo.
 
 <b>Features</b>
 
@@ -38,7 +38,6 @@ Optional:
 - Location (ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, ACCESS_BACKGROUND_LOCATION): to show weather in your current location
 - Storage (READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE): helps setting the live weather wallpaper and/or widgets on some devices
 - Tile (EXPAND_STATUS_BAR): allow to launch the app from Quick Settings
-- Specific app language (READ_APP_SPECIFIC_LOCALES): allows to save a specific language for the app and read the value after reboot on some devices
 
 <b>License</b>
 

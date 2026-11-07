@@ -4,6 +4,79 @@
 - [Changelog for v4.x](docs/CHANGELOG_4.x.md)
 
 
+# Version 6.2.3 (not yet released)
+
+**Improvements and fixes**
+- Main screen settings - You can now reset blocks, daily trends, hourly trends to default order
+- Main screen - Forecast charts - Add daily/hourly wind gusts
+- Main screen - Forecast charts - Remove excessive margin at the top of some charts
+- Main screen - Forecast charts - Make threshold lines draw on top of chart instead of behind
+- Main screen - Forecast charts - Accessibility: texts will now take into account system font scale
+- Main screen - Forecast charts - Fix missing Daily Wind tab when there is no precipitation in the whole period
+- Notifications - Dismiss old today/tomorrow/nowcasting notifications if no longer relevant
+- Widget - Clock + Daily (Vertical) - Temperature style - Now opens calendar when tapping on the date
+- Per-app language is now correctly remembered (@zbigniewfr)
+
+**Sources**
+- BMKG - Temporarily disable alert support
+- Cyprus Department of Meteorology - Added as a new source for Cyprus (@sashkent3)
+- Gadgetbridge - Add pressure, cloud cover, and dewpoint (@ThomasKuehne)
+- MET IE - Fix icons sometimes being wrongly shown as thunderstorms
+- MET Norway - Add wind gusts
+- Open-Meteo - Update selectable weather models
+- Pollen Information - Add missing pollens: ash, chestnut, linden, plantain, sorrel
+- SMHI - Add precipitation probability and snow probability
+
+**Technical**
+- Remove support for Android 6
+- Target Android 17
+- Add pollen levels to datasharing lib
+- Remove unused `READ_APP_SPECIFIC_LOCALES` permission
+
+
+# Version 6.2.2 (2026-08-23)
+
+**Improvements and fixes**
+- Main screen - Add precipitation probability to hourly feels like tab
+- Main screen - Make the sun dark instead of bright when the user explicitly asked for dark mode
+
+**Sources**
+- BMKG - Fix refresh errors
+- Met Office (UK) - Fix shifted day sequence in locations with a different timezone than UTC
+- NCEI - Fix parsing error
+
+**Technical**
+- [Breezy Update Notifier] Fix broadcast when the location list is changed from the app
+
+**Translations**
+- Initial translation for Creoles and pidgins (English based) (En Oh)
+- Initial translation for Hawaiian (En Oh)
+- Initial translation for Kannada (Vinay)
+- Initial translation for Urdu (haseebwt)
+- Translations updated
+
+
+# Version 6.2.1 (2026-06-07)
+
+**Improvements and fixes**
+- Cap temperature animation duration to 1 to 2 seconds
+- Ensure pollutant and pollen concentrations are always positive to avoid a rare case of crash when some sources provide negative concentrations
+- Notification widget - Daily - Fix reversed feels like setting
+
+**Security**
+- Enable Arm memory tagging (MTE) asynchronous mode
+
+**Sources**
+- AEMET - Fix current visibility and night wind speed units
+- China - Use a server which is less likely to return invalid data when language is set to Chinese
+- KNMI - Fix duplicate “Today” when migrating from another source
+- KNMI - Fix precipitation probability being 100 times too low
+- Recosanté - Removed source will no longer be available for choice in the source selection screens
+
+**Translations**
+- Translations updated
+
+
 # Version 6.2.0 (2026-05-01)
 
 **New features**

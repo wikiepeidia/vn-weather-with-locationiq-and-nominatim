@@ -48,11 +48,11 @@ import androidx.compose.ui.text.style.TextAlign
 import breezyweather.domain.location.model.Location
 import breezyweather.domain.weather.model.Daily
 import breezyweather.domain.weather.model.Hourly
-import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarkerVisibilityListener
+import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerVisibilityListener
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -76,13 +76,14 @@ import org.breezyweather.domain.weather.model.getFullLabel
 import org.breezyweather.domain.weather.model.getRangeContentDescriptionSummary
 import org.breezyweather.domain.weather.model.getRangeDescriptionSummary
 import org.breezyweather.domain.weather.model.getRangeSummary
-import org.breezyweather.ui.common.charts.BreezyLineChart
-import org.breezyweather.ui.common.charts.TimeTopAxisItemPlacer
+import org.breezyweather.ui.common.charts.compose.BreezyLineChart
+import org.breezyweather.ui.common.charts.compose.TimeTopAxisItemPlacer
 import org.breezyweather.ui.common.widgets.Material3ExpressiveCardListItem
 import org.breezyweather.unit.distance.Distance
 import org.breezyweather.unit.distance.Distance.Companion.meters
 import org.breezyweather.unit.distance.toDistance
 import org.breezyweather.unit.formatting.UnitWidth
+import org.breezyweather.unit.formatting.format
 import java.util.Date
 import kotlin.math.max
 
@@ -95,10 +96,12 @@ fun DetailsVisibility(
     modifier: Modifier = Modifier,
 ) {
     val mappedValues = remember(hourlyList) {
-        hourlyList
-            .filter { it.visibility != null }
-            .associate { it.date.time to it.visibility!! }
-            .toImmutableMap()
+        buildMap(hourlyList.size) {
+            hourlyList.forEach { hourly ->
+                val visibility = hourly.visibility ?: return@forEach
+                put(hourly.date.time, visibility)
+            }
+        }.toImmutableMap()
     }
     var activeItem: Pair<Date, Distance>? by remember { mutableStateOf(null) }
     val markerVisibilityListener = remember {
@@ -301,9 +304,9 @@ private fun VisibilityChart(
 
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    LaunchedEffect(location) {
+    LaunchedEffect(mappedValues) {
         modelProducer.runTransaction {
-            lineSeries {
+            lineModel {
                 series(
                     x = mappedValues.keys,
                     y = mappedValues.values.map { it.toDouble(distanceUnit) }
@@ -336,8 +339,10 @@ private fun VisibilityChart(
                 )
             )
         },
-        topAxisValueFormatter = { _, value, _ ->
-            mappedValues.getOrElse(value.toLong()) { null }?.formatValue(context) ?: "-"
+        topAxisValueFormatter = remember(mappedValues) {
+            { _, value, _ ->
+                mappedValues.getOrElse(value.toLong()) { null }?.formatValue(context) ?: "-"
+            }
         },
         endAxisItemPlacer = remember { VerticalAxis.ItemPlacer.step({ step }) },
         markerVisibilityListener = markerVisibilityListener
@@ -385,21 +390,13 @@ fun VisibilityScale(
                 )
             }
             visibilityScaleThresholds.forEachIndexed { index, startingValue ->
-                val startingValueFormatted = UnitUtils.formatDouble(
-                    context,
-                    startingValue.toDouble(distanceUnit),
-                    distanceUnit.decimals.short
-                )
+                val startingValueFormatted = startingValue.toDouble(distanceUnit)
+                    .format(decimals = distanceUnit.decimals.short, locale = context.currentLocale)
                 val endingValueFormatted = visibilityScaleThresholds.getOrElse(index + 1) { null }
                     ?.let {
                         " – ${
-                            UnitUtils.formatDouble(
-                                context,
-                                it.toDouble(distanceUnit).minus(
-                                    if (distanceUnit.decimals.short == 0) 1.0 else 0.1
-                                ),
-                                distanceUnit.decimals.short
-                            )
+                            it.toDouble(distanceUnit).minus(if (distanceUnit.decimals.short == 0) 1.0 else 0.1)
+                                .format(decimals = distanceUnit.decimals.short, locale = context.currentLocale)
                         }"
                     }
                     ?: "+"

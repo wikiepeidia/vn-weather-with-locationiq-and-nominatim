@@ -24,8 +24,8 @@ configure<ApplicationExtension> {
 
     defaultConfig {
         applicationId = "io.github.wikiepeidia.vnweather"
-        versionCode = 60201
-        versionName = "6.2.1"
+        versionCode = 60203
+        versionName = "6.2.3"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -363,7 +363,7 @@ configure<ApplicationExtension> {
         }
         getByName("freenet") {
             kotlin.directories += "src/src_freenet"
-            res.directories += "src/res_freenet"
+            // res.directories += "src/res_freenet"
             if (Config.isBreezy) {
                 res.directories += "src/res_breezy"
             } else {

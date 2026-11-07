@@ -29,17 +29,18 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import breezyweather.domain.location.model.Location
 import org.breezyweather.BreezyWeather
 import org.breezyweather.R
+import org.breezyweather.common.extensions.currentLocale
 import org.breezyweather.common.extensions.formatMeasure
-import org.breezyweather.common.utils.UnitUtils
 import org.breezyweather.domain.settings.SettingsManager
 import org.breezyweather.domain.weather.model.getTemperatureRangeSummary
 import org.breezyweather.ui.common.widgets.NumberAnimTextView
 import org.breezyweather.ui.main.widgets.TextRelativeClock
 import org.breezyweather.ui.theme.resource.providers.ResourceProvider
 import org.breezyweather.unit.formatting.UnitWidth
+import org.breezyweather.unit.formatting.format
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
 class HeaderViewHolder(parent: ViewGroup) : AbstractMainViewHolder(
     LayoutInflater.from(parent.context).inflate(R.layout.container_main_header, parent, false)
@@ -97,8 +98,10 @@ class HeaderViewHolder(parent: ViewGroup) : AbstractMainViewHolder(
                 mTemperatureFrom = mTemperatureTo
                 mTemperatureTo = it.toDouble(temperatureUnit).roundToInt()
                 mTemperature.isAnimEnabled = itemAnimationEnabled
-                // no longer than 2 seconds.
-                mTemperature.duration = max(2000.0, abs(mTemperatureTo - mTemperatureFrom) * 20.0).toLong()
+                mTemperature.duration = (abs(mTemperatureTo - mTemperatureFrom) * 20.0)
+                    .coerceAtLeast(1000.0) // at least 1 second
+                    .coerceAtMost(2000.0) // no longer than 2 seconds
+                    .milliseconds
                 mTemperatureUnitView.text = temperatureUnit.getNominativeUnit(context)
             } ?: run {
                 mTemperatureContainer.visibility = View.GONE
@@ -153,8 +156,8 @@ class HeaderViewHolder(parent: ViewGroup) : AbstractMainViewHolder(
     override fun onEnterScreen() {
         super.onEnterScreen()
         mTemperature.setNumberString(
-            UnitUtils.formatInt(context, mTemperatureFrom),
-            UnitUtils.formatInt(context, mTemperatureTo)
+            mTemperatureFrom.format(decimals = 0, locale = context.currentLocale),
+            mTemperatureTo.format(decimals = 0, locale = context.currentLocale)
         )
     }
 }

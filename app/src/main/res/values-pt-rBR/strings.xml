@@ -71,7 +71,7 @@
     <string name="hourly_forecast">Previsão horária</string>
     <string name="air_quality">Qualidade do ar</string>
     <string name="pollen">Pólen</string>
-    <string name="ephemeris">Sol e lua</string>
+    <string name="ephemeris">Sol &amp; lua</string>
     <string name="action_next">Avançar</string>
     <string name="action_done">Pronto</string>
     <string name="settings_enabled">Ativado</string>
@@ -692,7 +692,7 @@
     <string name="action_open_in_other_app">Abrir em outro app</string>
     <string name="action_open_in_other_app_description">Abrir esta localização em outro app</string>
     <string name="ephemeris_about">Sobre o nascer e o pôr do sol</string>
-    <string name="ephemeris_about_rise">O horário de quando o sol ou a lua aparece totalmente acima do horizonte.</string>
+    <string name="ephemeris_about_rise">O horário em que o sol ou a lua aparece totalmente acima do horizonte.</string>
     <string name="ephemeris_about_set">O horário de quando o sol ou a lua desaparece totalmente abaixo do horizonte.</string>
     <string name="daily_summary">Resumo diário</string>
     <string name="chart_no_hourly_data">Não há dados horários.</string>
@@ -770,7 +770,7 @@
     <string name="label_expanded">Expandido</string>
     <string name="label_collapsed">Comprimido</string>
     <string name="ephemeris_about_dawn">O amanhecer é quando a primeira luz visível do dia aparece antes do nascer do sol.</string>
-    <string name="ephemeris_about_dusk">O anoitecer é o estágio mais escuro antes que toda luz visível desapareça.</string>
+    <string name="ephemeris_about_dusk">O anoitecer é o estágio mais escuro do crepúsculo antes que toda luz visível desapareça.</string>
     <string name="ephemeris_dawn_at">Amanhecer às %s</string>
     <string name="ephemeris_dusk_at">Anoitecer às %s</string>
     <string name="wind_origin">Do %s</string>
@@ -843,4 +843,6 @@
     <string name="message_please_wait_refresh">Aguarde para concluir o recarregamento</string>
     <string name="settings_source_api_key_invalid">O valor não está no formato esperado</string>
     <string name="settings_main_background_title">Plano de fundo baseado no clima</string>
+    <string name="settings_weather_source_no_longer_exists">%s (não existe mais)</string>
+    <string name="action_reset_to_default">Redefinir para valores padrão</string>
 </resources>

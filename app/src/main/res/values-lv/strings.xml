@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Laikapstākļi VN</string>
     <string name="daily_forecast">Dienu prognoze</string>
-    <string name="hourly_forecast">Stundu prognoze</string>
+    <string name="hourly_forecast">Ik stundu</string>
     <string name="air_quality">Gaisa kvalitāte</string>
     <string name="pollen">Ziedputekšņi</string>
     <string name="ephemeris">Saule un Mēness</string>
@@ -70,7 +70,7 @@
     <string name="ephemeris_sunset_at">Saulriets %s</string>
     <string name="ephemeris_moonrise_at">Mēness lēkts %s</string>
     <string name="ephemeris_moonset_at">Mēness riets %s</string>
-    <string name="nighttime">Nakts</string>
+    <string name="nighttime">Naktī</string>
     <string name="sunshine_duration">Saules stundas</string>
     <string name="pressure">Spiediens</string>
     <string name="visibility">Redzamība</string>
@@ -98,7 +98,7 @@
     <string name="action_back">Atpakaļ</string>
     <string name="action_next">Nākamais</string>
     <string name="action_done">Gatavs</string>
-    <string name="action_delete">Dzēst</string>
+    <string name="action_delete">Izdzēst</string>
     <string name="action_continue">Turpināt</string>
     <string name="action_close">Aizvērt</string>
     <string name="dialog_permissions_location_content">Lai izmantotu šo iespēju, ir nepieciešams nodrošināt lietotnei atļauju piekļūt pašreizējai atrašanās vietai. Tā tiks kopīgota tikai ar atlasītajiem laikapstākļu avotiem. Ja pārdomāji, ir iespēja atcelt darbību un pašrocīgi pievienot noteiktu atrašanās vietu.</string>
@@ -118,9 +118,9 @@
     <string name="widget_label_text_size">Teksta lielums</string>
     <string name="widget_custom_subtitle_keyword_hd_description">Stundu apraksts</string>
     <string name="widget_custom_subtitle_keyword_enter_description">Jaunā rinda</string>
-    <string name="widget_custom_subtitle_keyword_xnt_description">Nakts temperatūra šodien, rīt, …, pēc 4 dienām (°C/°F)</string>
+    <string name="widget_custom_subtitle_keyword_xnt_description">Temperatūra naktī šodien, rīt, …, pēc 4 dienām (°C/°F)</string>
     <string name="widget_custom_subtitle_keyword_xdtd_description">Dienas temperatūra šodien, rīt, …, pēc 4 dienām (°)</string>
-    <string name="widget_custom_subtitle_keyword_xntd_description">Nakts temperatūra šodien, rīt, …, pēc 4 dienām (°)</string>
+    <string name="widget_custom_subtitle_keyword_xntd_description">Temperatūra naktī šodien, rīt, …, pēc 4 dienām (°)</string>
     <string name="widget_custom_subtitle_keyword_xsr_description">Saullēkts šodien, rīt, …, pēc 4 dienām</string>
     <string name="widget_custom_subtitle_keyword_xss_description">Saulriets šodien, rīt, …, pēc 4 dienām</string>
     <string name="widget_custom_subtitle_keyword_xmr_description">Mēness lēkts šodien, rīt, …, pēc 4 dienām</string>
@@ -219,9 +219,9 @@
     <string name="widget_custom_subtitle_keyword_ws_description">Nedēļa (īsa)</string>
     <string name="widget_custom_subtitle_keyword_dd_description">Dienu apraksts</string>
     <string name="widget_custom_subtitle_keyword_xdp_description">Dienas nokrišņi šodien, rīt, …, pēc 4 dienām (%)</string>
-    <string name="widget_custom_subtitle_keyword_xnp_description">Nakts nokrišņi šodien, rīt, …, pēc 4 dienām (%)</string>
+    <string name="widget_custom_subtitle_keyword_xnp_description">Nokrišņi naktī šodien, rīt, …, pēc 4 dienām (%)</string>
     <string name="widget_custom_subtitle_keyword_xdwd_description">Dienas vējš šodien, rīt, …, pēc 4 dienām</string>
-    <string name="widget_custom_subtitle_keyword_xnwd_description">Nakts vējš šodien, rīt, …, pēc 4 dienām</string>
+    <string name="widget_custom_subtitle_keyword_xnwd_description">Vējš naktī šodien, rīt, …, pēc 4 dienām</string>
     <string name="settings_background_updates_battery_optimization_disabled">Akumulatora optimizēšana jau ir atspējota.</string>
     <string name="settings_background_updates_dont_kill_my_app_title">Ražotājiem atbilstošas norādes</string>
     <string name="settings_location_service">Atrašanās vietas pakalpojums</string>
@@ -347,7 +347,7 @@
     <string name="widget_custom_subtitle_keyword_w_description">Nedēļa</string>
     <string name="widget_custom_subtitle_keyword_xdt_description">Dienas temperatūra šodien, rīt, …, pēc 4 dienām (°C/°F)</string>
     <string name="widget_custom_subtitle_keyword_xdw_description">Dienas laikapstākļi šodien, rīt, …, pēc 4 dienām</string>
-    <string name="widget_custom_subtitle_keyword_xnw_description">Nakts laikapstākļi šodien, rīt, …, pēc 4 dienām</string>
+    <string name="widget_custom_subtitle_keyword_xnw_description">Laikapstākļi naktī šodien, rīt, …, pēc 4 dienām</string>
     <string name="widget_style_vertical">Stateniski</string>
     <string name="widget_style_nano">Nano</string>
     <string name="widget_style_pixel">Pikselis</string>
@@ -670,7 +670,7 @@
     <string name="ephemeris_about_dawn">Rītausma ir tad, kad pirms saullēkta parādās pirmā redzamā dienas gaisma.</string>
     <string name="wind_origin">No %s</string>
     <string name="about_update_check_eol">Šī Android versija vairs netiek atbalstīta</string>
-    <string name="nighttime_short">Nakts</string>
+    <string name="nighttime_short">Naktī</string>
     <string name="daytime_short">Diena</string>
     <string name="precipitation_snow_total_night">Sniegs nakts laikā</string>
     <string name="precipitation_snow_total_day">Sniegs dienas laikā</string>
@@ -752,7 +752,7 @@
     <string name="settings_appearance_section_theme">Izskats</string>
     <string name="settings_appearance_dark_mode_locations_day_night">Ņemt vērā dienu/nakti</string>
     <string name="settings_appearance_dark_mode_locations_dark">Vienmēr tumšs, kad lietotnē ir tumšais izskats</string>
-    <string name="message_incompatible_times_content">Maini savu prognožu vai gaisa kvalitātes avotu, lai laiks sakristu!</string>
+    <string name="message_incompatible_times_content">Prognožu vai gaisa kvalitātes avots jāmaina tā, lai laiks sakristu.</string>
     <string name="humidity_from_to_number">%1$s līdz %2$s</string>
     <string name="dew_point_from_to_number">%1$s līdz %2$s</string>
     <string name="cloud_cover_from_to_number">%1$s līdz %2$s</string>
@@ -778,4 +778,8 @@
     <string name="action_pull_down_to_refresh">Pavilkt uz leju, lai atsvaidzinātu</string>
     <string name="pressure_standard">Parasts</string>
     <string name="settings_source_api_key_invalid">Vērtība nav paredzētajā veidolā</string>
+    <string name="message_please_wait_refresh">Lūgums uzgaidīt atsvaidzināšanas pabeigšanos</string>
+    <string name="settings_weather_source_no_longer_exists">%s (vairs nepastāv)</string>
+    <string name="settings_main_background_title">Uz laikapstākļiem balstīts fons</string>
+    <string name="action_reset_to_default">Atiestatīt uz noklusējumu</string>
 </resources>

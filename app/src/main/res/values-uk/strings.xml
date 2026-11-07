@@ -201,7 +201,7 @@
     <string name="action_restart">Перезапустити</string>
     <string name="widget_material_you_forecast">Material You – Прогноз</string>
     <string name="dialog_permissions_location_content">Щоби скористатися цією функцією, вам необхідно надати дозвіл на доступ до вашого поточного місцеперебування. Ці дані будуть передаватися лише обраним джерелам погоди. Якщо ви передумали, можете скасувати процес та додати розташування вручну.</string>
-    <string name="dialog_permissions_location_background_content">Щоб увімкнути оновлення погоди у фоновому режимі для останнього поточного місцеперебуваннч, відомого Android, вам необхідно змінити дозвіл місцеперебування на “Завжди дозволяти”. Якщо цього не зробити, оновлення погоди буде здійснюватися на основі останніх отриманих координат під час використання, які можуть бути застарілими.</string>
+    <string name="dialog_permissions_location_background_content">Щоб увімкнути оновлення погоди у фоновому режимі для поточного місцеперебування, відомого Android, вам необхідно змінити дозвіл місцеперебування на «Завжди дозволяти». Інакше погода буде оновлюватися на основі останніх координат, отриманими під час використання застосунку, які можуть бути застарілими.</string>
     <string name="message_parsing_error_content">Переконайтеся, що ви оновили застосунок до останньої версії. Сервер може бути тимчасово недоступним, у такому випадку, повторіть спробу пізніше. Якщо проблема не зникне, створіть журнал збоїв у налаштуваннях та повідомте про проблему на GitHub.</string>
     <string name="message_source_not_installed_error_title">Джерело більше недоступне</string>
     <string name="widget_material_you_current">Material You – Поточний</string>
@@ -778,4 +778,6 @@
     <string name="settings_source_api_key_invalid">Значення не відповідає очікуваному формату</string>
     <string name="message_please_wait_refresh">Просимо зачекати до завершення оновлення</string>
     <string name="settings_main_background_title">Фон залежно від погоди</string>
+    <string name="settings_weather_source_no_longer_exists">%s (більше не існує)</string>
+    <string name="action_reset_to_default">Скинути до типових</string>
 </resources>

@@ -35,6 +35,7 @@ import org.breezyweather.common.source.LocationSource
 import org.breezyweather.common.source.NonFreeNetSource
 import org.breezyweather.common.source.PollenIndexSource
 import org.breezyweather.common.source.PreferencesParametersSource
+import org.breezyweather.common.source.RemovedSource
 import org.breezyweather.common.source.ReverseGeocodingSource
 import org.breezyweather.common.source.Source
 import org.breezyweather.common.source.TimeZoneSource
@@ -75,6 +76,7 @@ import org.breezyweather.sources.climweb.SmaScService
 import org.breezyweather.sources.climweb.SmaSuService
 import org.breezyweather.sources.climweb.SsmsService
 import org.breezyweather.sources.cwa.CwaService
+import org.breezyweather.sources.cydom.CyDoMService
 import org.breezyweather.sources.debug.DebugService
 import org.breezyweather.sources.dmi.DmiService
 import org.breezyweather.sources.eccc.EcccService
@@ -144,6 +146,7 @@ class SourceManager @Inject constructor(
     brightSkyService: BrightSkyService,
     chinaService: ChinaService,
     cwaService: CwaService,
+    cyDoMService: CyDoMService,
     dccmsService: DccmsService,
     debugService: DebugService,
     dmnNeService: DmnNeService,
@@ -253,6 +256,7 @@ class SourceManager @Inject constructor(
         brightSkyService,
         chinaService,
         cwaService,
+        cyDoMService,
         dccmsService,
         dmiService,
         dmnNeService,
@@ -337,6 +341,7 @@ class SourceManager @Inject constructor(
     fun getLocationSources(): ImmutableList<LocationSource> = sourceList
         .filterIsInstance<LocationSource>()
         .toImmutableList()
+
     fun getLocationSource(id: String): LocationSource? = getLocationSources().firstOrNull { it.id == id }
     fun getLocationSourceOrDefault(id: String): LocationSource = getLocationSource(id)
         ?: getLocationSource(BuildConfig.DEFAULT_LOCATION_SOURCE)!!
@@ -344,11 +349,13 @@ class SourceManager @Inject constructor(
     fun getFeatureSources(): ImmutableList<FeatureSource> = sourceList
         .filterIsInstance<FeatureSource>()
         .toImmutableList()
+
     fun getFeatureSource(id: String): FeatureSource? = getFeatureSources().firstOrNull { it.id == id }
 
     fun getWeatherSources(): ImmutableList<WeatherSource> = sourceList
         .filterIsInstance<WeatherSource>()
         .toImmutableList()
+
     fun getWeatherSource(id: String): WeatherSource? = getWeatherSources().firstOrNull { it.id == id }
 
     // Secondary weather
@@ -360,10 +367,13 @@ class SourceManager @Inject constructor(
     fun getLocationSearchSources(): ImmutableList<LocationSearchSource> = sourceList
         .filterIsInstance<LocationSearchSource>()
         .toImmutableList()
+
     fun getLocationSearchSource(id: String): LocationSearchSource? = getLocationSearchSources()
         .firstOrNull { it.id == id }
+
     fun getLocationSearchSourceOrDefault(id: String): LocationSearchSource = getLocationSearchSource(id)
         ?: getLocationSearchSource(BuildConfig.DEFAULT_LOCATION_SEARCH_SOURCE)!!
+
     fun getConfiguredLocationSearchSources(): ImmutableList<LocationSearchSource> = getLocationSearchSources()
         .filter { it !is ConfigurableSource || it.isConfigured }
         .toImmutableList()
@@ -373,8 +383,10 @@ class SourceManager @Inject constructor(
         .filterIsInstance<ReverseGeocodingSource>()
         .filter { it.supportedFeatures.containsKey(SourceFeature.REVERSE_GEOCODING) }
         .toImmutableList()
+
     fun getReverseGeocodingSource(id: String): ReverseGeocodingSource? = getReverseGeocodingSources()
         .firstOrNull { it.id == id }
+
     fun getReverseGeocodingSourceOrDefault(id: String): ReverseGeocodingSource = getReverseGeocodingSource(id)
         ?: getReverseGeocodingSource(BuildConfig.DEFAULT_GEOCODING_SOURCE)!!
 
@@ -382,6 +394,7 @@ class SourceManager @Inject constructor(
     fun getBroadcastSources(): ImmutableList<BroadcastSource> = sourceList
         .filterIsInstance<BroadcastSource>()
         .toImmutableList()
+
     fun isBroadcastSourcesEnabled(context: Context): Boolean {
         return getBroadcastSources().any {
             (SourceConfigStore(context, it.id).getString("packages", null) ?: "").isNotEmpty()
@@ -441,15 +454,17 @@ class SourceManager @Inject constructor(
             it.id != "naturalearth" && (
                 it.id == sourceException ||
                     (
-                        feature == null ||
-                            (
-                                it.supportedFeatures.containsKey(feature) &&
-                                    (
-                                        location == null ||
-                                            (location.isCurrentPosition && !location.isUsable) ||
-                                            it.isFeatureSupportedForLocation(location, feature)
-                                        )
-                                )
+                        it !is RemovedSource && (
+                            feature == null ||
+                                (
+                                    it.supportedFeatures.containsKey(feature) &&
+                                        (
+                                            location == null ||
+                                                (location.isCurrentPosition && !location.isUsable) ||
+                                                it.isFeatureSupportedForLocation(location, feature)
+                                            )
+                                    )
+                            )
                         )
                 )
         }.toImmutableList()
@@ -463,7 +478,8 @@ class SourceManager @Inject constructor(
     ): FeatureSource? {
         return getSupportedFeatureSources(feature, location)
             .filter {
-                it.isFeatureSupportedForLocation(location, feature) &&
+                it !is RemovedSource &&
+                    it.isFeatureSupportedForLocation(location, feature) &&
                     it.getFeaturePriorityForLocation(location, feature) > PRIORITY_NONE &&
                     (it !is ConfigurableSource || (it.isConfigured && !it.isRestricted)) &&
                     (BuildConfig.FLAVOR != "freenet" || it !is NonFreeNetSource)
@@ -494,11 +510,13 @@ class SourceManager @Inject constructor(
             } else {
                 null
             }
+
             SourceFeature.POLLEN -> getWeatherSource("openmeteo")?.let {
                 if (it.isFeatureSupportedForLocation(location, feature)) it else null
             } ?: getWeatherSource("accu")?.takeIf {
                 it.isFeatureSupportedForLocation(location, feature) && BuildConfig.FLAVOR != "freenet"
             }
+
             SourceFeature.ALERT -> if (BuildConfig.FLAVOR != "freenet") getWeatherSource("accu") else null
             SourceFeature.NORMALS -> if (!location.countryCode.equals("CN", ignoreCase = true) &&
                 BuildConfig.FLAVOR != "freenet"
@@ -507,10 +525,12 @@ class SourceManager @Inject constructor(
             } else {
                 null
             }
+
             SourceFeature.REVERSE_GEOCODING -> getReverseGeocodingSource("nominatim")
             else -> getWeatherSource("openmeteo")
         }
     }
+
     fun getBestSourceForFeatureOrDefault(
         location: Location,
         feature: SourceFeature,

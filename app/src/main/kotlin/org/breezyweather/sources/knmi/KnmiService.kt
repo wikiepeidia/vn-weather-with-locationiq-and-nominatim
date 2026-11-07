@@ -45,6 +45,7 @@ import org.breezyweather.common.extensions.currentLocale
 import org.breezyweather.common.extensions.getCountryName
 import org.breezyweather.common.extensions.getFormattedDate
 import org.breezyweather.common.extensions.getIsoFormattedDate
+import org.breezyweather.common.extensions.toCalendarWithTimeZone
 import org.breezyweather.common.preference.EditTextPreference
 import org.breezyweather.common.preference.Preference
 import org.breezyweather.common.source.ConfigurableSource
@@ -56,12 +57,13 @@ import org.breezyweather.domain.settings.SourceConfigStore
 import org.breezyweather.sources.knmi.json.KnmiDailyWeatherForecast
 import org.breezyweather.sources.knmi.json.KnmiDailyWeatherGraph
 import org.breezyweather.sources.knmi.json.KnmiHourlyWeatherForecast
+import org.breezyweather.sources.knmi.json.KnmiSunshine
 import org.breezyweather.sources.knmi.json.KnmiUvIndex
 import org.breezyweather.sources.knmi.json.KnmiWeather
 import org.breezyweather.sources.knmi.json.KnmiWeatherDetail
 import org.breezyweather.sources.knmi.json.KnmiWeatherSnapshot
 import org.breezyweather.unit.precipitation.Precipitation.Companion.millimeters
-import org.breezyweather.unit.ratio.Ratio.Companion.percent
+import org.breezyweather.unit.ratio.Ratio.Companion.fraction
 import org.breezyweather.unit.speed.Speed.Companion.kilometersPerHour
 import org.breezyweather.unit.temperature.Temperature.Companion.celsius
 import retrofit2.Retrofit
@@ -69,6 +71,7 @@ import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Named
+import kotlin.time.Duration.Companion.hours
 
 class KnmiService @Inject constructor(
     @ApplicationContext context: Context,
@@ -191,7 +194,15 @@ class KnmiService @Inject constructor(
         ) { /*alerts, */weather, weatherDetail, fourteenDayForecast, weatherSnapshot ->
             WeatherWrapper(
                 dailyForecast = if (SourceFeature.FORECAST in requestedFeatures) {
-                    getDailyForecast(context, weather.daily, fourteenDayForecast.daily, weather.uvIndex)
+                    getDailyForecast(
+                        context,
+                        location,
+                        weather.daily,
+                        fourteenDayForecast.daily,
+                        weather.uvIndex,
+                        // Only available with normals, not worth an additional call otherwise
+                        weatherDetail.sunshine
+                    )
                 } else {
                     null
                 },
@@ -299,64 +310,68 @@ class KnmiService @Inject constructor(
 
     private fun getDailyForecast(
         context: Context,
+        location: Location,
         dailyWeatherForecast: KnmiDailyWeatherForecast?,
         dailyWeatherGraph: KnmiDailyWeatherGraph?,
         todayUv: KnmiUvIndex?,
+        sunshine: KnmiSunshine?,
     ): List<DailyWrapper>? {
-        val numDays = dailyWeatherGraph?.temperature?.dates?.size ?: dailyWeatherForecast?.forecast?.size ?: return null
+        val numDays = dailyWeatherGraph?.temperature?.dates?.size
+            ?: dailyWeatherForecast?.forecast?.size
+            ?: return null
 
         val dailyList: MutableList<DailyWrapper> = ArrayList(numDays)
         for (i in 0 until numDays) {
-            val date = dailyWeatherGraph?.temperature?.dates?.get(i)
+            val midnightUtc = dailyWeatherGraph?.temperature?.dates?.get(i)
                 ?: dailyWeatherForecast?.forecast?.get(i)?.date
                 ?: continue // date is required so fail, really should not happen
+
+            val midnightLocalTime = midnightUtc
+                .toCalendarWithTimeZone(location.timeZone)
+                .apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                }.time
 
             val temperatureDay = dailyWeatherGraph?.temperature?.maxTemperatures?.get(i)?.celsius
             // use next day's minimum temp for night
             val temperatureNight = dailyWeatherGraph?.temperature?.minTemperatures?.getOrNull(i + 1)?.celsius
-            val precipitation = dailyWeatherGraph?.precipitation?.amounts?.get(i)?.millimeters
-            val todayForecast = dailyWeatherForecast?.forecast?.getOrNull(i)
-            val precipitationChance = if (todayForecast?.date == date) {
-                todayForecast.precipitation?.chance?.percent
-            } else {
-                null
-            }
+            val theDayForecast = dailyWeatherForecast?.forecast?.getOrNull(i)
 
-            val weatherCode = if (todayForecast?.date == date) {
-                getWeatherCode(todayForecast.weatherType)
+            val weatherCode = if (theDayForecast?.date == midnightUtc) {
+                getWeatherCode(theDayForecast.weatherType)
             } else {
                 null
             }
-            val weatherText = if (todayForecast?.date == date) {
-                getWeatherText(context, todayForecast.weatherType)
+            val weatherText = if (theDayForecast?.date == midnightUtc) {
+                getWeatherText(context, theDayForecast.weatherType)
             } else {
                 null
             }
 
             dailyList.add(
                 DailyWrapper(
-                    date = date,
+                    date = midnightLocalTime,
                     day = HalfDayWrapper(
                         weatherCode = weatherCode,
                         weatherText = weatherText,
                         temperature = TemperatureWrapper(
                             temperature = temperatureDay
-                        ),
-                        precipitation = Precipitation(
-                            total = precipitation
-                        ),
-                        precipitationProbability = PrecipitationProbability(
-                            total = precipitationChance
                         )
                     ),
                     night = HalfDayWrapper(
-                        // weatherCode = weatherCode,
+                        weatherCode = weatherCode,
+                        weatherText = weatherText,
                         temperature = TemperatureWrapper(
                             temperature = temperatureNight
                         )
                     ),
                     uV = if (i == 0) { // put the current UV day value into the first day
                         UV(index = todayUv?.value?.toDouble())
+                    } else {
+                        null
+                    },
+                    sunshineDuration = if (i == 0) {
+                        sunshine?.hours?.hours
                     } else {
                         null
                     }
@@ -386,12 +401,10 @@ class KnmiService @Inject constructor(
                     total = it.precipitation?.amount?.millimeters
                 ),
                 precipitationProbability = PrecipitationProbability(
-                    total = it.precipitation?.chance?.percent
+                    total = it.precipitation?.chance?.fraction
                 ),
                 wind = Wind(
                     degree = it.wind?.degree,
-                    // the API also gives beaufort wind speeds, but use km/h instead for more precision.
-                    // The app will convert automatically if the user requests those units.
                     speed = it.wind?.speed?.kilometersPerHour,
                     gusts = it.wind?.gusts?.kilometersPerHour
                 )

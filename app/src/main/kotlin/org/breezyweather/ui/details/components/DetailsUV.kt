@@ -52,11 +52,11 @@ import breezyweather.domain.location.model.Location
 import breezyweather.domain.weather.model.Daily
 import breezyweather.domain.weather.model.Hourly
 import breezyweather.domain.weather.model.UV
-import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarkerVisibilityListener
+import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerVisibilityListener
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -64,17 +64,21 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import org.breezyweather.R
+import org.breezyweather.common.extensions.currentLocale
 import org.breezyweather.common.extensions.getColorResource
 import org.breezyweather.common.extensions.getFormattedTime
 import org.breezyweather.common.extensions.is12Hour
 import org.breezyweather.common.extensions.toDate
 import org.breezyweather.common.options.appearance.DetailScreen
 import org.breezyweather.common.utils.UnitUtils
+import org.breezyweather.domain.weather.model.getConcentration
+import org.breezyweather.domain.weather.model.getIndex
 import org.breezyweather.domain.weather.model.getLevel
 import org.breezyweather.domain.weather.model.getUVColor
-import org.breezyweather.ui.common.charts.BreezyLineChart
-import org.breezyweather.ui.common.charts.TimeTopAxisItemPlacer
+import org.breezyweather.ui.common.charts.compose.BreezyLineChart
+import org.breezyweather.ui.common.charts.compose.TimeTopAxisItemPlacer
 import org.breezyweather.ui.common.widgets.Material3ExpressiveCardListItem
+import org.breezyweather.unit.formatting.format
 import java.util.Date
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -88,10 +92,14 @@ fun DetailsUV(
     modifier: Modifier = Modifier,
 ) {
     val mappedValues = remember(hourlyList) {
-        hourlyList
-            .filter { it.uV?.isValid == true }
-            .associate { it.date.time to it.uV!! }
-            .toImmutableMap()
+        buildMap(hourlyList.size) {
+            hourlyList.forEach { hourly ->
+                val uV = hourly.uV ?: return@forEach
+                if (uV.isValid) {
+                    put(hourly.date.time, uV)
+                }
+            }
+        }.toImmutableMap()
     }
     var activeItem: Pair<Date, UV>? by remember { mutableStateOf(null) }
     val markerVisibilityListener = remember {
@@ -217,7 +225,7 @@ private fun UVItem(
             TextFixedHeight(
                 text = buildAnnotatedString {
                     uV?.index?.let {
-                        append(UnitUtils.formatDouble(context, it, 1))
+                        append(it.format(decimals = 1, locale = context.currentLocale))
                         append(" ")
                     }
                     uV?.getLevel(context)?.let {
@@ -256,9 +264,9 @@ private fun UVChart(
 
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    LaunchedEffect(location) {
+    LaunchedEffect(mappedValues) {
         modelProducer.runTransaction {
-            lineSeries {
+            lineModel {
                 series(
                     x = mappedValues.keys,
                     y = mappedValues.values.map { it.index ?: 0 }
@@ -275,7 +283,9 @@ private fun UVChart(
         topAxisItemPlacer = remember(mappedValues) {
             TimeTopAxisItemPlacer(mappedValues.keys.toImmutableList())
         },
-        endAxisValueFormatter = { _, value, _ -> UnitUtils.formatInt(context, value.roundToInt()) },
+        endAxisValueFormatter = { _, value, _ ->
+            value.roundToInt().format(decimals = 0, locale = context.currentLocale)
+        },
         colors = remember {
             persistentListOf(
                 persistentMapOf(
@@ -289,10 +299,12 @@ private fun UVChart(
                 )
             )
         },
-        topAxisValueFormatter = { _, value, _ ->
-            mappedValues.getOrElse(value.toLong()) { null }?.index?.roundToInt()
-                ?.let { UnitUtils.formatInt(context, it) }
-                ?: "-"
+        topAxisValueFormatter = remember(mappedValues) {
+            { _, value, _ ->
+                mappedValues.getOrElse(value.toLong()) { null }?.index?.roundToInt()
+                    ?.format(decimals = 0, locale = context.currentLocale)
+                    ?: "-"
+            }
         },
         trendHorizontalLines = persistentMapOf(
             UV.UV_INDEX_MIDDLE to context.getString(R.string.uv_alert_level)
@@ -339,7 +351,7 @@ fun UVScale(
             }
             UV.uvThresholds.forEachIndexed { index, startingValue ->
                 val endingValue = UV.uvThresholds.getOrElse(index + 1) { null }
-                    ?.let { " – ${UnitUtils.formatInt(context, it - 1)}" }
+                    ?.let { " – ${(it - 1).format(decimals = 0, locale = context.currentLocale)}" }
                     ?: "+"
                 val uv = UV(index = startingValue.toDouble())
                 Row(
@@ -366,7 +378,7 @@ fun UVScale(
                         )
                     }
                     Text(
-                        "${UnitUtils.formatInt(context, startingValue)}$endingValue",
+                        "${startingValue.format(decimals = 0, locale = context.currentLocale)}$endingValue",
                         textAlign = TextAlign.End,
                         modifier = Modifier.weight(1f)
                     )

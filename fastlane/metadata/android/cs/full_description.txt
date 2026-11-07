@@ -1,4 +1,4 @@
-Breezy Weather je bezplatná open-source aplikace pro předpověď počasí s bohatou nabídkou funkcí a designem Material 3 Expressive. Nabízí propracované vizualizace a podporuje předpověď, aktuální počasí v reálném čase, nowcasting, kvalitu ovzduší, pylové zpravodajství a výstrahy z více než 50 zdrojů, jako jsou Open-Meteo.
+Breezy Weather je bezplatná open-source aplikace pro předpověď počasí s bohatou nabídkou funkcí a designem Material 3 Expressive. Nabízí propracované vizualizace a podporuje předpověď, aktuální počasí v reálném čase, nowcasting, kvalitu ovzduší, pylové zpravodajství a výstrahy z více než 50 zdrojů, jako jsou AccuWeather, OpenWeather, Pirate Weather či Open-Meteo.
 
 <b>Funkce</b>
 
@@ -38,7 +38,6 @@ Volitelné:
 - Poloha (ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, ACCESS_BACKGROUND_LOCATION): pro zobrazení počasí ve vaší aktuální poloze
 - Úložiště (READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE): pomáhá nastavit živou tapetu a/nebo widgety na některých zařízeních
 - Dlaždice (EXPAND_STATUS_BAR): umožňuje spuštění aplikace z Rychlých nastavení
-- Specifický jazyk aplikace (READ_APP_SPECIFIC_LOCALES): umožňuje uložit specifický jazyk aplikace a přečíst hodnotu po restartu na některých zařízeních
 
 <b>Licence</b>
 

@@ -71,10 +71,10 @@ import breezyweather.domain.location.model.Location
 import breezyweather.domain.weather.model.AirQuality
 import breezyweather.domain.weather.model.Daily
 import breezyweather.domain.weather.model.Hourly
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarker
-import com.patrykandpatrick.vico.core.cartesian.marker.CartesianMarkerVisibilityListener
+import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerVisibilityListener
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -97,16 +97,26 @@ import org.breezyweather.domain.weather.model.getConcentration
 import org.breezyweather.domain.weather.model.getDescription
 import org.breezyweather.domain.weather.model.getIndex
 import org.breezyweather.domain.weather.model.getName
-import org.breezyweather.ui.common.charts.BreezyLineChart
-import org.breezyweather.ui.common.charts.SpecificVerticalAxisItemPlacer
-import org.breezyweather.ui.common.charts.TimeTopAxisItemPlacer
+import org.breezyweather.ui.common.charts.compose.BreezyLineChart
+import org.breezyweather.ui.common.charts.compose.SpecificVerticalAxisItemPlacer
+import org.breezyweather.ui.common.charts.compose.TimeTopAxisItemPlacer
 import org.breezyweather.ui.common.widgets.Material3ExpressiveCardListItem
 import org.breezyweather.unit.formatting.UnitWidth
+import org.breezyweather.unit.formatting.format
 import java.util.Date
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-class AqiItem(
+private val PRIMARY_DETAIL_POLLUTANTS = persistentListOf(
+    PollutantIndex.PM25,
+    PollutantIndex.PM10,
+    PollutantIndex.O3,
+    PollutantIndex.NO2
+)
+
+private val SECONDARY_DETAIL_POLLUTANTS = persistentListOf(PollutantIndex.SO2, PollutantIndex.CO)
+
+data class AqiItem(
     val pollutantType: PollutantIndex,
     @field:ColorInt val color: Int,
     val progress: Float,
@@ -129,14 +139,16 @@ fun DetailsAirQuality(
 ) {
     val context = LocalContext.current
     val mappedValues = remember(hourlyList, selectedPollutant) {
-        hourlyList
-            .filter { hourly ->
-                selectedPollutant?.let {
-                    hourly.airQuality?.getConcentration(it) != null
-                } ?: (hourly.airQuality?.isIndexValid == true)
+        buildMap(hourlyList.size) {
+            hourlyList.forEach { hourly ->
+                val airQuality = hourly.airQuality ?: return@forEach
+                val isValid = selectedPollutant?.let { airQuality.getConcentration(it) != null }
+                    ?: airQuality.isIndexValid
+                if (isValid) {
+                    put(hourly.date.time, airQuality)
+                }
             }
-            .associate { it.date.time to it.airQuality!! }
-            .toImmutableMap()
+        }.toImmutableMap()
     }
     var activeItem: Pair<Date, AirQuality>? by remember { mutableStateOf(null) }
     val markerVisibilityListener = remember {
@@ -170,7 +182,7 @@ fun DetailsAirQuality(
         buildList {
             selectedAirQuality?.let { airQuality ->
                 // We use air quality index for the progress bar instead of concentration for more realistic bar
-                listOf(PollutantIndex.PM25, PollutantIndex.PM10, PollutantIndex.O3, PollutantIndex.NO2)
+                PRIMARY_DETAIL_POLLUTANTS
                     .forEach { pollutantIndex ->
                         airQuality.getConcentration(pollutantIndex)?.let {
                             add(
@@ -189,7 +201,7 @@ fun DetailsAirQuality(
                             )
                         }
                     }
-                listOf(PollutantIndex.SO2, PollutantIndex.CO)
+                SECONDARY_DETAIL_POLLUTANTS
                     .forEach { pollutantIndex ->
                         (airQuality.getConcentration(pollutantIndex) ?: 0.0).let {
                             if (it > 0) {
@@ -231,8 +243,7 @@ fun DetailsAirQuality(
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.normal_margin)))
         }
         if (mappedValues.size >= DetailScreen.CHART_MIN_COUNT) {
-            // Force recomposition when switching charts
-            item(key = "chart-$selectedPollutant") {
+            item {
                 AirQualityChart(location, selectedPollutant, mappedValues, daily, markerVisibilityListener)
             }
         } else {
@@ -402,7 +413,7 @@ private fun AirQualityItem(
                 text = buildAnnotatedString {
                     if (selectedPollutant == null) {
                         airQuality?.getIndex()?.let {
-                            append(UnitUtils.formatInt(context, it))
+                            append(it.format(decimals = 0, locale = context.currentLocale))
                             append(" ")
                         }
                     } else {
@@ -460,9 +471,9 @@ private fun AirQualityChart(
 
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    LaunchedEffect(location) {
+    LaunchedEffect(mappedValues, selectedPollutant) {
         modelProducer.runTransaction {
-            lineSeries {
+            lineModel {
                 series(
                     x = mappedValues.keys,
                     y = mappedValues.values.map {
@@ -477,6 +488,10 @@ private fun AirQualityChart(
         }
     }
 
+    val reversedLevelColors = remember {
+        resources.getIntArray(PollutantIndex.colorsArrayId).reversed().map { Color(it) }
+    }
+
     BreezyLineChart(
         location = location,
         modelProducer = modelProducer,
@@ -488,35 +503,45 @@ private fun AirQualityChart(
         endAxisValueFormatter = remember(selectedPollutant) {
             { _, value, _ ->
                 if (selectedPollutant == null) {
-                    UnitUtils.formatInt(context, value.roundToInt())
+                    value.roundToInt().format(
+                        decimals = 0,
+                        locale = context.currentLocale
+                    )
                 } else {
                     PollutantIndex.getUnit(selectedPollutant).formatMeasure(context, value)
                 }
             }
         },
-        colors = remember(selectedPollutant) {
+        colors = remember(selectedPollutant, reversedLevelColors) {
             persistentListOf(
-                ((selectedPollutant?.thresholds ?: PollutantIndex.aqiThresholds).reversed().map { it.toFloat() }).zip(
-                    resources.getIntArray(PollutantIndex.colorsArrayId).reversed().map { Color(it) }
-                ).toMap().toImmutableMap()
+                (selectedPollutant?.thresholds ?: PollutantIndex.aqiThresholds)
+                    .reversed()
+                    .map { it.toFloat() }
+                    .zip(reversedLevelColors)
+                    .toMap()
+                    .toImmutableMap()
             )
         },
-        trendHorizontalLines = persistentMapOf(
-            (selectedPollutant?.let { it.thresholds[3] } ?: PollutantIndex.aqiThresholds[3]).toDouble() to
-                resources.getStringArray(R.array.air_quality_levels)[3]
-        ),
-        topAxisValueFormatter = { _, value, _ ->
-            mappedValues.getOrElse(value.toLong()) { null }
-                ?.let {
-                    UnitUtils.formatInt(
-                        context,
+        trendHorizontalLines = remember(selectedPollutant) {
+            persistentMapOf(
+                (selectedPollutant?.let { it.thresholds[3] } ?: PollutantIndex.aqiThresholds[3]).toDouble() to
+                    resources.getStringArray(R.array.air_quality_levels)[3]
+            )
+        },
+        topAxisValueFormatter = remember(mappedValues, selectedPollutant) {
+            { _, value, _ ->
+                mappedValues.getOrElse(value.toLong()) { null }
+                    ?.let {
                         if (selectedPollutant == null) {
                             it.getIndex()!!
                         } else {
                             it.getConcentration(selectedPollutant)!!.roundToInt()
-                        }
-                    )
-                } ?: "-"
+                        }.format(
+                            decimals = 0,
+                            locale = context.currentLocale
+                        )
+                    } ?: "-"
+            }
         },
         endAxisItemPlacer = remember(selectedPollutant) {
             SpecificVerticalAxisItemPlacer(
@@ -773,7 +798,7 @@ fun AirQualityScale(
                 }
                 val endingValue = (selectedPollutant?.thresholds ?: PollutantIndex.aqiThresholds)
                     .getOrElse(index + 1) { null }
-                    ?.let { " – ${UnitUtils.formatInt(context, it - 1)}" }
+                    ?.let { " – ${(it - 1).format(decimals = 0, locale = context.currentLocale)}" }
                     ?: "+"
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -803,7 +828,7 @@ fun AirQualityScale(
                         modifier = Modifier.weight(1.5f)
                     )
                     Text(
-                        text = "${UnitUtils.formatInt(context, startingValue)}$endingValue",
+                        text = "${startingValue.format(decimals = 0, locale = context.currentLocale)}$endingValue",
                         textAlign = TextAlign.End,
                         modifier = Modifier.weight(1.5f)
                     )
