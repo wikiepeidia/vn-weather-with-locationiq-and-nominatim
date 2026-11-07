@@ -1,103 +1,123 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-03-23
-
-## Language & Formatting
-
-**Primary Language:** Kotlin (100% of app code — Java interop only via libraries)
-
-**Formatting:**
-
-- Tool: Not detected (no `.editorconfig`, no `ktlint` or `detekt` config at root); follow existing indentation style
-- Indentation: 4 spaces
-- Line length: ~120 chars (lines wrap in terminal display but no enforced limit found)
-
-**Linting:**
-
-- No `.detekt` or `ktlint` config found; code style is enforced by convention and code review only
-
----
-
-## File Header
-
-Every source file begins with an LGPL v3 license header block comment. This is mandatory:
-
-```kotlin
-/*
- * This file is part of Breezy Weather.
- *
- * Breezy Weather is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation, version 3 of the License.
- * ...
- */
-```
-
----
+**Analysis Date:** 2026-05-29
 
 ## Naming Patterns
 
 **Files:**
+- Kotlin source files: `PascalCase.kt` — one top-level class/interface per file, name matches class
+  - Examples: `NominatimService.kt`, `NominatimApi.kt`, `NominatimAddress.kt`
+- JSON model files: grouped under a `json/` subpackage within each source module
+  - `app/src/main/kotlin/org/breezyweather/sources/nominatim/json/NominatimAddress.kt`
+  - `app/src/main/kotlin/org/breezyweather/sources/nominatim/json/NominatimLocationResult.kt`
+- Test files: `<Subject>Test.kt` placed in a mirror package under the test source set
+  - Upstream tests live in `app/src/test/kotlin/`
+  - Custom fork tests placed in `app/src/test/java/` (valid Kotlin; different source root for fork isolation)
 
-- Classes: PascalCase filename matching the class name (`NominatimService.kt`, `MainActivityViewModel.kt`)
-- Interfaces: PascalCase, named by capability (`WeatherSource`, `LocationSearchSource`, `ReverseGeocodingSource`, `ConfigurableSource`)
-- API interfaces: `<ServiceName>Api.kt` (e.g., `NominatimApi.kt`, `BrightSkyApi.kt`)
-- JSON models: `<ServiceName>Address.kt`, `<ServiceName>LocationResult.kt` under `json/` subdirectory
-- DI modules: `<Area>Module.kt` (e.g., `HttpModule.kt`, `DbModule.kt`, `RxModule.kt`)
+**Classes:**
+- `PascalCase` for all classes, interfaces, and objects
+- Service classes implement interfaces and carry a `Source` suffix: `NominatimService`, `HttpSource`
+- Enum entries: `SCREAMING_SNAKE_CASE` — e.g., `LocationIqKeyState.MISSING`, `MALFORMED`, `VALID`
+- Companion object enums: `internal enum class` inside the companion block of the owning class
 
-**Functions:**
+**Functions and methods:**
+- `camelCase` for regular functions: `isLocationIqKey`, `classifyLocationIqKeyState`, `normalizeLocationIqBaseUrl`
+- Backtick-delimited sentence-style names for test functions (JUnit 5 display-name convention):
+  ```kotlin
+  fun `isLocationIqKey - pk prefix is accepted`()
+  fun `pickBestVietnamSubProvincePart - dirty-only list returns null`()
+  ```
+- Composable functions: `ktlint_function_naming_ignore_when_annotated_with = Composable` permits
+  PascalCase without a ktlint warning
 
-- camelCase
-- Suspend functions follow same naming as regular functions
-- Observable-returning functions: `requestWeather(...)`, `requestLocationSearch(...)`, `requestNearestLocation(...)`
-- Private helpers: descriptive camelCase (e.g., `pickBestVietnamSubProvincePart`, `getNonAmbiguousCountryCode`, `isLocationIqKey`)
-
-**Variables:**
-
-- camelCase
-- Private backing properties: underscore-prefixed `_uiState` exposed as public `val uiState`
-- Private API field: `mApi` (m-prefix for lazily-initialized API client)
-- Constants: `SCREAMING_SNAKE_CASE` in `companion object`
+**Variables and properties:**
+- `camelCase` for local variables and instance properties
+- `SCREAMING_SNAKE_CASE` for `const val` and `private const val` in companion objects:
+  ```kotlin
+  private const val NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/"
+  private const val LOCATIONIQ_BASE_URL = "https://eu1.locationiq.com/v1/"
+  private const val LOCATIONIQ_BASE_URL_PREF_KEY = "locationiq_base_url"
+  ```
+- `val` preferred over `var`; `var` used only for config-backed mutable properties with explicit getter/setter
 
 **Types:**
+- `PascalCase` for all type names
+- Data classes for JSON models: `NominatimAddress`, `NominatimLocationResult`
+- `@SerialName("snake_case_key")` when a JSON key differs from the Kotlin property name:
+  ```kotlin
+  @SerialName("country_code") val countryCode: String?
+  @SerialName("ISO3166-2-lvl4") val isoLvl4: String?
+  @SerialName("place_id") val placeId: Int?
+  ```
 
-- Interfaces: PascalCase, prefixed with `I` is NOT used; name describes the capability
-- Data classes (JSON): PascalCase with `@Serializable`
+## Code Style
 
----
+**Formatter:** Spotless with a ktlint backend.
+
+**Configuration files:**
+- `buildSrc/src/main/kotlin/breezy.code.lint.gradle.kts` — applies `com.diffplug.spotless` plugin
+  to all modules; targets `**/*.kt`, `**/*.kts`, `**/*.xml`
+- `.editorconfig` at project root — authoritative settings for both editors and ktlint
+
+**Key settings (from `.editorconfig`):**
+| Setting | Value |
+|---------|-------|
+| Indent — Kotlin (`*.kt`, `*.kts`) | 4 spaces |
+| Indent — XML / SQL | 4 spaces |
+| Indent — all other files | 2 spaces |
+| Max line length — Kotlin | 120 characters |
+| Trailing commas in declarations | Allowed |
+| Trailing commas on call sites | Not allowed |
+| Star imports | Disabled (`count = 2147483647`) |
+| Code style | `intellij_idea` |
+| Final newline | Required |
+| Trailing whitespace | Trimmed |
+
+**Disabled ktlint rules:**
+- `class-signature`, `comment-wrapping`, `discouraged-comment-location`
+- `function-expression-body`, `function-signature`
+- `type-argument-comment`, `type-parameter-comment`
+- `blank-line-between-when-conditions`
+
+**Enforcement commands:**
+```bash
+./gradlew spotlessCheck   # fails CI if any file is unformatted
+./gradlew spotlessApply   # auto-format in place
+```
 
 ## Import Organization
 
-1. `android.*` / `androidx.*`
-2. `breezyweather.domain.*` / `breezyweather.data.*` (domain/data modules)
-3. Third-party libraries (`dagger.*`, `io.reactivex.*`, `kotlinx.*`, `retrofit2.*`, `javax.inject.*`)
-4. Project-local `org.breezyweather.*`
-5. `java.*` / `kotlin.*`
+**Order (enforced by ktlint `intellij_idea` style):**
+1. `android.*` imports
+2. Third-party library imports (`breezyweather.*`, `dagger.*`, `io.reactivex.*`, etc.)
+3. Internal project imports (`org.breezyweather.*`)
+4. Standard library (`java.*`, `javax.*`, `kotlin.*`)
 
-No explicit enforced grouping; IDE auto-sort is assumed. No wildcard imports.
+Star imports are disabled; each symbol must be imported individually.
 
----
+**Example from `NominatimService.kt`:**
+```kotlin
+import android.content.Context
+import android.util.Log
+import breezyweather.domain.location.model.LocationAddressInfo
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.reactivex.rxjava3.core.Observable
+import org.breezyweather.common.source.HttpSource
+import retrofit2.HttpException
+import java.io.IOException
+import java.net.URI
+import javax.inject.Inject
+```
 
-## Dependency Injection (Hilt)
+## Dependency Injection
 
-The project uses **Hilt** (Dagger Hilt) for dependency injection throughout.
+**Framework:** Hilt (Dagger/Hilt for Android)
 
-**Key annotations in use:**
-
-- `@HiltViewModel` on ViewModels (e.g., `MainActivityViewModel`, `AlertViewModel`)
-- `@Inject constructor(...)` on Services and Repositories
-- `@Module` + `@InstallIn(SingletonComponent::class)` on DI modules
-- `@Provides` + `@Singleton` for singleton bindings
-- `@Named("JsonClient")` / `@Named("XmlClient")` for qualifying multiple Retrofit builders
-- `@ApplicationContext` for injecting Context
-
-**DI Module locations:**
-
-- `app/src/main/java/org/breezyweather/common/di/HttpModule.kt` — OkHttp, Retrofit, RxJava3 adapter, serialization converters
-- `app/src/main/java/org/breezyweather/common/di/DbModule.kt` — SQLDelight database
-- `app/src/main/java/org/breezyweather/common/di/RxModule.kt` — RxJava scheduler module
-
-**Pattern — Service injection:**
+- Constructor injection only — annotate constructors with `@Inject constructor`
+- Android qualifiers: `@ApplicationContext context: Context`
+- Named bindings for Retrofit clients: `@Named("JsonClient") private val client: Retrofit.Builder`
+- No field injection observed in the scanned sources
+- KSP (`ksp(libs.kotlin.metadata.jvm)` + `ksp(libs.dagger.hilt.compiler)`) generates Hilt code
 
 ```kotlin
 class NominatimService @Inject constructor(
@@ -106,300 +126,120 @@ class NominatimService @Inject constructor(
 ) : HttpSource(), LocationSearchSource, ReverseGeocodingSource, ConfigurableSource {
 ```
 
-**Pattern — ViewModel injection:**
+## Async / Reactive Pattern
+
+**Framework:** RxJava3 — `io.reactivex.rxjava3.core.Observable`
+
+All network operations return `Observable<T>`. Never return raw values or suspend functions from
+source interface methods.
 
 ```kotlin
-@HiltViewModel
-class MainActivityViewModel @Inject constructor(
-    application: Application,
-    private val savedStateHandle: SavedStateHandle,
-    val statementManager: StatementManager,
-    private val refreshHelper: RefreshHelper,
-    ...
-) : BreezyViewModel(application) {
+override fun requestLocationSearch(context: Context, query: String): Observable<List<LocationAddressInfo>>
+override fun requestNearestLocation(context: Context, latitude: Double, longitude: Double): Observable<List<LocationAddressInfo>>
 ```
 
----
+**RxJava error handling operators:**
+- `.onErrorResumeNext { e -> Observable<T> }` — fall back to another observable on failure
+- `.onErrorReturn { e -> T }` — recover to a fallback value (e.g., `emptyList()`)
+- `.flatMap { ... }` — chain dependent async calls where the inner call may be conditional
 
-## Network Layer (Retrofit + RxJava3)
+**Coroutine bridge:** `kotlinx-coroutines-rx3` is on the classpath for any interop needs. Tests
+use `kotlinx.coroutines.test.runTest` for coroutine-based tests.
 
-**API interface pattern** — Retrofit interface returning `Observable<T>`:
+## Serialization
+
+**Framework:** `kotlinx.serialization` (JSON)
+
+- Data classes annotated with `@Serializable`
+- Field mapping: `@SerialName("json_key")` wherever JSON key differs from property name
+- Global opt-in: `ExperimentalSerializationApi` enabled in `app/build.gradle.kts`
+  via `freeCompilerArgs`
+- Parser config used in tests (mirrors production):
+  ```kotlin
+  private val json = Json {
+      ignoreUnknownKeys = true
+      explicitNulls = false
+  }
+  ```
+
+## Companion Object — Testable Logic Pattern
+
+Pure logic that must be unit-testable without the Android runtime is placed in the `companion object`
+with `internal` visibility. The class body holds thin private delegation wrappers:
 
 ```kotlin
-interface NominatimApi {
-    @GET("reverse")
-    fun getReverseLocation(
-        @Header("Accept-Language") acceptLanguage: String,
-        @Header("User-Agent") userAgent: String,
-        @Query("lat") lat: Double,
-        @Query("lon") lon: Double,
-        @Query("zoom") zoom: Int = 13,
-        @Query("format") format: String = "jsonv2",
-        @Query("addressdetails") addressDetails: Int = 1,
-        @Query("key") key: String? = null,
-    ): Observable<NominatimLocationResult>
-}
+// Instance wrapper — used inside the service
+private fun isLocationIqKey(value: String?): Boolean = Companion.isLocationIqKey(value)
+
+// Companion — directly callable by tests
+internal fun isLocationIqKey(value: String?): Boolean = value?.startsWith("pk.") == true
 ```
 
-**API client instantiation** — lazy property using injected `Retrofit.Builder`:
-
-```kotlin
-private val mApi by lazy {
-    client
-        .baseUrl(instance ?: NOMINATIM_BASE_URL)
-        .build()
-        .create(NominatimApi::class.java)
-}
-```
-
-**Named clients provided by `HttpModule`:**
-
-- `@Named("JsonClient")` — kotlinx-serialization JSON converter + RxJava3 adapter
-- `@Named("XmlClient")` — kotlinx-xml (xmlutil) converter + RxJava3 adapter
-
-**Note (active TODO in `HttpModule.kt`):** There is a stated migration intent to `suspend` functions (coroutines) for Retrofit calls, but this is not yet implemented. All source-layer network calls are `Observable<T>` (RxJava3).
-
----
-
-## Reactive Patterns (RxJava3 in Sources Layer)
-
-All `WeatherSource`, `LocationSearchSource`, and `ReverseGeocodingSource` methods return `Observable<T>`.
-
-**Parallel multi-endpoint calls** use `Observable.zip(obs1, obs2, ...) { results... -> ... }`:
-
-```kotlin
-return Observable.zip(weather, curWeather, alerts) { brightSkyWeather, brightSkyCurWeather, brightSkyAlerts ->
-    WeatherWrapper(...)
-}
-```
-
-**Per-feature error isolation** with `onErrorResumeNext`:
-
-```kotlin
-val weather = mApi.getWeather(...).onErrorResumeNext {
-    failedFeatures[SourceFeature.FORECAST] = it
-    Observable.just(BrightSkyWeatherResult())
-}
-```
-
-**Graceful fallback** with `onErrorReturn`:
-
-```kotlin
-val locationIQObs = locationIQClient.getReverseLocation(...)
-    .map { ... }
-    .onErrorReturn { emptyList() }
-```
-
-**Concurrent dual-API strategy** (as in `NominatimService`):
-
-```kotlin
-return Observable.zip(locationIQObs, nominatimObs) { liqList, nomList ->
-    val liqInfo = liqList.firstOrNull()
-    if (liqInfo != null) liqList
-    else if (nomList.firstOrNull() != null) nomList
-    else throw InvalidLocationException()
-}
-```
-
----
-
-## Coroutines & Flow (ViewModel/UI Layer)
-
-ViewModels use Kotlin Coroutines + StateFlow. **Do not** use RxJava in the ViewModel or UI layer.
-
-**StateFlow pattern:**
-
-```kotlin
-private val _uiState = MutableStateFlow(AlertUiState())
-val uiState: StateFlow<AlertUiState> = _uiState.asStateFlow()
-```
-
-**Launching coroutines from ViewModel:**
-
-```kotlin
-viewModelScope.launchIO {
-    // background work
-}
-```
-
-**Coroutine extension helpers** in `app/src/main/java/org/breezyweather/common/extensions/CoroutinesExtensions.kt`:
-
-- `CoroutineScope.launchIO(block)` — launch on `Dispatchers.IO`
-- `CoroutineScope.launchUI(block)` — launch on `Dispatchers.Main`
-- `suspend fun withIOContext(block)` — `withContext(Dispatchers.IO, block)`
-- `suspend fun withUIContext(block)` — `withContext(Dispatchers.Main, block)`
-
-**Collecting StateFlow in Compose UI:**
-
-```kotlin
-val alertUiState by alertViewModel.uiState.collectAsState()
-```
-
----
-
-## JSON Serialization
-
-Uses **kotlinx.serialization** (not Gson/Moshi).
-
-**Data class pattern:**
-
-```kotlin
-@Serializable
-data class NominatimAddress(
-    val village: String?,
-    val town: String?,
-    @SerialName("country_code") val countryCode: String?,
-    @SerialName("ISO3166-2-lvl4") val isoLvl4: String?,
-)
-```
-
-**JSON configuration** (in `HttpModule`):
-
-```kotlin
-val json = Json {
-    ignoreUnknownKeys = true
-    explicitNulls = false
-    isLenient = !BreezyWeather.instance.debugMode
-}
-```
-
----
+Tests call `NominatimService.isLocationIqKey(...)` without constructing the full Hilt-injected
+service. Apply this pattern to all pure-logic helpers in source classes.
 
 ## Error Handling
 
-**Strategy:** Throw domain-specific `Exception` subclasses. No `Result<T>` or sealed class wrappers. Callers handle errors via RxJava3's error channel or `try/catch` in coroutines.
+**Patterns:**
+- Exceptions classified into semantic strings via a classify function:
+  `classifyLocationIqFailureReason(error: Throwable): String`
+- Domain exceptions thrown into the RxJava stream: `throw InvalidLocationException()`
+- Android `Log.d("NominatimService", "...")` for diagnostic logging — no crash reporting SDK
+- Intentionally ignored catch blocks use the underscore convention: `catch (_: Exception)`
 
-**Exception hierarchy** — all in `app/src/main/java/org/breezyweather/common/exceptions/`:
-
-| Exception | Meaning |
-|-----------|---------|
-| `InvalidLocationException` | Geocoding returned no usable location |
-| `InvalidOrIncompleteDataException` | Parsed data is missing required fields |
-| `NoNetworkException` | No network connectivity |
-| `ApiKeyMissingException` | Source requires API key not configured |
-| `ApiLimitReachedException` | Rate limit hit |
-| `ApiUnauthorizedException` | API key rejected |
-| `ParsingException` | JSON/XML parse failure |
-| `ReverseGeocodingException` | Reverse geocoding failed |
-| `WeatherException` | General weather request failure |
-| `OutdatedServerDataException` | Server returned stale data |
-| `UnsupportedFeatureException` | Requested feature not supported by source |
-| `SourceNotInstalledException` | Source module not installed |
-
-**RxJava error side-effects** — `failedFeatures` map collects per-feature errors without aborting the whole request:
-
-```kotlin
-val failedFeatures = mutableMapOf<SourceFeature, Throwable>()
-val weather = mApi.getWeather(...).onErrorResumeNext {
-    failedFeatures[SourceFeature.FORECAST] = it
-    Observable.just(BrightSkyWeatherResult())
-}
-```
-
----
-
-## Source Implementation Pattern
-
-All weather data sources follow a consistent structure:
-
-1. Class annotated with `@Inject constructor(...)` extending `HttpSource()` and implementing capability interfaces
-2. `override val id = "sourceId"` — unique lowercase kebab-case string
-3. `override val name = "Display Name"` — human-readable
-4. `override val continent = SourceContinent.XXX`
-5. `override val supportedFeatures = mapOf(SourceFeature.XXX to attribution)`
-6. `private val mApi by lazy { client.baseUrl(...).build().create(Api::class.java) }`
-7. `override fun requestWeather(context, location, requestedFeatures): Observable<WeatherWrapper>`
-8. Companion object with `BASE_URL`, `USER_AGENT`, and regex/constant definitions
-
-**Stub pattern** for flavor-gated sources: `<ServiceName>Stub.kt` provides a no-op stub when the source is not available in that build flavor.
-
----
-
-## Vietnamese Address Parsing Pattern
-
-Location: `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt`
-
-**Regex definition** (uses `java.util.regex.Pattern` for `(?iu)` flag support):
-
-```kotlin
-private val vnSubProvinceRegex = Pattern.compile(
-    "(?iu)^(?:xã|phường|đặc\\s*khu|xa|phuong|dac\\s*khu)\\s+.*"
-)
-```
-
-**Display name splitting:**
-
-```kotlin
-private val COMMA_SPLIT_REGEX = Regex("[,，]")  // handles full-width comma too
-val parts = displayName.split(COMMA_SPLIT_REGEX).map { it.trim() }
-```
-
-**Part selection** — picks the last matching segment to avoid institutional prefixes like "Ủy ban nhân dân Phường...":
-
-```kotlin
-private fun pickBestVietnamSubProvincePart(parts: List<String>): String? {
-    return parts.lastOrNull { part ->
-        vnSubProvinceRegex.matcher(part).matches()
-    }
-}
-```
-
-**Dual-API strategy** — only active when a LocationIQ key (`pk.xxx`) is configured; otherwise falls back to Nominatim-only:
-
-```kotlin
-private fun isLocationIqKey(value: String?): Boolean = value?.startsWith("pk.") == true
-```
-
----
-
-## Source Configuration Pattern
-
-Sources implementing `ConfigurableSource` use `SourceConfigStore` (SharedPreferences wrapper):
-
-```kotlin
-private val config = SourceConfigStore(context, id)
-override val isConfigured = true
-private var instance: String?
-    set(value) { value?.let { config.edit().putString("instance", it).apply() } ?: config.edit().remove("instance").apply() }
-    get() = config.getString("instance", null) ?: NOMINATIM_BASE_URL
-
-override fun getPreferences(context: Context): List<Preference> = listOf(
-    EditTextPreference(
-        titleId = R.string.settings_weather_source_nominatim_instance,
-        summary = { _, content -> ... },
-        onValueChanged = { instance = ... }
-    )
-)
-```
-
----
-
-## Module/Barrel Organization
-
-- `app/src/main/java/org/breezyweather/common/source/` — all source interfaces (contracts)
-- `app/src/main/java/org/breezyweather/common/exceptions/` — all exception types
-- `app/src/main/java/org/breezyweather/common/extensions/` — all Kotlin extension functions
-- `app/src/main/java/org/breezyweather/common/di/` — Hilt DI modules
-- `app/src/main/java/org/breezyweather/sources/<name>/` — each source in its own package
-- `app/src/main/java/org/breezyweather/sources/<name>/json/` — JSON data classes for that source
-
----
+**Null safety:**
+- `?.let`, `?:`, and `?.equals(...) == true` patterns throughout
+- `!!` used only when null has been ruled out logically (e.g., immediately after a null check on
+  `address.countryCode`)
+- Function return types are nullable (`String?`, `LocationAddressInfo?`) when absence is a valid result
 
 ## Comments
 
-**When to comment:**
+**License header:** LGPL v3 block comment on every production file:
+```
+/*
+ * This file is part of Breezy Weather.
+ * ...
+ * along with Breezy Weather. If not, see <https://www.gnu.org/licenses/>.
+ */
+```
 
-- KDoc block comments on interface methods (see `WeatherSource.kt` inline doc for `testingLocations` and `requestWeather`)
-- Inline comments for non-obvious logic (country code disambiguation in `getNonAmbiguousCountryCode`)
-- `TODO:` for known deferred work (e.g., `// TODO: We should probably migrate to suspend`)
-- Class-level KDoc for complex services
+**KDoc:** Used on abstract classes, interfaces, and non-obvious public methods to explain intent.
 
-**Style:**
+**Inline reference comments:** Section separators using `// ─── Section Title ───` in long files.
+Work-item codes cross-reference implementation to test specs:
+```kotlin
+// GIGL-01: [GiggleRescue] log — Nominatim superseded dirty LIQ result
+// REL-02: log Nominatim failures for diagnosability
+// PERF-01/02: Deferred Nominatim fetch — only subscribed when LIQ result is dirty
+```
 
-- Block `/** ... */` for public API/interface documentation
-- Single-line `// comment` for implementation notes
-- Multi-line `/* ... */` for license header only
+**TODO comments:** Preserved verbatim and not stripped by spotless. Used in test helpers and
+interfaces to track incomplete paths.
+
+## Module Design
+
+**Visibility:**
+- `internal` for companion object helpers that tests need to call directly
+- `private` for implementation details used only within the class
+- `override` for all interface implementations; no redundant `public` keyword
+
+**Package structure for a source module:**
+```
+sources/nominatim/
+    NominatimService.kt          # Main service — implements HttpSource + feature interfaces
+    NominatimApi.kt              # Retrofit API interface
+    json/
+        NominatimAddress.kt      # @Serializable data class
+        NominatimLocationResult.kt
+```
+
+**Source root layout:**
+- Production Kotlin: `app/src/main/kotlin/org/breezyweather/`
+- Watchdog custom code (Kotlin files, java/ source root): `app/src/main/java/org/breezyweather/background/watchdog/`
+- Upstream tests: `app/src/test/kotlin/org/breezyweather/`
+- Fork-specific tests: `app/src/test/java/org/breezyweather/sources/nominatim/`
 
 ---
 
-*Convention analysis: 2026-03-23*
+*Convention analysis: 2026-05-29*

@@ -1,121 +1,127 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-03-23
+**Analysis Date:** 2026-05-29
 
 ---
 
-## Vietnamese Address Parsing
+## Source Layout Split
 
-### LocationIQ Fallback Uses `parts.firstOrNull()` — Still Returns Garbage
+### Watchdog Files Remain in `java/` While All Other Code is in `kotlin/`
 
-- **Issue:** When the VN sub-province regex finds no match in LocationIQ data, the code falls back to `parts.firstOrNull()?.trim()`. If LocationIQ puts "Ủy ban nhân dân Phường X" as the FIRST comma-segment (e.g. a POI name), this raw garbage string is assigned directly to `city`.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 210–214
-- **Impact:** Users in Vietnam see "Ủy ban nhân dân Phường X" or "Nhà văn hóa Phường X" as their city name instead of the clean "Phường X".
-- **Trigger:** Occurs when the logged GPS point resolves to a POI address rather than a standard administrative address. LocationIQ zoom=18 retrieves fine-grained results which can lead with POI names.
-- **Fix approach:** When regex fails for a LocationIQ result, skip the LocationIQ fallback entirely and let Nominatim's result take over (since Nominatim result quality for administrative names is more predictable). Alternatively, apply a secondary filter: skip any `firstOrNull()` result that itself contains a VN administrative prefix somewhere internally but is NOT the whole clean token.
-
----
-
-### No Cross-Validation Between LocationIQ and Nominatim City Values
-
-- **Issue:** The current `Observable.zip` merge logic at line 152–161 picks the LocationIQ result unconditionally if it produced any result, using Nominatim only as a total-failure fallback. The project goal requires both sources to be cross-referenced: if LocationIQ produces a non-clean VN address, Nominatim should save it.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 152–162
-- **Impact:** The dual-API benefit is nullified. LocationIQ errors pass through silently while the valid Nominatim result is discarded.
-- **Fix approach:** After running `pickBestVietnamSubProvincePart()` on both results (for VN locations), prefer whichever produced a clean VN sub-province match. If LocationIQ result is clean → use it. If not but Nominatim result is clean → use Nominatim. If neither is clean → use LocationIQ as last resort (current behavior). Apply this logic only for `countryCode == "vn"`.
+- **Issue:** The three watchdog files (`WatchdogService.kt`, `WatchdogRestartWorker.kt`, `WatchdogAlarmReceiver.kt`) live under `app/src/main/java/org/breezyweather/background/watchdog/`. Every other Kotlin source file in the app is under `app/src/main/kotlin/`. The `java/` directory contains only these three files.
+- **Files:** `app/src/main/java/org/breezyweather/background/watchdog/WatchdogService.kt`, `app/src/main/java/org/breezyweather/background/watchdog/WatchdogRestartWorker.kt`, `app/src/main/java/org/breezyweather/background/watchdog/WatchdogAlarmReceiver.kt`
+- **Impact:** Developers looking at `app/src/main/kotlin/org/breezyweather/background/watchdog/` will find nothing and assume the feature doesn't exist. Tooling (lint, test coverage) configured against the `kotlin/` root may silently skip these files. IDE navigation from callers in `kotlin/` to these files may require an extra step.
+- **Fix approach:** Move all three files to `app/src/main/kotlin/org/breezyweather/background/watchdog/` and delete the now-empty `java/` subtree. No code changes required — package declarations remain identical.
 
 ---
 
-### `pickBestVietnamSubProvincePart` Picks LAST Match — May Choose Wrong Level
+## Watchdog Service — Remaining Risks
 
-- **Issue:** The function returns `parts.lastOrNull { vnSubProvinceRegex.matcher(it).matches() }`. In `testaddress.py` the self-test shows `("Phường A, Xã B, blabla", "Xã B")` — the LAST match wins. For LocationIQ zoom=18, the finest-grained component (ward/commune) is typically earlier in `display_name`, not at the end. The "last" may refer to a higher-level administrative entity in some layouts.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 237–240; `signature/testaddress.py` `pick_best_vn_part()`
-- **Impact:** Rare but possible: a province-level "Xã" (if any exist with that prefix) could override the correct ward-level "Phường" when both appear in `display_name`.
-- **Fix approach:** For LocationIQ zoom=18, the ward is almost always the FIRST valid VN token. Consider using `firstOrNull` for LocationIQ results and `lastOrNull` for Nominatim results (Nominatim zoom=13 is coarser, different segment order). Alternatively, re-examine real `display_name` samples to confirm ordering assumptions.
+### `shortService` 3-Minute Hard Kill on HyperOS
 
----
+- **Issue:** `WatchdogService` uses `FOREGROUND_SERVICE_TYPE_SHORT_SERVICE` (Android 14+). The Android platform enforces a ~3-minute time budget for this FGS type. On HyperOS, cold WorkManager DB init (`Room` initialization) inside `performHeartbeat()` via `.get()` can be slow. If the cumulative wall time from `onStartCommand` to `stopSelf()` exceeds ~3 minutes, the platform force-kills the service with `ForegroundServiceStartNotAllowedException: Time limit already exhausted for foreground service type shortService`.
+- **Files:** `app/src/main/java/org/breezyweather/background/watchdog/WatchdogService.kt` (lines 100–116: `Thread { performHeartbeat(); scheduleNextAlarm(); stopSelf() }`)
+- **Impact:** Confirmed crash. See `BUG/breezyweather_crash_logs_1.txt` line 4: `ForegroundServiceStartNotAllowedException: Time limit already exhausted for foreground service type dataSync` (from `dataSync`-era build; same issue applies to `shortService` under load). The service gets killed mid-heartbeat and `scheduleNextAlarm()` never runs, breaking the self-healing loop.
+- **Current mitigation:** Heartbeat and all blocking I/O runs on a background `Thread` (not main thread). `WakeLock` has a 30-second timeout. `WatchdogRestartWorker` provides a 30-minute fallback.
+- **Remaining risk:** The 30-second `WakeLock` does not cap total service lifetime — it only prevents CPU sleep during the wakelock window. If Room init takes longer than 3 minutes total wall time, the OS kill still applies.
+- **Fix approach:** Add a timeout to `workManager.getWorkInfos(workQuery).get()` call (e.g., `.get(10, TimeUnit.SECONDS)`) to bound heartbeat time. Consider removing the `Thread { }` wrapper entirely and using a `CoroutineScope` with a strict `withTimeout(60_000)` block, stopping the service on timeout with a log.
+- **Awaiting:** Human device verification on SDK 36 / HyperOS that `shortService` change resolves the original crash.
 
-### NominatimAddress Missing `suburb` and `hamlet` Fields
+### `WatchdogRestartWorker` Does Not Restart `WatchdogService` — Only Checks Job Health
 
-- **Issue:** `NominatimAddress.kt` maps only `village`, `town`, `municipality`, `county`, `state`. Nominatim frequently returns Vietnamese ward/commune data under the `suburb` key (e.g. `"suburb": "Phường Hoàn Kiếm"`). This field is completely unmapped. `address.town` is often null for Vietnamese cities, falling through to `locationResult.name` which is a raw place name from OSM.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/json/NominatimAddress.kt`; `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` line 194
-- **Impact:** For Vietnamese locations, Nominatim's structured address parsing is partially blind. The fallback to `display_name` regex mitigates this but is brittle.
-- **Fix approach:** Add `suburb: String?`, `hamlet: String?`, `quarter: String?`, `neighbourhood: String?` to `NominatimAddress`. Then in `convertLocation()` for `countryCode == "vn"`, try `address.suburb ?: address.hamlet ?: address.quarter` before falling through to `display_name` regex.
+- **Issue:** `WatchdogRestartWorker.doWork()` only checks `WeatherUpdateJob` health and re-enqueues it if needed. It does NOT call `WatchdogService.start()`. If the AlarmManager loop breaks (e.g., after process kill with no alarm pending), no mechanism restarts the `WatchdogService` heartbeat chain until next device boot or user re-toggle.
+- **Files:** `app/src/main/java/org/breezyweather/background/watchdog/WatchdogRestartWorker.kt` (lines 52–76)
+- **Impact:** Watchdog heartbeat loop is silently dead after a process kill if the alarm was not yet scheduled. Only `WeatherUpdateJob` health is covered, not the watchdog's own continuity.
+- **Fix approach:** After re-enqueuing `WeatherUpdateJob`, also call `WatchdogService.start(applicationContext, "worker_restart")` inside `doWork()` to restart the AlarmManager chain.
 
----
+### `WatchdogService` Uses Raw `Thread {}` Instead of Structured Concurrency
 
-## Concurrency / API Reliability
-
-### Nominatim Rate Limit Violation Risk (1 req/s Policy)
-
-- **Issue:** Every call to `requestNearestLocation` with a LocationIQ key issues a simultaneous call to both `us1.locationiq.com` and `nominatim.openstreetmap.org` via `Observable.zip`. Nominatim's usage policy mandates maximum 1 request per second. No throttle, delay, or queue exists in the app's HTTP stack.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 117–152; `app/src/main/java/org/breezyweather/common/di/HttpModule.kt`
-- **Impact:** High-frequency reverse geocoding (e.g., background refresh with multiple locations) can violate Nominatim ToS and trigger IP bans which will break the app for all users relying on Nominatim.
-- **Fix approach:** Add an in-process rate limiter (e.g., a `Semaphore` or `RxJava`-based delay) specifically for Nominatim calls. Alternatively, de-prioritize the concurrent Nominatim call: fire it only if LocationIQ has already returned a non-clean result (sequential conditional logic instead of always-parallel).
-
----
-
-### `mApi` Lazy Initialization Goes Stale After Config Change
-
-- **Issue:** `mApi` is created via `by lazy { ... }` (line 77) and captures the `instance` value at first access. If the user saves a new URL/key in Settings, `requestLocationSearch` continues using the old `mApi` (pointing to the old URL). `requestNearestLocation` correctly builds fresh clients on every call, but search does not.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 77–83, 96
-- **Impact:** After a config change, location search silently queries the stale endpoint until the app process restarts. Bug is silent — no error, just wrong search results.
-- **Fix approach:** Remove `by lazy`. Build the API client freshly in `requestLocationSearch` (same pattern used in `requestNearestLocation`), or use a getter that checks if `instance` has changed and rebuilds.
+- **Issue:** `onStartCommand` spawns a plain `Thread { }` for the heartbeat. This thread is not tracked, not cancellable, and not lifecycle-aware. If the service is re-started (overlapping `onStartCommand` calls), multiple threads can run concurrently.
+- **Files:** `app/src/main/java/org/breezyweather/background/watchdog/WatchdogService.kt` (lines 106–116)
+- **Impact:** Low probability but possible: duplicate `WeatherUpdateJob.setupTask()` calls from concurrent heartbeat threads. More importantly, the thread has no way to be cancelled if the service is stopped early.
+- **Fix approach:** Use `CoroutineScope(Dispatchers.IO + Job())` scoped to the service lifecycle, cancelled in `onDestroy()`. Or use a `HandlerThread` with proper cleanup.
 
 ---
 
-### Nominatim Error Silently Swallowed in Concurrent Mode
+## LocationIQ / Nominatim — Geocoding Risks
 
-- **Issue:** Both `locationIQObs.onErrorReturn { emptyList() }` and `nominatimObs.onErrorReturn { emptyList() }` (lines 138, 150) swallow all errors. If Nominatim fails with a network error, it silently returns an empty list, causing LocationIQ to be used unconditionally without any logging. If both fail, `InvalidLocationException` is thrown but no logging identifies which source failed.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 135–160
-- **Impact:** Debugging address resolution failures is very hard. No signal distinguishes "Nominatim timed out", "LocationIQ 401 bad key", or "both failed".
-- **Fix approach:** Log the error (at debug level) inside each `onErrorReturn` lambda before returning the empty list. Include source name and throwable message.
+### `zoom` Parameter Removed from `NominatimApi.getReverseLocation()`
+
+- **Issue:** Upstream removed the `zoom` query parameter from `NominatimApi.getReverseLocation()`. Previous versions of this fork passed `zoom=18` for LocationIQ calls to request fine-grained (address-level) reverse geocoding results. The parameter is now absent from the API interface.
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimApi.kt` (interface has no `zoom` param)
+- **Impact:** LocationIQ calls no longer request building-level precision. For Vietnamese ward/commune matching, this may return coarser results, making the `vnSubProvinceRegex` match less reliable and increasing the frequency of "dirty" results requiring Nominatim rescue. Accuracy degradation is subtle — no runtime error, just different (possibly less precise) `display_name` values.
+- **Fix approach:** Add `@Query("zoom") zoom: Int? = null` back to `getReverseLocation()` in `NominatimApi.kt`. In `NominatimService`, pass `zoom = 18` for LocationIQ-keyed calls only. Do not pass `zoom` for plain Nominatim calls (where the default is fine).
+
+### `pickBestVietnamSubProvincePart` Uses `lastOrNull` — May Pick Wrong Admin Level
+
+- **Issue:** `pickBestVietnamSubProvincePart()` returns `parts.lastOrNull { vnSubProvinceRegex.matcher(it).matches() }`. In `display_name` returned by LocationIQ without `zoom=18`, the segment order may differ from Nominatim. If both a ward ("Phường X") and a higher-level "Xã Y" appear, `lastOrNull` returns the last match, which may be the higher-level entity rather than the ward.
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt` (line 709: Companion `pickBestVietnamSubProvincePart`)
+- **Impact:** Rare but possible wrong city name (province-level instead of ward-level).
+- **Fix approach:** Investigate whether `firstOrNull` is more reliable for LocationIQ results (where the finest-grained token typically appears earlier). Possibly use `firstOrNull` when `isLocationIQSource=true` and `lastOrNull` for Nominatim.
+
+### Nominatim Rate Limit Violation Risk
+
+- **Issue:** Every `requestNearestLocation` call with a LocationIQ key starts a deferred Nominatim fetch that fires whenever LocationIQ returns a dirty VN result. There is no throttle, queue, or delay applied to Nominatim calls. Nominatim's usage policy mandates a maximum of 1 request/second.
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt` (lines 165–179: `nominatimFetch` Observable; lines 198–211: conditional subscription)
+- **Impact:** In the current lazy-fetch design (Nominatim is only called when LocationIQ result is dirty), the rate is lower than the old always-parallel `zip` design. However, on a user with multiple VN locations doing simultaneous background refresh, multiple Nominatim calls can fire concurrently.
+- **Fix approach:** Add a global `Semaphore(1)` or a timestamp-gated rate limiter applied to all Nominatim HTTP calls. Alternatively, add a configurable minimum delay between Nominatim calls using `RxJava`'s `.delay()` operator.
+
+### LocationIQ Key Stored in Unencrypted `SharedPreferences`
+
+- **Risk:** The user's LocationIQ key (`pk.xxxx`) is stored via `SourceConfigStore` → `SharedPreferences`. On rooted devices or via ADB backup, this key is extractable.
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt` (key read/write via `config`); `app/src/main/kotlin/org/breezyweather/domain/settings/SourceConfigStore.kt`
+- **Current mitigation:** Android per-app private storage provides a baseline. Key rotation is cheap (user re-enters).
+- **Recommendation:** Migrate `SourceConfigStore` to `EncryptedSharedPreferences` (Jetpack Security Crypto) for entries holding API keys. This is especially relevant for `pk.` keys which have billing implications.
 
 ---
 
-## Security Considerations
+## Build System — AGP 9 Upgrade Blockers
 
-### LocationIQ API Key Stored in Unencrypted SharedPreferences
+### Three Unresolved `# TODO: AGP 9 upgrade` Flags in `gradle.properties`
 
-- **Risk:** The LocationIQ key (pk.xxxx) entered by the user is stored via `SourceConfigStore` → `SharedPreferences` on disk. On rooted devices or via adb backup, this key can be extracted.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 358–366; `app/src/main/java/org/breezyweather/domain/settings/SourceConfigStore.kt`
-- **Current mitigation:** Android's per-app private storage provides a baseline. Key rotation is cheap (user re-enters new key).
-- **Recommendation:** Consider using Android `EncryptedSharedPreferences` (Jetpack Security) for `SourceConfigStore` to protect API keys at rest. This is especially relevant for `pk.` keys which have billing implications.
-
-### LocationIQ Key Sent as Query Parameter (URL-visible)
-
-- **Risk:** The `key` parameter is passed via `@Query("key")` in `NominatimApi.getReverseLocation`, meaning it appears in the HTTP request URL as a query string. OkHttp logging at `Level.BODY` (enabled in debug mode) prints full URLs to logcat.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimApi.kt` line 47; `app/src/main/java/org/breezyweather/common/di/HttpModule.kt` lines 102–107
-- **Impact:** In debug builds, the full key is printed to logcat. In production this is NONE-level logging (acceptable), but the debug log exposure is a risk during development.
-- **Recommendation:** This is the LocationIQ API's own convention; no app-level fix is needed. Ensure debug builds are never shared. Document this limitation.
+- **Issue:** Three properties in `gradle.properties` are explicitly flagged as requiring review before upgrading to Android Gradle Plugin 9.
+  1. `android.dependency.useConstraints=true` — Line 31: "Check if we need this"
+  2. `android.r8.strictFullModeForKeepRules=false` — Line 34: "Check impacts on our rules"
+  3. `android.r8.optimizedResourceShrinking=false` — Line 37: "Check the impacts on our weather icons which are accessed through reflection. Note: a package.keep.xml was added to protect them, but unsure if it works"
+- **Files:** `gradle.properties` (lines 30–38)
+- **Impact:** Upgrading to AGP 9 without resolving these may silently break: (1) dependency resolution behavior, (2) R8 keep rules causing ProGuard stripping of custom code, (3) reflection-accessed weather icon resources being removed by optimized resource shrinking.
+- **Fix approach:** Before any AGP 9 bump: test a debug build with `android.r8.optimizedResourceShrinking=true` and verify all weather icon resources load at runtime. Review upstream Breezy Weather's AGP 9 migration commits and apply the same changes.
 
 ---
 
 ## Tech Debt
 
-### RxJava Not Migrated to Coroutines/Suspend Functions
+### RxJava3 Not Migrated to Coroutines / Suspend Functions
 
-- **Issue:** The entire HTTP stack uses RxJava3 `Observable` rather than Kotlin coroutines with `suspend`. Three `TODO` comments in `HttpModule.kt` explicitly call this out.
-- **Files:** `app/src/main/java/org/breezyweather/common/di/HttpModule.kt` lines 133, 162, 191; all `*Service.kt` source files
-- **Impact:** RxJava adds significant API complexity, thread management overhead, and a heavier dependency. `Observable.zip` for the concurrent strategy is harder to test and reason about than `async/await` with `supervisorScope`.
-- **Fix approach:** Migrate one source at a time, starting with `NominatimService`. Replace `Observable` with `suspend` functions and use `coroutineScope { async { } }` for the concurrent dual-API call.
+- **Issue:** The entire HTTP layer uses RxJava3 `Observable` rather than Kotlin coroutines. Three `TODO` comments in `HttpModule.kt` explicitly flag this. The fork-specific `NominatimService` uses `flatMap`, `onErrorResumeNext`, and deferred `Observable` chaining — patterns that are hard to test and reason about compared to `async/await`.
+- **Files:** `app/src/main/kotlin/org/breezyweather/common/di/HttpModule.kt` (lines 133, 162, 191); `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt` (all request methods)
+- **Impact:** RxJava adds dependency weight and complexity. The fork-specific dual-API logic (`flatMap` → conditional `nominatimFetch`) is harder to unit test than a `suspend` + `withContext` equivalent.
+- **Fix approach:** Migrate one source at a time. `NominatimService` is the best candidate first since it has an existing test suite. Replace `Observable` returns with `suspend` and use `coroutineScope { async {} }` for the conditional deferred fetch.
 
-### `UpdateStrategy` Feature Commented Out
+### `UpdateStrategy` Feature is Commented Out
 
-- **Issue:** The per-location `UpdateStrategy.ALWAYS_UPDATE` check is commented out with `TODO: Implement this, it's a good idea`. The surrounding code has dead commented-out logic.
-- **Files:** `app/src/main/java/org/breezyweather/background/weather/WeatherUpdateJob.kt` lines 236–240
+- **Issue:** Per-location `UpdateStrategy.ALWAYS_UPDATE` skip logic is commented out with `TODO: Implement this, it's a good idea`.
+- **Files:** `app/src/main/kotlin/org/breezyweather/background/weather/WeatherUpdateJob.kt` (line 236)
 - **Impact:** All locations are always refreshed regardless of user preference, wasting battery and API quota.
 
-### `ConfigStore` Should Be Read-Only After Migration
+### `ConfigStore` Mutable — Should Be Read-Only After Setup
 
-- **Issue:** Two TODOs note `ConfigStore` should become read-only and consider migration to Android DataStore.
-- **Files:** `app/src/main/java/org/breezyweather/domain/settings/ConfigStore.kt` lines 22–24
-- **Impact:** Mutable `ConfigStore` wrappers are scattered across service classes, making data mutation tracking difficult.
+- **Issue:** Two TODOs note `ConfigStore` should become read-only and migrate to Android `DataStore`.
+- **Files:** `app/src/main/kotlin/org/breezyweather/domain/settings/ConfigStore.kt` (lines 22–24)
+- **Impact:** Mutable `ConfigStore` wrappers scattered across service classes make data mutation tracking difficult. Settings migrations are error-prone.
 
-### `CommonConverterTest` Is Stub Only
+### `TileService` Has an Acknowledged Memory Leak
 
-- **Issue:** `CommonConverterTest.kt` has a single wind-degree test with a `TODO: To be completed` comment at the top. All other conversion logic (VN address, weather unit conversions) is untested in this class.
-- **Files:** `app/src/test/java/org/breezyweather/sources/CommonConverterTest.kt`
-- **Impact:** Regressions in shared conversion logic go undetected until runtime.
+- **Issue:** `TileService.kt` has a `TODO: Memory leak` comment at its class declaration. It implements `CoroutineScope` directly on the service class without a backing `Job` that is cancelled in `onTileRemoved()` or `onDestroy()`.
+- **Files:** `app/src/main/kotlin/org/breezyweather/background/interfaces/TileService.kt` (line 44)
+- **Impact:** Coroutines launched from `TileService` may outlive the tile's lifecycle, holding references to the service instance and any captured lambdas.
+- **Fix approach:** Replace `CoroutineScope` implementation with a `private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)` field, cancelling `scope` in `onTileRemoved()`.
+
+### `BreezyViewModel` Has Open Kotlin Conversion Issue
+
+- **Issue:** `BreezyViewModel.kt` has `// TODO: Issue with getter on application when converted to Kotlin`.
+- **Files:** `app/src/main/kotlin/org/breezyweather/common/activities/BreezyViewModel.kt` (line 22)
+- **Impact:** The class is likely a partial Java→Kotlin conversion. The application getter may behave differently from the original Java version.
 
 ---
 
@@ -123,73 +129,80 @@
 
 ### `Release.getDownloadLink()` FIXME — Silent Wrong-File Fallback
 
-- **Symptoms:** If no APK asset matches the device ABI pattern, the fallback `?: assets[0]` silently downloads the first asset, which may be the wrong architecture or a freenet variant.
-- **Files:** `app/src/main/java/org/breezyweather/background/updater/model/Release.kt` line 54
-- **Trigger:** Device with an uncommon ABI or when `GITHUB_RELEASE_PREFIX` naming convention changes.
-- **Workaround:** None. Update will install an incompatible APK silently.
+- **Symptoms:** If no APK asset name matches the device ABI pattern, the fallback `?: assets[0]` silently downloads the first available asset, which may be the wrong architecture or a freenet/basic flavor mismatch.
+- **Files:** `app/src/main/kotlin/org/breezyweather/background/updater/model/Release.kt` (line 54: `?: assets[0] // FIXME`)
+- **Trigger:** Device with an uncommon ABI, or when the `app.github.release_prefix` naming convention changes.
+- **Workaround:** None. The auto-updater silently installs an incompatible APK.
 
-### Astro Timezone Handling Is Wrong
+### Astro Timezone Handling Acknowledged as Wrong
 
-- **Symptoms:** Sunrise/sunset progress calculation uses a workaround involving `Calendar` but the TODO comment acknowledges the timezone logic is incorrect.
-- **Files:** `app/src/main/java/org/breezyweather/domain/weather/model/Astro.kt` line 32
-- **Trigger:** Locations in unusual timezones, or during DST transitions.
+- **Symptoms:** Sunrise/sunset progress calculation uses a `Calendar`-based workaround that the TODO comment acknowledges handles timezones incorrectly.
+- **Files:** `app/src/main/kotlin/org/breezyweather/domain/weather/model/Astro.kt` (line 32: `TODO: Works but the way timezones are handled is wrong`)
+- **Trigger:** Locations in non-local or unusual timezones, or during DST transitions.
 - **Workaround:** Visual glitches only; core weather data unaffected.
 
-### Notifications FIXME: Timezone
+### Notification Timezone Scheduling Incorrect
 
-- **Symptoms:** Notification scheduling has a `FIXME: Timezone` comment at line 239.
-- **Files:** `app/src/main/java/org/breezyweather/remoteviews/Notifications.kt` line 239
+- **Symptoms:** Notification scheduling has a `FIXME: Timezone` comment.
+- **Files:** `app/src/main/kotlin/org/breezyweather/remoteviews/Notifications.kt` (line 257)
 - **Trigger:** Users in non-UTC timezones may see notification timing drift.
 
 ---
 
 ## Performance Bottlenecks
 
-### Every VN Reverse Geocoding Request Hits Two External APIs Simultaneously
+### `workManager.getWorkInfos().get()` Blocks Background Thread Without Timeout
 
-- **Problem:** With a LocationIQ key set, every `requestNearestLocation` call fires two HTTP requests in parallel (LocationIQ + Nominatim). For a user with 5 saved locations, a background refresh fires 10 external API calls per cycle.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 117–152
-- **Cause:** Parallel `Observable.zip` with no short-circuit: Nominatim is always called even when LocationIQ connection is fast and clean.
-- **Improvement path:** Consider calling Nominatim only when the LocationIQ result fails the VN regex check (lazy fallback). This avoids unnecessary Nominatim requests for locations that already return clean addresses.
+- **Problem:** `performHeartbeat()` calls `workManager.getWorkInfos(workQuery).get()` (blocking) on the background `Thread` spawned by `onStartCommand`. Room DB initialization on first access after a cold process kill (HyperOS midnight-kill scenario) can block this call for many seconds or minutes.
+- **Files:** `app/src/main/java/org/breezyweather/background/watchdog/WatchdogService.kt` (line 235)
+- **Cause:** `ListenableFuture.get()` with no timeout blocks indefinitely until Room's executor completes the query.
+- **Improvement path:** Replace `.get()` with `.get(10L, TimeUnit.SECONDS)` and catch `TimeoutException` to skip the health check gracefully on slow startup rather than blocking the watchdog thread.
 
 ---
 
 ## Fragile Areas
 
-### `vnSubProvinceRegex` Pattern Compiled via Java `Pattern.compile`
+### `vnSubProvinceRegex` Must Preserve `(?iu)` Unicode Flags
 
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` line 75
-- **Why fragile:** Uses Java `Pattern` with `(?iu)` flags while Kotlin natively supports `Regex`. The `(?iu)` flag enables Unicode-aware case folding — critical for Vietnamese diacritics. If the pattern is ever copy-pasted or migrated to a plain Kotlin `Regex` without the `UNICODE_CASE` option, Vietnamese diacritic matching will silently break.
-- **Safe modification:** Any changes to `vnSubProvinceRegex` MUST preserve `Pattern.UNICODE_CASE or Pattern.CASE_INSENSITIVE` (or `(?iu)` inline). The pattern must also be kept in sync with `testaddress.py`'s `VN_SUB_PROVINCE_REGEX`.
-- **Test coverage:** Zero unit tests in Kotlin for this regex. Tests exist only in `signature/testaddress.py` (Python, not run by CI).
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt` (line 698: `Companion.vnSubProvinceRegex`; compiled via Java `Pattern.compile` with `UNICODE_CASE | CASE_INSENSITIVE`)
+- **Why fragile:** The regex uses `(?iu)` inline flags for Unicode-aware case folding — critical for Vietnamese diacritics. If the pattern is migrated to a plain Kotlin `Regex` without `RegexOption.UNICODE_CASE`, diacritic matching silently breaks. The pattern must also stay in sync with `signature/testaddress.py`'s `VN_SUB_PROVINCE_REGEX` (Python version used for manual regression testing, not part of CI).
+- **Safe modification:** Any changes to `vnSubProvinceRegex` MUST keep `Pattern.UNICODE_CASE or Pattern.CASE_INSENSITIVE` flags (or `(?iu)` inline). Add a unit test for a Vietnamese diacritic variant (e.g., `"Phường Hoàng Mai"`) to catch flag removal.
+- **Test coverage:** Unit tests in `NominatimServiceTest.kt` cover `pickBestVietnamSubProvincePart()` for ASCII-equivalent inputs but do not explicitly test diacritic folding.
 
-### `NominatimApi` Shared Between LocationIQ and Nominatim Endpoints
+### `NominatimApi` Interface Shared Between LocationIQ and Nominatim
 
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimApi.kt`
-- **Why fragile:** The same interface is used for both `nominatim.openstreetmap.org` and `us1.locationiq.com/v1/`. LocationIQ and Nominatim return slightly different JSON structures (e.g., `format=json` vs `format=jsonv2`; different `display_name` conventions). Both are deserialized into `NominatimLocationResult`, which means a future divergence in either API response shape may silently cause null fields without a deserialization error (due to `ignoreUnknownKeys = true` and `explicitNulls = false` in `HttpModule.kt`).
-- **Safe modification:** Before adding new JSON fields derived from one service, verify they also exist (or are safely nullable) for the other.
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimApi.kt`
+- **Why fragile:** The same Retrofit interface is used for both `nominatim.openstreetmap.org` and `us1/eu1.locationiq.com/v1/`. The two services return different JSON structures. Both are deserialized into `NominatimLocationResult` with `ignoreUnknownKeys = true`, meaning field divergence between the two APIs is silently absorbed as `null`.
+- **Safe modification:** Before adding new JSON fields from one service, verify they are safely nullable for the other. Prefer separate response model classes if the schemas diverge further.
 
 ---
 
 ## Test Coverage Gaps
 
-### Vietnamese Address Parsing — No Kotlin Unit Tests
+### `requestNearestLocation` Lazy Nominatim Fetch — Not Integration Tested
 
-- **What's not tested:** `pickBestVietnamSubProvincePart()`, the POI-garbage fallback branch (lines 210–214), the `displayName` split logic, and the dual-API merge `zip` result selection.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt`; no corresponding test file exists under `app/src/test/`
-- **Risk:** Changes to the regex, split logic, or priority merging can regress silently. The Python `testaddress.py` covers algorithm logic but is not part of the Gradle test suite.
-- **Priority:** High — this is the primary fork-specific feature
-
-### `NominatimService` Concurrent Path — Not Tested
-
-- **What's not tested:** The `Observable.zip` concurrent strategy path (key present), including the error-swallowing fallback, the zip result selection, and the fresh-client construction.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` lines 115–162
-- **Risk:** Regression in dual-API logic goes undetected. The `mApi` stale-after-config bug would be caught by a proper unit test.
+- **What's not tested:** The `flatMap` → conditional `nominatimFetch` path, including: (1) the "clean LIQ result, Nominatim never called" branch; (2) the "dirty LIQ result, Nominatim rescue" branch (GiggleRescue); (3) the "LIQ failure, fall through to Nominatim" branch; (4) `mergeVnResults()` output when both sources provide data.
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt` (lines 158–224); `app/src/test/java/org/breezyweather/sources/nominatim/NominatimServiceTest.kt`
+- **Risk:** Changes to the lazy-fetch logic or `mergeVnResults()` regress silently. The GiggleRescue path has never been integration-tested.
 - **Priority:** High
 
-### Common Source Converter — Stub Test
+### `vnSubProvinceRegex` Diacritic Folding — Not Explicitly Tested
 
-- **What's not tested:** All weather unit conversions, country code disambiguation logic, address field extraction logic.
+- **What's not tested:** No unit test passes a Vietnamese diacritic string directly to `vnSubProvinceRegex` to confirm `(?iu)` is active. Tests use ASCII-equivalent strings.
+- **Files:** `app/src/test/java/org/breezyweather/sources/nominatim/NominatimServiceTest.kt`
+- **Risk:** If a refactor strips the Unicode flags, all VN address resolution silently fails for names with diacritics (the common case).
+- **Priority:** High
+
+### `WatchdogService` / `WatchdogRestartWorker` — Zero Unit Tests
+
+- **What's not tested:** `performHeartbeat()` logic, `scheduleNextAlarm()` alarm setup, `startWatchdogForeground()` failure fallback branch, `WatchdogRestartWorker.doWork()` re-enqueue path.
+- **Files:** `app/src/main/java/org/breezyweather/background/watchdog/` (no corresponding test file exists under `app/src/test/`)
+- **Risk:** Any change to watchdog startup, alarm scheduling, or fallback logic can break background job recovery undetected.
+- **Priority:** Medium
+
+### `CommonConverterTest` Is Stub Only
+
+- **What's not tested:** Weather unit conversions, country code disambiguation, address field extraction.
 - **Files:** `app/src/test/java/org/breezyweather/sources/CommonConverterTest.kt`
 - **Priority:** Medium
 
@@ -199,17 +212,17 @@
 
 ### Nominatim Public Instance — No SLA, ToS Restrictions
 
-- **Risk:** `https://nominatim.openstreetmap.org/` is a public free service with no uptime guarantee, a hard 1 req/sec rate limit, and a ToS that prohibits bulk or automated usage without prior contact. The app uses it as a concurrent secondary call alongside LocationIQ.
-- **Impact:** IP-level blocks would silently degrade Nominatim fallback for all users of that IP range (shared on mobile carriers).
-- **Mitigation plan:** Support user-specified self-hosted Nominatim instances (already partially implemented via `instance` config). Document the ToS concern clearly in user-facing settings help text.
+- **Risk:** `https://nominatim.openstreetmap.org/` is a public free service with no uptime SLA, a hard 1 req/sec rate limit, and a ToS that prohibits bulk or automated usage. The app uses it as a conditional secondary call for VN reverse geocoding rescue.
+- **Impact:** IP-level blocks would silently degrade Nominatim fallback for all users sharing that carrier's IP range.
+- **Mitigation plan:** Support is already partially implemented for user-specified self-hosted Nominatim via `instance` config. Document the ToS concern in user-facing settings help text.
 
-### LocationIQ US-West Endpoint Hardcoded
+### LocationIQ Regional Endpoint — No Auto-Selection
 
-- **Risk:** `LOCATIONIQ_BASE_URL = "https://us1.locationiq.com/v1/"` is hardcoded to the US-1 region endpoint. Users in Asia (including Vietnam) will experience higher latency and the endpoint may differ in accuracy for VN data.
-- **Files:** `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` line 397
-- **Impact:** Suboptimal reverse geocoding accuracy and latency for the primary target userbase (Vietnam).
-- **Migration plan:** Make the LocationIQ endpoint region configurable, or auto-select based on device locale/country.
+- **Risk:** LocationIQ requests fall back through `eu1` → `us1` candidates. There is no Asia-Pacific (`ap1`) option since `ap1.locationiq.com` was deprecated (DNS failure confirmed during debugging). For Vietnamese users, both `eu1` and `us1` have higher latency than an APAC endpoint.
+- **Files:** `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt` (endpoint candidate resolution logic)
+- **Impact:** Suboptimal reverse geocoding latency for the primary target userbase (Vietnam). If LocationIQ introduces a new APAC endpoint, the app won't use it without a code change.
+- **Migration plan:** Make the endpoint region configurable in Settings, or auto-select based on device locale.
 
 ---
 
-*Concerns audit: 2026-03-23*
+*Concerns audit: 2026-05-29*

@@ -1,259 +1,300 @@
+<!-- refreshed: 2026-05-29 -->
 # Codebase Structure
 
-**Analysis Date:** 2026-03-23
+**Analysis Date:** 2026-05-29
 
 ## Directory Layout
 
 ```
-breezy-weather-VN/
-├── app/                        # Main application module
-│   └── src/main/java/org/breezyweather/
-│       ├── BreezyWeather.kt    # Application class (@HiltAndroidApp)
-│       ├── Migrations.kt       # DB migration helpers
-│       ├── background/         # WorkManager jobs and background services
-│       ├── common/             # Shared utilities, DI, source interfaces
-│       ├── data/               # App-layer data classes (Contributors.kt)
-│       ├── domain/             # App-layer domain extensions and settings
-│       ├── remoteviews/        # Widgets and notification views
-│       ├── sources/            # All weather/geocoding source implementations
-│       ├── ui/                 # Activities, ViewModels, Fragments (MVVM)
-│       └── wallpaper/          # Live wallpaper provider
-├── data/                       # :data module — persistence layer
-│   └── src/main/
-│       ├── java/breezyweather/data/    # Repositories, DB handler, mappers
-│       └── sqldelight/breezyweather/data/  # SQLDelight .sq schema files
-├── domain/                     # :domain module — pure Kotlin domain models
-│   └── src/main/java/breezyweather/domain/
-│       ├── location/model/     # Location.kt, LocationAddressInfo.kt
+vn-weather-with-locationiq-and-nominatim/   # Project root
+├── app/                        # Android application module
+│   └── src/
+│       ├── main/
+│       │   ├── AndroidManifest.xml
+│       │   ├── java/org/breezyweather/
+│       │   │   └── background/watchdog/    # Fork: WatchdogService, WatchdogAlarmReceiver, WatchdogRestartWorker
+│       │   ├── kotlin/org/breezyweather/
+│       │   │   ├── BreezyWeather.kt        # Application class
+│       │   │   ├── Migrations.kt
+│       │   │   ├── background/             # Background jobs, services, receivers, widgets
+│       │   │   ├── common/                 # Shared utils, DI modules, source interfaces
+│       │   │   ├── data/                   # App-level data (Contributors.kt)
+│       │   │   ├── domain/                 # App-level settings + source domain helpers
+│       │   │   ├── remoteviews/            # Widgets and notifications
+│       │   │   ├── sources/                # All weather/geocoding source implementations
+│       │   │   ├── ui/                     # All user-facing screens
+│       │   │   └── wallpaper/              # Live wallpaper service + config
+│       │   └── res/                        # Shared resources (layouts, drawables, strings)
+│       ├── src_nonfreenet/                 # basic flavor source set (proprietary sources)
+│       │   └── org/breezyweather/sources/  # AccuService (full), and other non-free sources
+│       ├── src_freenet/                    # freenet flavor source set (free/open sources)
+│       │   └── org/breezyweather/sources/  # AccuService (stub), free-only source implementations
+│       ├── res_nonfreenet/                 # basic flavor resources
+│       ├── res_freenet/                    # freenet flavor resources
+│       ├── res_fork/                       # Fork-specific shared resources (both flavors)
+│       ├── res_breezy/                     # Upstream breezy-weather resources (isBreezy builds only)
+│       ├── debug/                          # Debug variant resources
+│       └── test/                           # Unit tests
+├── data/                       # :data Gradle module — SQLDelight repositories
+│   └── src/main/kotlin/breezyweather/data/
+│       ├── AndroidDatabaseHandler.kt
+│       ├── DatabaseAdapter.kt
+│       ├── DatabaseHandler.kt
+│       ├── location/
+│       │   ├── LocationRepository.kt
+│       │   └── LocationMapper.kt
+│       └── weather/
+│           ├── WeatherRepository.kt
+│           └── WeatherMapper.kt
+├── domain/                     # :domain Gradle module — pure Kotlin models
+│   └── src/main/kotlin/breezyweather/domain/
+│       ├── location/model/     # Location, LocationAddressInfo
 │       ├── source/             # SourceFeature.kt, SourceContinent.kt
-│       └── weather/            # model/, reference/, wrappers/
-├── ui-weather-view/            # :ui-weather-view module — reusable animated views
-│   └── src/main/java/org/breezyweather/ui/theme/
+│       └── weather/
+│           ├── model/          # Weather, Daily, Hourly, AirQuality, Alert, Pollen, etc.
+│           ├── index/          # PollenIndex.kt, PollutantIndex.kt
+│           ├── reference/      # WeatherCode, Month enums
+│           └── wrappers/       # WeatherWrapper (source response wrapper)
+├── ui-weather-view/            # :ui-weather-view module — animated weather canvas
 ├── weather-unit/               # :weather-unit module — unit conversion
-│   └── src/main/java/org/breezyweather/unit/
-│       ├── temperature/  speed/  pressure/  precipitation/
-│       ├── distance/  pollen/  pollutant/  ratio/  duration/
-│       ├── WeatherUnit.kt      # Base sealed class
-│       └── WeatherValue.kt     # Value + unit container
-├── maps-utils/                 # :maps-utils — vendored Google Maps utils
-├── buildSrc/                   # Gradle convention plugins
-├── gradle/
-│   └── libs.versions.toml      # Version catalog for all dependencies
+├── maps-utils/                 # :maps-utils module — geometry utilities (SphericalUtil)
+├── buildSrc/                   # Gradle convention plugins (breezy.android.application, etc.)
+├── config/                     # Upstream config (code style, etc.)
+├── config-fork/                # Fork-specific config overrides
+├── docs/                       # Documentation
+├── fastlane/                   # F-Droid / release metadata
+├── .planning/codebase/         # GSD planning documents (this file)
+├── build.gradle.kts            # Root build file
 ├── settings.gradle.kts         # Module declarations
-├── build.gradle.kts            # Root build config
-├── signature/
-│   ├── testaddress.py          # Manual lat/lon address lookup test script, require to edit if alrogithm changes, sync with the app to quickly test address without building the app
-│   └── testaddress.py.bak
-└── .planning/codebase/         # GSD architecture documents (this file)
+└── gradle.properties           # App metadata, source/API key defaults
 ```
 
-## Directory Purposes
+## Key Package Breakdown
 
-**`app/src/main/java/org/breezyweather/sources/`:**
+### `app/src/main/kotlin/org/breezyweather/background/`
 
-- Purpose: All pluggable weather and geocoding source implementations
-- Contains: One subdirectory per source (50+ sources)
-- Each source directory contains: `<Name>Api.kt` (Retrofit interface), `<Name>Service.kt` (logic + interface impls), `json/` (serialization models), optional `xml/`
-- Special files directly in `sources/`: `SourceManager.kt` (service registry), `RefreshHelper.kt` (refresh orchestrator), `CommonConverter.kt` (shared conversion utilities)
-- Key source: `sources/nominatim/` — unified Nominatim/LocationIQ with VN ward-name regex
+```
+background/
+├── forecast/
+│   ├── ForecastNotificationNotifier.kt
+│   ├── TodayForecastNotificationJob.kt
+│   └── TomorrowForecastNotificationJob.kt
+├── interfaces/
+│   └── TileService.kt              # Quick settings tile
+├── provider/
+│   └── WeatherContentProvider.kt   # Exports weather to other apps
+├── receiver/
+│   ├── BootReceiver.kt
+│   ├── NotificationReceiver.kt
+│   └── widget/                     # AppWidgetProvider subclasses (one per widget type)
+├── updater/
+│   ├── AppUpdateChecker.kt
+│   └── AppUpdateNotifier.kt
+└── weather/
+    ├── WeatherUpdateJob.kt          # WorkManager periodic job
+    └── WeatherUpdateNotifier.kt
+```
 
-**`app/src/main/java/org/breezyweather/common/source/`:**
+Watchdog (fork-only, legacy `java/` root):
+```
+app/src/main/java/org/breezyweather/background/watchdog/
+├── WatchdogService.kt              # Foreground service, heartbeat monitor
+├── WatchdogAlarmReceiver.kt        # AlarmManager wakeup receiver
+└── WatchdogRestartWorker.kt        # WorkManager one-shot restart worker
+```
 
-- Purpose: Source interface contracts
-- Contains: `Source.kt`, `HttpSource.kt`, `WeatherSource.kt`, `ReverseGeocodingSource.kt`, `LocationSearchSource.kt`, `ConfigurableSource.kt`, `FeatureSource.kt`, `LocationSource.kt`, `AddressSource.kt`, etc.
-- All source services implement one or more of these interfaces
+### `app/src/main/kotlin/org/breezyweather/sources/`
 
-**`app/src/main/java/org/breezyweather/common/di/`:**
+```
+sources/
+├── CommonConverter.kt              # Shared DTO-to-domain conversion logic
+├── RefreshHelper.kt                # Orchestrates full weather refresh cycle
+├── SourceManager.kt                # Hilt singleton registry of all sources
+├── nominatim/                      # Fork: unified Nominatim + LocationIQ
+│   ├── NominatimService.kt
+│   ├── NominatimApi.kt
+│   └── json/
+│       ├── NominatimLocationResult.kt
+│       └── NominatimAddress.kt
+├── openmeteo/                      # Default weather source
+├── android/                        # Device GPS + Android geocoder
+├── openweather/
+├── metno/
+├── brightsky/
+├── [60+ other provider packages]/  # One package per weather/geocoding provider
+└── debug/                          # Debug/test source stub
+```
 
-- Purpose: Hilt DI modules
-- `HttpModule.kt` — OkHttpClient, `@Named("JsonClient")` / `@Named("XmlClient")` Retrofit.Builder singletons
-- `DbModule.kt` — DatabaseHandler
-- `RxModule.kt` — RxJava schedulers
+### `app/src/main/kotlin/org/breezyweather/ui/`
 
-**`app/src/main/java/org/breezyweather/ui/`:**
+```
+ui/
+├── main/
+│   ├── MainActivity.kt
+│   ├── MainActivityModels.kt
+│   ├── MainActivityViewModel.kt
+│   ├── fragments/
+│   │   ├── HomeFragment.kt         # Primary weather display
+│   │   ├── MainModuleFragment.kt
+│   │   └── ManagementFragment.kt   # Location list management
+│   ├── adapters/
+│   ├── dialogs/
+│   ├── layouts/
+│   ├── utils/
+│   └── widgets/
+├── search/
+│   └── SearchActivity.kt
+├── details/
+│   └── DetailsActivity.kt          # Daily forecast detail
+├── alert/
+│   └── AlertActivity.kt
+├── settings/
+│   ├── activities/                 # Settings sub-screens
+│   ├── adapters/
+│   ├── compose/                    # Compose-based settings UI
+│   ├── dialogs/
+│   └── preference/
+├── about/
+│   └── AboutActivity.kt
+├── theme/
+└── common/
+```
 
-- Purpose: All UI — Activities, ViewModels, Fragments, Compose screens
-- `main/` — `MainActivity`, `MainActivityViewModel`, `HomeFragment`, `ManagementFragment`, adapters, layouts
-- `search/` — `SearchActivity`, `SearchViewModel`, `SearchActivityRepository`
-- `settings/` — settings screens (`activities/`, `compose/`, `adapters/`, `preference/`, `dialogs/`)
-- `details/` — per-day/hour detail screen
-- `alert/` — weather alert screen
-- `about/` — about screen
-- `common/` — shared UI utilities
+### `app/src/main/kotlin/org/breezyweather/common/`
 
-**`app/src/main/java/org/breezyweather/background/`:**
-
-- Purpose: Background work (WorkManager)
-- `weather/WeatherUpdateJob.kt` — periodic weather refresh worker
-- `forecast/` — forecasted-event notification worker
-- `updater/` — GitHub release checker
-- `interfaces/` — background job interfaces
-
-**`app/src/main/java/org/breezyweather/domain/`:**
-
-- Purpose: App-layer extensions on domain models (NOT the `:domain` module)
-- `settings/SettingsManager.kt` — `SharedPreferences`-backed user settings singleton
-- `settings/SourceConfigStore.kt` — per-source API key storage
-- `location/model/Location.kt` — extension functions (`isDaylight`, `getPlace`, `isCloseTo`, `applyDefaultPreset`)
-
-**`app/src/main/java/org/breezyweather/remoteviews/`:**
-
-- Purpose: Android widgets and notifications
-- `presenters/` — one presenter per widget type
-- `Notifications.kt` — channel setup and notification builders
-- `Widgets.kt` — widget registration and update trigger
-
-**`data/src/main/java/breezyweather/data/`:**
-
-- `location/LocationRepository.kt` — all location CRUD (suspend)
-- `location/LocationMapper.kt` — SQLDelight DB row → `Location` domain model
-- `weather/WeatherRepository.kt` — all weather CRUD (suspend)
-- `weather/WeatherMapper.kt` — DB rows → `Weather` domain model
-- `DatabaseHandler.kt` — coroutine wrapper around SQLDelight driver
-- `AndroidDatabaseHandler.kt` — Android-specific driver init
-
-**`data/src/main/sqldelight/breezyweather/data/`:**
-
-- `.sq` files define all tables and queries used by SQLDelight codegen
-- Files: `locations.sq`, `location_parameters.sq`, `weathers.sq`, `dailys.sq`, `hourlys.sq`, `minutelys.sq`, `alerts.sq`, `normals.sq`
-
-**`domain/src/main/java/breezyweather/domain/`:**
-
-- `location/model/Location.kt` — core location data class
-- `location/model/LocationAddressInfo.kt` — geocoding result DTO
-- `weather/model/*.kt` — 20+ weather entity data classes (Weather, Current, Daily, Hourly, AirQuality, Alert, Pollen, Temperature, Wind, Precipitation, UV, etc.)
-- `weather/reference/` — enum references (WeatherCode, Month, etc.)
-- `weather/wrappers/WeatherWrapper.kt` — source output wrapper
-- `source/SourceFeature.kt`, `SourceContinent.kt`
+```
+common/
+├── di/
+│   ├── DbModule.kt                 # Hilt: database + repositories
+│   ├── HttpModule.kt               # Hilt: Retrofit clients (JsonClient, XmlClient)
+│   └── RxModule.kt                 # Hilt: RxJava3 schedulers
+├── source/
+│   ├── Source.kt                   # Base interface
+│   ├── WeatherSource.kt
+│   ├── LocationSource.kt
+│   ├── LocationSearchSource.kt
+│   ├── ReverseGeocodingSource.kt
+│   ├── HttpSource.kt
+│   ├── ConfigurableSource.kt
+│   ├── NonFreeNetSource.kt
+│   ├── TimeZoneSource.kt
+│   ├── PollenIndexSource.kt
+│   ├── BroadcastSource.kt
+│   ├── RefreshError.kt
+│   ├── WeatherResult.kt
+│   └── LocationResult.kt
+├── exceptions/                     # ApiKeyMissingException, InvalidLocationException, etc.
+├── extensions/                     # Kotlin extension functions
+├── preference/                     # Preference UI helpers (EditTextPreference, etc.)
+├── serializer/
+├── utils/
+│   ├── helpers/
+│   ├── ColorUtils.kt
+│   ├── UnitUtils.kt
+│   └── CrashLogUtils.kt
+└── [other utility packages]
+```
 
 ## Key File Locations
 
 **Entry Points:**
+- `app/src/main/kotlin/org/breezyweather/BreezyWeather.kt` — Application class
+- `app/src/main/kotlin/org/breezyweather/ui/main/MainActivity.kt` — UI entry point
+- `app/src/main/kotlin/org/breezyweather/background/weather/WeatherUpdateJob.kt` — Background entry point
 
-- `app/src/main/java/org/breezyweather/BreezyWeather.kt` — Application class
-- `app/src/main/java/org/breezyweather/ui/main/MainActivity.kt` — Launcher Activity
-- `app/src/main/java/org/breezyweather/background/weather/WeatherUpdateJob.kt` — Background refresh
+**Source Interface Contracts:**
+- `app/src/main/kotlin/org/breezyweather/common/source/` — all `*Source` interfaces
 
-**Source Infrastructure:**
+**Fork-Specific Files:**
+- `app/src/main/java/org/breezyweather/background/watchdog/WatchdogService.kt`
+- `app/src/main/java/org/breezyweather/background/watchdog/WatchdogAlarmReceiver.kt`
+- `app/src/main/java/org/breezyweather/background/watchdog/WatchdogRestartWorker.kt`
+- `app/src/main/kotlin/org/breezyweather/sources/nominatim/NominatimService.kt`
 
-- `app/src/main/java/org/breezyweather/sources/SourceManager.kt` — source registry
-- `app/src/main/java/org/breezyweather/sources/RefreshHelper.kt` — refresh orchestrator
-- `app/src/main/java/org/breezyweather/sources/nominatim/NominatimService.kt` — Nominatim/LocationIQ (VN-enhanced)
+**Dependency Injection:**
+- `app/src/main/kotlin/org/breezyweather/common/di/DbModule.kt`
+- `app/src/main/kotlin/org/breezyweather/common/di/HttpModule.kt`
+- `app/src/main/kotlin/org/breezyweather/common/di/RxModule.kt`
 
-**Domain Models:**
+**Settings:**
+- `app/src/main/kotlin/org/breezyweather/domain/settings/SettingsManager.kt`
+- `app/src/main/kotlin/org/breezyweather/domain/settings/SourceConfigStore.kt`
 
-- `domain/src/main/java/breezyweather/domain/location/model/Location.kt`
-- `domain/src/main/java/breezyweather/domain/location/model/LocationAddressInfo.kt`
-- `domain/src/main/java/breezyweather/domain/weather/model/Weather.kt`
-
-**Persistence:**
-
-- `data/src/main/java/breezyweather/data/location/LocationRepository.kt`
-- `data/src/main/java/breezyweather/data/weather/WeatherRepository.kt`
-
-**Configuration:**
-
-- `gradle/libs.versions.toml` — all dependency versions
-- `settings.gradle.kts` — module includes (`:app`, `:data`, `:domain`, `:maps-utils`, `:ui-weather-view`, `:weather-unit`)
-- `app/build.gradle.kts` — app module build config with flavors (`freenet`, `nonfreenet`)
-
-**Testing:**
-
-- `app/src/test/` — unit tests for app module
-- `weather-unit/src/test/` — unit tests for unit conversions
-- `maps-utils/src/test/` — utility tests
-- `signature/testaddress.py` — manual integration test for reverse geocoding APIs (Python script)
+**Build Configuration:**
+- `app/build.gradle.kts` — flavor declarations, API key `buildConfigField` entries, source set wiring
+- `gradle.properties` — app metadata defaults (`app.report_issue`, `app.source_code_link`, etc.)
+- `local.properties` — developer-local API keys (`breezy.source.default_geocoding`, `breezy.accu.key`, etc.) — not committed
 
 ## Naming Conventions
 
 **Files:**
-
 - Kotlin classes: `PascalCase.kt` (e.g., `NominatimService.kt`, `WeatherUpdateJob.kt`)
-- API interfaces: `<SourceName>Api.kt` (e.g., `NominatimApi.kt`, `OpenMeteoApi.kt`)
-- Service classes: `<SourceName>Service.kt`
-- ViewModel: `<Screen>ViewModel.kt` (e.g., `MainActivityViewModel.kt`, `SearchViewModel.kt`)
-- Repository: `<Entity>Repository.kt`
-- Mapper: `<Entity>Mapper.kt`
-- SQLDelight schemas: `<tablename>.sq` (plural, lowercase)
+- Source packages: lowercase, matching provider name (e.g., `nominatim/`, `openmeteo/`, `brightsky/`)
+- JSON DTO files: `[SourcePrefix][Concept].kt` (e.g., `NominatimLocationResult.kt`, `AccuCurrentResult.kt`)
+- Test files: `[ClassName]Test.kt`
 
 **Packages:**
-
-- Source modules use reversed domain: `breezyweather.domain.*`, `breezyweather.data.*`
-- App module uses `org.breezyweather.*`
-- Sources grouped by provider name: `org.breezyweather.sources.nominatim`, `org.breezyweather.sources.openmeteo`
-
-**Directories:**
-
-- Source subdirectory name = source `id` string (e.g., `nominatim/`, `openmeteo/`, `accu/`)
-- JSON models under `json/` subdirectory within each source
-- XML models under `xml/` subdirectory if the source uses XML responses
+- All app code under `org.breezyweather`
+- Domain/data modules use `breezyweather.domain` / `breezyweather.data` (no `org.` prefix)
 
 ## Where to Add New Code
 
-**New Weather/Geocoding Source:**
+**New weather source:**
+1. Create package: `app/src/main/kotlin/org/breezyweather/sources/[sourceid]/`
+2. Implement: `[Name]Service.kt` (implements relevant `*Source` interfaces), `[Name]Api.kt` (Retrofit), `json/` DTOs
+3. Register: add `@Inject` constructor to `[Name]Service` and add it to `SourceManager.kt`
+4. If source requires a proprietary SDK: place `[Name]Service.kt` in `app/src/src_nonfreenet/` and add a stub to `app/src/src_freenet/`; implement `NonFreeNetSource`
 
-- Create `app/src/main/java/org/breezyweather/sources/<sourceid>/` directory
-- Add `<Name>Api.kt` (Retrofit interface), `<Name>Service.kt` (implements `HttpSource` + feature interfaces), `json/` for models
-- Register in `app/src/main/java/org/breezyweather/sources/SourceManager.kt` constructor list
+**New background job:**
+- Location: `app/src/main/kotlin/org/breezyweather/background/`
+- Pattern: extend `CoroutineWorker`, enqueue via WorkManager in `WeatherUpdateJob` or standalone
 
-**New Domain Model Field:**
+**New UI screen:**
+- Location: `app/src/main/kotlin/org/breezyweather/ui/[screenname]/`
+- Pattern: Activity or Fragment + ViewModel; register Activity in `AndroidManifest.xml`
 
-- Edit `domain/src/main/java/breezyweather/domain/location/model/Location.kt` or relevant weather model
-- Update `data/src/main/java/breezyweather/data/*/.*Mapper.kt` for DB serialization
-- Add migration in `data/src/main/sqldelight/breezyweather/migrations/`
+**New domain model:**
+- Location: `domain/src/main/kotlin/breezyweather/domain/weather/model/` (weather) or `domain/.../location/model/`
+- No Android imports allowed in `:domain`
 
-**New UI Screen:**
+**New utility:**
+- Shared extensions: `app/src/main/kotlin/org/breezyweather/common/extensions/`
+- Shared helpers: `app/src/main/kotlin/org/breezyweather/common/utils/helpers/`
 
-- Create Activity + ViewModel under `app/src/main/java/org/breezyweather/ui/<screenname>/`
-- ViewModel extends `BreezyViewModel` (`common/activities/BreezyViewModel.kt`), annotated `@HiltViewModel`
-
-**New User Setting:**
-
-- Add property to `app/src/main/java/org/breezyweather/domain/settings/SettingsManager.kt`
-- Add UI preference in `app/src/main/java/org/breezyweather/ui/settings/`
-
-**New Unit Type:**
-
-- Add sealed class under `weather-unit/src/main/java/org/breezyweather/unit/<unittype>/`
-- Follow pattern of existing units (e.g., `temperature/TemperatureUnit.kt`)
-
-**New Background Job:**
-
-- Add `CoroutineWorker` subclass under `app/src/main/java/org/breezyweather/background/`
-- Register with WorkManager in `BreezyWeather.kt` or the relevant trigger point
+**New widget:**
+- Config activity: `app/src/main/kotlin/org/breezyweather/remoteviews/config/`
+- Presenter: `app/src/main/kotlin/org/breezyweather/remoteviews/presenters/`
+- Provider receiver: `app/src/main/kotlin/org/breezyweather/background/receiver/widget/`
+- Declare in: `app/src/main/AndroidManifest.xml`
 
 ## Special Directories
 
-**`buildSrc/`:**
+**`app/src/main/java/`:**
+- Purpose: Legacy source root retained for the three watchdog files only
+- Generated: No
+- Committed: Yes
+- Note: All other Kotlin source is under `app/src/main/kotlin/`; both roots are compiled
 
-- Purpose: Gradle convention plugins (shared build logic)
+**`app/src/src_nonfreenet/` and `app/src/src_freenet/`:**
+- Purpose: Product flavor source sets; compiled exclusively per flavor build
 - Generated: No
 - Committed: Yes
 
-**`app/src/res_breezy/`, `res_fork/`, `res_freenet/`, `res_nonfreenet/`:**
-
-- Purpose: Flavor-specific resources (icons, strings, configs for different build variants)
+**`app/src/res_fork/`:**
+- Purpose: Fork-specific resource overrides applied to both flavors
 - Generated: No
 - Committed: Yes
 
-**`app/src/src_freenet/`, `src_nonfreenet/`:**
-
-- Purpose: Flavor-specific Kotlin source files (e.g., F-Droid vs standard builds differ in update checker, non-free sources)
-- Generated: No
+**`.planning/codebase/`:**
+- Purpose: GSD architecture and planning documents
+- Generated: Yes (by GSD commands)
 - Committed: Yes
 
-**`app/build/`, `data/build/`, `domain/build/`:**
-
-- Purpose: Gradle build outputs, generated code (Hilt, KSP, SQLDelight)
+**`build/`:**
+- Purpose: Gradle build outputs
 - Generated: Yes
 - Committed: No
 
-**`.planning/codebase/`:**
-
-- Purpose: GSD architecture analysis documents
-- Generated: By GSD mapper agents
-- Committed: Yes (project documentation)
-
 ---
 
-*Structure analysis: 2026-03-23*
+*Structure analysis: 2026-05-29*

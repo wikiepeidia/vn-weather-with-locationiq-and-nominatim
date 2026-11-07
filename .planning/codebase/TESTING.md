@@ -1,278 +1,310 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-03-23
+**Analysis Date:** 2026-05-29
 
 ## Test Framework
 
-**Runner:**
+**Runner:** JUnit 5 (Jupiter) 6.0.3
 
-- JUnit 5 (Jupiter) `6.0.3`
-- Config: `testImplementation(libs.bundles.test)` + `testRuntimeOnly(libs.junit.platform)` in `app/build.gradle.kts`
-- Version catalog: `gradle/libs.versions.toml`
+- Artifact: `org.junit.jupiter:junit-jupiter` via `libs.bundles.test`
+- Runtime launcher: `org.junit.platform:junit-platform-launcher` (`testRuntimeOnly`)
+- Config: `app/build.gradle.kts` — `testOptions { unitTests { isIncludeAndroidResources = true; isReturnDefaultValues = true } }`
 
-**Assertion Library:**
+**Assertion Library:** Kotest Assertions Core 6.1.11 — `io.kotest:kotest-assertions-core`
 
-- Kotest Assertions Core `6.1.7` — `io.kotest:kotest-assertions-core`
-- Uses `shouldBe` infix style (no `assertEquals`)
+**Mocking Library:** MockK — `io.mockk:mockk` (part of `libs.bundles.test`)
 
-**Mocking:**
-
-- MockK `1.14.9` — `io.mockk:mockk`
-
-**Coroutines Testing:**
-
-- `kotlinx-coroutines-test` `1.10.2`
-- All tests use `= runTest { ... }` even when not strictly async (project convention)
+**Async Test Support:** `kotlinx-coroutines-test` — `kotlinx.coroutines.test.runTest`
 
 **Run Commands:**
 
 ```bash
-./gradlew test                  # Run all unit tests
-./gradlew app:test              # Run app module unit tests only
-./gradlew app:testDebugUnitTest # Run debug variant unit tests
+./gradlew test                     # Run all unit tests
+./gradlew app:test                 # Run app module unit tests only
+./gradlew app:testDebugUnitTest    # Debug variant unit tests
 ```
 
----
+No coverage threshold is configured. Coverage tooling is not observed in the build files.
 
 ## Test File Organization
 
-**Location:** `app/src/test/java/org/breezyweather/`
+**Source roots:**
 
-**Mirror structure:** Test packages mirror the main source package structure.
+- Upstream tests: `app/src/test/kotlin/org/breezyweather/`
+- Fork-specific tests (valid Kotlin, `java/` source root): `app/src/test/java/org/breezyweather/`
 
-**Naming:** `<ClassUnderTest>Test.kt`
+**Naming:** `<SubjectClass>Test.kt` — mirrors the production class name exactly.
+
+**Package mirroring:** Test packages match production packages:
+
+```text
+Production: org.breezyweather.sources.nominatim.NominatimService
+Test:       org.breezyweather.sources.nominatim.NominatimServiceTest
+```
 
 **Current test files:**
 
-```
-app/src/test/java/org/breezyweather/
-├── LocationTest.kt                         # Empty stub (placeholder only)
-├── MatchTest.kt                            # Exploratory/scratch test
-├── option/
-│   ├── appearance/
-│   │   ├── CardDisplayTest.kt              # CardDisplay serialization roundtrip
-│   │   └── DailyTrendDisplayTest.kt        # DailyTrendDisplay serialization
-│   └── utils/
-│       └── UtilsTest.kt                    # UnitUtils.getNameByValue
-└── sources/
-    └── CommonConverterTest.kt              # getWindDegree parsing
-```
+```text
+app/src/test/java/org/breezyweather/sources/nominatim/
+    NominatimServiceTest.kt                    (503 lines — fork-owned, VN logic)
 
-**No androidTest directory found** — no instrumented tests; all tests are pure JVM unit tests.
-
----
+app/src/test/kotlin/org/breezyweather/
+    LocationTest.kt                            (stub — empty class body)
+    MatchTest.kt
+    option/appearance/
+        CardDisplayTest.kt
+        DailyTrendDisplayTest.kt
+    option/utils/
+        UtilsTest.kt
+    sources/
+        CommonConverterTest.kt
+```
 
 ## Test Structure
 
-**Standard pattern:**
+**Suite organization:** Flat class body — no `@Nested` classes or `@BeforeEach`/`@AfterEach`
+observed. Each `@Test` function is self-contained.
+
+**Section separators** are used inside large test classes to group related tests:
 
 ```kotlin
-class CardDisplayTest {
+// ─── Phase 15 key gate and diagnostics seams ──────────────────────────────────
+@Test
+fun `isLocationIqKey - pk prefix is accepted`() { ... }
 
-    @Test
-    fun toCardDisplayList() = runTest {
-        val value = "nowcast&daily_forecast&hourly_forecast&precipitation"
-        val list = CardDisplay.toCardDisplayList(value)
-        list[0] shouldBe CardDisplay.CARD_NOWCAST
-        list[1] shouldBe CardDisplay.CARD_DAILY_FORECAST
+// ─── TEST-01: pickBestVietnamSubProvincePart ──────────────────────────────────
+@Test
+fun `pickBestVietnamSubProvincePart - POI prefix is skipped, clean Phuong matched`() { ... }
+```
+
+**Class-level helpers** are declared as `private val` or `private fun` inside the test class body
+(not in a companion object):
+
+```kotlin
+class NominatimServiceTest {
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
     }
-}
+
+    private fun addressOf(city: String?, countryCode: String = "vn") = LocationAddressInfo(
+        countryCode = countryCode,
+        city = city,
+    )
+
+    private fun httpException(code: Int, message: String): HttpException { ... }
 ```
 
-**Key characteristics:**
-
-- No `@BeforeEach`, `@AfterEach`, `@BeforeAll` setup observed — tests are stateless
-- No nested `@Nested` classes (flat structure per test class)
-- All test functions use `= runTest { ... }` (assigned expression body, not block body with `fun`)
-- No explicit `TestDispatcher` or `UnconfinedTestDispatcher` setup — standard `runTest` only
-
----
-
-## Mocking with MockK
-
-**Creating mocks:**
-
-```kotlin
-val res = mockk<Resources>()
-val context = mockk<Context>()
-```
-
-**Stubbing with `every`:**
-
-```kotlin
-every { res.getStringArray(R.array.dark_modes) } returns
-    arrayOf("Automatic", "Follow system", "Always light", "Always dark")
-every { res.getStringArray(R.array.dark_mode_values) } returns
-    arrayOf("auto", "system", "light", "dark")
-```
-
-**Application (from `UtilsTest.kt`):**
+**Standard test function pattern** (no coroutines needed for pure logic):
 
 ```kotlin
 @Test
-fun getNameByValue() = runTest {
-    val res = mockk<Resources>()
-    every { res.getStringArray(R.array.dark_modes) } returns
-        arrayOf("Automatic", "Follow system", "Always light", "Always dark")
-    every { res.getStringArray(R.array.dark_mode_values) } returns
-        arrayOf("auto", "system", "light", "dark")
-    UnitUtils.getNameByValue(res, "auto", R.array.dark_modes, R.array.dark_mode_values) shouldBe "Automatic"
+fun `isLocationIqKey - pk prefix is accepted`() {
+    NominatimService.isLocationIqKey("pk.demo-key") shouldBe true
 }
 ```
 
-**Android Context mocking** uses `mockk<Context>().apply { every { getString(...) } returns "..." }`:
+**Coroutine test pattern** (when the subject is a suspend function or uses coroutines):
 
 ```kotlin
-val context = mockk<Context>().apply {
-    every { getString(any()) } returns "Name"
-    every { getString(org.breezyweather.unit.R.string.locale_separator) } returns ", "
+@Test
+fun getWindDegreeTest() = runTest {
+    getWindDegree(null) shouldBe null
+    getWindDegree("E") shouldBe 90.0
 }
 ```
-
-**What is mocked:**
-
-- `android.content.Context`
-- `android.content.res.Resources`
-- Android resource methods (`getString`, `getStringArray`)
-
-**What is NOT mocked:**
-
-- Pure Kotlin domain objects and data classes
-- Static utility functions (called directly)
-- Companion object methods (called directly on the class)
-
----
 
 ## Assertion Style
 
-Use **Kotest `shouldBe`** infix assertions exclusively. Do not use `assertEquals`.
-
-**Single value:**
+**Always use Kotest infix `shouldBe`** — never JUnit `assertEquals` or Kotlin `assert`:
 
 ```kotlin
-getWindDegree(null) shouldBe null
-getWindDegree("E") shouldBe 90.0
-getWindDegree("VR") shouldBe -1.0
+result shouldBe listOf(nomInfo)
+address.suburb shouldBe "Phường Hoàn Kiếm"
+address.hamlet shouldBe null
+NominatimService.classifyLocationIqKeyState(null) shouldBe NominatimService.Companion.LocationIqKeyState.MISSING
 ```
 
-**List element access:**
+Chain multiple assertions in a single test when they all verify the same object:
 
 ```kotlin
-list[0] shouldBe CardDisplay.CARD_NOWCAST
-list[12] shouldBe CardDisplay.CARD_MOON
+result.placeId shouldBe 123456
+result.lat shouldBe "21.0285"
+result.displayName shouldBe "Phường Hoàn Kiếm, Quận Hoàn Kiếm, Hà Nội, Việt Nam"
+result.address?.suburb shouldBe "Phường Hoàn Kiếm"
+result.address?.countryCode shouldBe "vn"
+result.address?.hamlet shouldBe null
 ```
 
-**String equality:**
+## Mocking
+
+**Framework:** MockK
+
+**Pattern:**
 
 ```kotlin
-CardDisplay.toValue(list) shouldBe "nowcast&daily_forecast&hourly_forecast..."
-UnitUtils.getNameByValue(...) shouldBe "Automatic"
+val res = mockk<Resources>()
+every { res.getStringArray(R.array.dark_modes) } returns
+    arrayOf("Automatic", "Follow system", "Always light", "Always dark")
 ```
 
----
+**What to mock:** Android framework types (`Context`, `Resources`) that cannot be constructed in
+a JVM-only unit test (`isReturnDefaultValues = true` is set, so unmocked Android stubs return
+defaults rather than crashing).
 
-## Test Types
+**What NOT to mock:** Pure Kotlin logic in companion objects — call these directly. The companion
+object pattern (see `NominatimService.kt`) exists precisely so mocking is unnecessary for
+business logic tests.
 
-**Unit Tests (only type present):**
+## How to Test NominatimService Logic
 
-- Scope: Single class, method, or pure function
-- Location: `app/src/test/`
-- Dependencies: MockK for Android framework; real objects otherwise
-
-**Integration Tests:** Not present
-
-**E2E / Instrumented Tests:** Not present (`androidTest` not populated)
-
----
-
-## Coverage
-
-**Requirements:** None enforced — no Jacoco configuration, no coverage threshold found.
-
-**Current state:** Very sparse. Only 5 non-empty test classes covering:
-
-- `CardDisplay` serialization roundtrip (`CardDisplayTest.kt`)
-- `DailyTrendDisplay` (similar roundtrip, `DailyTrendDisplayTest.kt`)
-- `UnitUtils.getNameByValue` (1 test in `UtilsTest.kt`)
-- `getWindDegree` direction parsing (4 assertions in `CommonConverterTest.kt`)
-- `MatchTest.kt` is exploratory scratch code with no real assertions
-
-**`LocationTest.kt`** is an empty class — a placeholder with no test methods.
-
----
-
-## Writing New Tests
-
-**For a new source converter function:**
+The companion object methods are `internal` and callable directly from tests in the same module:
 
 ```kotlin
-package org.breezyweather.sources
+// Pure logic — no mock needed
+NominatimService.isLocationIqKey("pk.demo") shouldBe true
+NominatimService.pickBestVietnamSubProvincePart(parts) shouldBe "Phường Phú Lương"
+NominatimService.mergeVnResults(liqInfo, listOf(nomInfo)) shouldBe listOf(nomInfo)
 
-import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
+// Helper to build test inputs without constructing the full service
+private fun addressOf(city: String?, countryCode: String = "vn") = LocationAddressInfo(
+    countryCode = countryCode,
+    city = city,
+)
+```
 
-class MySourceConverterTest {
+Do not try to instantiate `NominatimService` directly in unit tests — it requires Hilt injection
+and a live `Retrofit.Builder`. Test only via companion object static methods.
 
-    @Test
-    fun parseTemperature() = runTest {
-        parseTemperature("25.0") shouldBe 25.0
-        parseTemperature(null) shouldBe null
+## Fixtures and Test Data
+
+**Inline construction** — no separate fixture files or factory objects:
+
+```kotlin
+val parts = listOf(
+    "Ủy ban nhân dân Phường Phú Lương",
+    "Phường Phú Lương",
+    "Quận Hà Đông",
+    "Hà Nội",
+    "Việt Nam",
+)
+```
+
+**JSON strings** embedded directly in the test function using `trimIndent()`:
+
+```kotlin
+val jsonStr = """
+    {
+        "suburb": "Phường Hoàn Kiếm",
+        "town": "Hà Nội",
+        "state": "Hà Nội",
+        "country": "Việt Nam",
+        "country_code": "vn"
     }
+""".trimIndent()
+val address = json.decodeFromString<NominatimAddress>(jsonStr)
+```
+
+**Regression coordinate list** kept as a `private val` in the test class body and asserted as a
+whole to confirm it hasn't been accidentally modified:
+
+```kotlin
+private val manualReverseRegressionCoordinates = listOf(
+    21.11157 to 105.79121,
+    ...
+)
+
+@Test
+fun `manual reverse regression coordinates include all TODO vectors`() {
+    manualReverseRegressionCoordinates shouldBe listOf(...)
 }
 ```
 
-**For Vietnamese address parsing (NominatimService):**
-NominatimService uses `private` methods, so test the observable output via integration-style test
-or extract the parsing logic into a testable `internal` function. Current `pickBestVietnamSubProvincePart`
-is `private` — to unit test it, either:
+## Error Path Testing
 
-1. Make it `internal` and use `@VisibleForTesting`
-2. Test through the public `requestNearestLocation` observable (requires mocking the `NominatimApi`)
-
-**Recommended MockK pattern for Retrofit API mocking:**
+**HttpException construction helper:**
 
 ```kotlin
-val api = mockk<NominatimApi>()
-every { api.getReverseLocation(any(), any(), any(), any(), any(), any(), any()) } returns
-    Observable.just(fakeResult)
+private fun httpException(code: Int, message: String): HttpException {
+    val response = Response.error<String>(
+        code,
+        message.toResponseBody("text/plain".toMediaType()),
+    )
+    return HttpException(response)
+}
+
+@Test
+fun `classifyLocationIqFailureReason - invalid key bucket`() {
+    val error = httpException(401, "Invalid key")
+    NominatimService.classifyLocationIqFailureReason(error) shouldBe "invalid key response hint"
+}
+
+@Test
+fun `classifyLocationIqFailureReason - network failure bucket`() {
+    NominatimService.classifyLocationIqFailureReason(IOException("timeout")) shouldBe "request/network failure"
+}
 ```
 
----
+## Test Naming Convention
 
-## Known Test Gaps
+Test names use backtick strings in the format:
 
-| Area | What's Missing | Risk |
-|------|---------------|------|
-| `NominatimService` VN address parsing | No tests for `pickBestVietnamSubProvincePart` or `convertLocation` | High — regex logic is complex with edge cases |
-| `NominatimService` dual-API fallback | No test for LocationIQ+Nominatim zip strategy | High — fallback priority logic untested |
-| `CommonConverter` | Only `getWindDegree` tested; many conversion functions uncovered | Medium |
-| `BrightSkyService` / all weather sources | Zero test coverage on any weather source | Medium |
-| `SourceConfigStore` / configuration | No test for API key detection (`isLocationIqKey`) | Low |
-| ViewModel state management | No test for `MainActivityViewModel` | Low (requires Android) |
-
----
-
-## Test Dependencies (from `gradle/libs.versions.toml`)
-
-```toml
-[versions]
-junit = "6.0.3"
-kotest-assertions = "6.1.7"
-kotlinx-coroutines = "1.10.2"
-mockk = "1.14.9"
-
-[libraries]
-junit = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
-junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher" }
-kotest-assertions = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest-assertions" }
-kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
-mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
-
-[bundles]
-test = ["junit", "kotest-assertions", "kotlinx-coroutines-test", "mockk"]
+```text
+`<subject> - <condition or input> - <expected outcome>`
 ```
 
+Examples:
+
+- `` `isLocationIqKey - pk prefix is accepted` ``
+- `` `classifyLocationIqKeyState - malformed key detected` ``
+- `` `pickBestVietnamSubProvincePart - multiple matches - last (innermost) wins` ``
+- `` `mergeVnResults XVAL-01 - LIQ dirty, Nominatim clean - Nominatim wins` ``
+
+Test IDs (e.g., `XVAL-01`, `ADDR-03`) embedded in the test name or a comment act as
+cross-references to the test plan documented in the class-level KDoc block.
+
+## Test Types
+
+**Unit tests (only type present):**
+
+- Target: pure Kotlin logic — parsing, URL normalization, VN address classification, JSON deserialization
+- Scope: companion object static methods and data class deserialization
+- Android APIs: avoided; `isReturnDefaultValues = true` prevents crashes if any slip through
+- No Robolectric, no instrumented tests, no E2E or UI tests in the custom fork additions
+
+**Integration / instrumented tests:** Not observed in the fork-added test files.
+
+**E2E tests:** Not present.
+
+## Test Coverage — Current State
+
+**Well-covered (NominatimServiceTest.kt — 503 lines, ~40 test cases):**
+
+- `isLocationIqKey` — pk. prefix detection
+- `classifyLocationIqKeyState` — MISSING / MALFORMED / VALID states
+- `normalizeLocationIqBaseUrl` — protocol upgrade, path canonicalization, query stripping
+- `resolveLocationIqBaseUrl` — null fallback, override, deprecated host rejection
+- `normalizeLegacyLocationIqOverride` — migration from old endpoint format
+- `resolveNominatimBaseUrl` — default, custom instance, LocationIQ key rejection
+- `resolveLocationIqBaseUrlCandidates` — default, regional, custom, deprecated ordering
+- `classifyLocationIqFailureReason` — network / 401 / 429 HTTP buckets
+- `pickBestVietnamSubProvincePart` — POI skip, dirty-only null, single match, last-match ordering,
+  Đặc Khu prefix, UBND prefix filtering, empty list
+- `isCleanVnCity` — valid Phường/Xã, POI prefix, null, empty
+- `mergeVnResults` — XVAL-01/02/03 cross-validation scenarios, null LIQ, both empty
+- `NominatimAddress` JSON deserialization — suburb, hamlet, quarter, ISO3166-2-lvl4, `@SerialName`
+- `NominatimLocationResult` full VN response, structured-fields priority over dirty display_name
+
+**Coverage gaps:**
+
+- `convertLocation` private method — not directly tested; indirectly exercised through integration
+- `requestLocationSearch` / `requestNearestLocation` observable pipelines — not tested (require
+  Hilt + live Retrofit); RxJava fallback chains are untested in the test suite
+- `getAdmin1CodeForCountry` / `getAdmin2CodeForCountry` / `getNonAmbiguousCountryCode` — not tested
+- `migrateLegacyLocationIqEndpointOverrideIfNeeded` — depends on `SourceConfigStore`; not tested
+- `WatchdogService`, `WatchdogRestartWorker`, `WatchdogAlarmReceiver` — no tests exist
+
 ---
 
-*Testing analysis: 2026-03-23*
+*Testing analysis: 2026-05-29*
