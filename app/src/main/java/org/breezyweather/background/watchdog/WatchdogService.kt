@@ -19,7 +19,6 @@ package org.breezyweather.background.watchdog
 import android.app.AlarmManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -32,22 +31,20 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
-import androidx.work.WorkInfo
-import androidx.work.WorkQuery
 import org.breezyweather.R
-import org.breezyweather.background.weather.WeatherUpdateJob
+import org.breezyweather.background.weather.WeatherUpdateEventLog
 import org.breezyweather.common.extensions.notificationBuilder
 import org.breezyweather.common.extensions.workManager
 import org.breezyweather.domain.settings.SettingsManager
 import org.breezyweather.remoteviews.Notifications
-import org.breezyweather.remoteviews.presenters.notification.WidgetNotificationIMP
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Persistent foreground service that monitors WeatherUpdateJob health.
+ * Short-lived foreground service that monitors WeatherUpdateJob health.
  *
- * On HyperOS/MIUI, WorkManager periodic jobs get silently killed. This service:
- * 1. Runs as a foreground service with a persistent notification (ROM is less likely to kill it)
+ * On HyperOS/MIUI, WorkManager periodic jobs can get silently killed. This service:
+ * 1. Runs a brief foreground heartbeat instead of a long-lived keepalive on Android 14+
  * 2. Checks WeatherUpdateJob state every 15 minutes via AlarmManager heartbeat
  * 3. Re-enqueues WeatherUpdateJob if it's not RUNNING or ENQUEUED
  * 4. Self-heals via AlarmManager if the ROM kills the service process
@@ -60,8 +57,6 @@ class WatchdogService : Service() {
     private var alarmManager: AlarmManager? = null
     private var alarmPendingIntent: PendingIntent? = null
     private var serviceStartTime = 0L
-    /** Tracks which notification ID we're using for startForeground */
-    private var foregroundNotifId = Notifications.ID_WATCHDOG_KEEPALIVE
 
     override fun onCreate() {
         super.onCreate()
@@ -79,13 +74,9 @@ class WatchdogService : Service() {
         incrementRestartCount(source)
 
         // Promote to foreground immediately — Android requires this within 5 seconds.
-        // When the weather widget notification is enabled, piggyback on it (ID_WIDGET)
-        // so the user sees ONE useful notification instead of a separate keepalive.
-        foregroundNotifId = if (WidgetNotificationIMP.isEnabled(this)) {
-            Notifications.ID_WIDGET
-        } else {
-            Notifications.ID_WATCHDOG_KEEPALIVE
-        }
+        // Never piggyback on the weather notification ID here: OEMs such as MIUI/HyperOS can
+        // later treat that notification as service-owned and clear the user's persistent weather
+        // notification when the short-lived watchdog service exits.
         val notification = getForegroundNotification()
         if (!startWatchdogForeground(notification, source)) {
             WatchdogRestartWorker.enqueue(this)
@@ -121,10 +112,9 @@ class WatchdogService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
-        // When piggybacking on widget notification, detach without removing it
-        if (foregroundNotifId == Notifications.ID_WIDGET) {
-            stopForeground(STOP_FOREGROUND_DETACH)
-        }
+        // Explicitly tear down foreground state so the temporary watchdog notification follows
+        // the short-service lifecycle instead of lingering until the system cleans it up.
+        stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d(TAG, "WatchdogService destroyed")
         // NOTE: cancelAlarm() is intentionally NOT called here.
         // For ephemeral runs (stopSelf after heartbeat) the scheduled alarm MUST survive —
@@ -139,29 +129,10 @@ class WatchdogService : Service() {
     /**
      * Gets the notification for startForeground().
      *
-     * When piggybacking on the weather widget (ID_WIDGET): grabs the EXISTING rich
-     * weather notification from NotificationManager so we never overwrite it with
-     * garbage. Only builds a minimal placeholder if the weather notification hasn't
-     * been posted yet (cold start — WidgetNotificationIMP replaces it on first update).
-     *
-     * When standalone: builds the "Background guard" notification.
+     * Always uses a dedicated watchdog notification so the persistent weather
+     * notification never becomes bound to the watchdog foreground-service lifecycle.
      */
     private fun getForegroundNotification(): Notification {
-        if (foregroundNotifId == Notifications.ID_WIDGET) {
-            // Reuse the existing weather notification — never overwrite it
-            getExistingNotification(Notifications.ID_WIDGET)?.let { return it }
-
-            // Cold start fallback: minimal placeholder until first weather update
-            return notificationBuilder(Notifications.CHANNEL_WIDGET) {
-                setSmallIcon(R.drawable.ic_running_in_background)
-                setContentTitle(getString(R.string.notification_running_in_background))
-                setOngoing(true)
-                setShowWhen(false)
-                priority = NotificationCompat.PRIORITY_MIN
-            }.build()
-        }
-
-        // Standalone "Background guard" notification
         return notificationBuilder(Notifications.CHANNEL_WATCHDOG) {
             setSmallIcon(R.drawable.ic_running_in_background)
             setContentTitle(getString(R.string.watchdog_notification_title))
@@ -177,22 +148,9 @@ class WatchdogService : Service() {
     }
 
     /**
-     * Grabs an existing notification from the system by ID.
-     * Returns null if not currently posted.
-     */
-    private fun getExistingNotification(id: Int): Notification? {
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        return nm?.activeNotifications?.firstOrNull { it.id == id }?.notification
-    }
-
-    /**
-     * Refreshes the foreground notification.
-     * When piggybacking on the weather widget, this is a no-op —
-     * WidgetNotificationIMP owns that notification's content.
+     * Refreshes the dedicated watchdog foreground notification.
      */
     fun updateNotification() {
-        if (foregroundNotifId == Notifications.ID_WIDGET) return
-
         val notification = getForegroundNotification()
         startWatchdogForeground(notification, "update")
     }
@@ -204,12 +162,12 @@ class WatchdogService : Service() {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(
-                    foregroundNotifId,
+                    Notifications.ID_WATCHDOG_KEEPALIVE,
                     notification,
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE,
                 )
             } else {
-                startForeground(foregroundNotifId, notification)
+                startForeground(Notifications.ID_WATCHDOG_KEEPALIVE, notification)
             }
             true
         } catch (e: ForegroundServiceStartNotAllowedException) {
@@ -222,27 +180,13 @@ class WatchdogService : Service() {
     }
 
     /**
-     * Checks WeatherUpdateJob health; re-enqueues if not RUNNING or ENQUEUED.
+     * Checks WeatherUpdateJob health and repairs stale or missing background updates.
      */
     private fun performHeartbeat() {
         Log.d(TAG, "Performing heartbeat check")
 
-        val workQuery = WorkQuery.Builder
-            .fromUniqueWorkNames(listOf(WeatherUpdateJob.WORK_NAME_AUTO))
-            .addStates(listOf(WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED))
-            .build()
-
-        val healthyWorks = workManager.getWorkInfos(workQuery).get()
-
-        val jobStatus: String
-        if (healthyWorks.isEmpty()) {
-            Log.d(TAG, "Re-enqueued WeatherUpdateJob — was not found in RUNNING/ENQUEUED state")
-            WeatherUpdateJob.setupTask(this)
-            jobStatus = "re-enqueued"
-        } else {
-            Log.d(TAG, "WeatherUpdateJob is healthy (RUNNING or ENQUEUED)")
-            jobStatus = "healthy"
-        }
+        val jobStatus = WatchdogWeatherUpdateHealth.ensureHealthy(this)
+        Log.d(TAG, "Watchdog weather health result: $jobStatus")
 
         // HEART-03: Write diagnostic entry
         writeDiagnostic(jobStatus)
@@ -260,11 +204,13 @@ class WatchdogService : Service() {
         val heartbeatCount = prefs.getInt("heartbeat_count", 0) + 1
         val uptimeMs = SystemClock.elapsedRealtime() - serviceStartTime
 
+        val lastWeatherEvents = WeatherUpdateEventLog.getLastEntries(this, 3)
         val diagnostic = JSONObject().apply {
             put("timestamp", System.currentTimeMillis())
             put("heartbeat_count", heartbeatCount)
             put("uptime_ms", uptimeMs)
             put("job_status", jobStatus)
+            put("weather_events", JSONArray(lastWeatherEvents))
         }
 
         prefs.edit()

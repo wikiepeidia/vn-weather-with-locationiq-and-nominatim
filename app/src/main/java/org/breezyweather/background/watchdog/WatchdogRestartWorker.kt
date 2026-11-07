@@ -26,11 +26,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ForegroundInfo
 import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import org.breezyweather.R
-import org.breezyweather.background.weather.WeatherUpdateJob
 import org.breezyweather.common.extensions.notificationBuilder
 import org.breezyweather.common.extensions.setForegroundSafely
 import org.breezyweather.common.extensions.workManager
@@ -58,20 +55,8 @@ class WatchdogRestartWorker(
         // Promote to foreground for the brief execution window so HyperOS doesn't kill us mid-check
         setForegroundSafely()
 
-        // Directly check WeatherUpdateJob health — WatchdogService.isRunning is not reliable
-        // in the new ephemeral model (service intentionally exits after each heartbeat)
-        val workQuery = WorkQuery.Builder
-            .fromUniqueWorkNames(listOf(WeatherUpdateJob.WORK_NAME_AUTO))
-            .addStates(listOf(WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED))
-            .build()
-
-        val healthyWorks = applicationContext.workManager.getWorkInfos(workQuery).get()
-        if (healthyWorks.isEmpty()) {
-            Log.d(TAG, "WeatherUpdateJob not found in RUNNING/ENQUEUED — re-enqueueing via WorkManager fallback")
-            WeatherUpdateJob.setupTask(applicationContext)
-        } else {
-            Log.d(TAG, "WeatherUpdateJob is healthy (RUNNING or ENQUEUED)")
-        }
+        val jobStatus = WatchdogWeatherUpdateHealth.ensureHealthy(applicationContext)
+        Log.d(TAG, "Watchdog weather health result: $jobStatus")
 
         return Result.success()
     }

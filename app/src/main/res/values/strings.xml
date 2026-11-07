@@ -679,11 +679,11 @@
     <string name="settings_background_updates_worker_info_enqueued" translatable="false">Enqueued</string>
     <string name="settings_background_updates_worker_info_finished" translatable="false">Finished</string>
     <string name="settings_background_updates_worker_info_running" translatable="false">Running</string>
-    <!-- Watchdog mode (HyperOS/MIUI keepalive) -->
+    <!-- Watchdog mode (HyperOS/MIUI short-service recovery) -->
     <string name="settings_background_updates_section_watchdog">Watchdog Mode</string>
-    <string name="settings_background_updates_watchdog_switch">Watchdog keepalive</string>
+    <string name="settings_background_updates_watchdog_switch">Watchdog background guard</string>
     <string name="settings_background_updates_watchdog_battery_opt_title">Optimize battery settings</string>
-    <string name="settings_background_updates_watchdog_battery_opt_message">For Watchdog to work reliably, disable battery optimization for this app. This allows it to run without interruption.</string>
+    <string name="settings_background_updates_watchdog_battery_opt_message">For Watchdog to work more reliably, disable battery optimization for this app. This helps its scheduled short checks and alarm restarts survive HyperOS/MIUI restrictions.</string>
     <string name="settings_background_updates_watchdog_hyperios_autostart">Enable HyperOS/MIUI Autostart</string>
     <string name="settings_background_updates_watchdog_hyperios_autostart_summary">Required on Xiaomi/Redmi/POCO devices to prevent the app from being killed</string>
     <string name="settings_background_updates_watchdog_hyperios_autostart_not_found">Could not open Autostart settings. Go to Security app - Permissions - Autostart manually.</string>

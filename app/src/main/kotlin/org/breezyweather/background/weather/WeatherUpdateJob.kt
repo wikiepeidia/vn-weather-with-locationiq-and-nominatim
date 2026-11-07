@@ -89,34 +89,48 @@ class WeatherUpdateJob @AssistedInject constructor(
     private val updateChecker: AppUpdateChecker,
 ) : CoroutineWorker(context, workerParams) {
 
+    internal enum class ImmediateRefreshEnqueuePlan {
+        ALREADY_RUNNING,
+        ENQUEUE_NEW,
+        REPLACE_PENDING,
+    }
+
     private val notifier = WeatherUpdateNotifier(context)
 
     private var locationsToUpdate: List<Location> = mutableListOf()
 
     override suspend fun doWork(): Result {
+        val source = if (tags.contains(WORK_NAME_AUTO)) "auto" else "manual"
+        WeatherUpdateEventLog.append(context, "JOB_START", "source=$source")
+
         if (tags.contains(WORK_NAME_AUTO)) {
             // Find a running manual worker. If exists, try again later
             if (context.workManager.isRunning(WORK_NAME_MANUAL)) {
+                WeatherUpdateEventLog.append(context, "JOB_RETRY", "reason=manual_running")
                 return Result.retry()
             }
         }
 
         // Exit early in case there is no network and Android still executes the job
         if (!context.isOnline()) {
+            WeatherUpdateEventLog.append(context, "JOB_RETRY", "reason=no_network")
             return Result.retry()
         }
 
         setForegroundSafely()
-
-        // Set the last update time to now
-        SettingsManager.getInstance(context).weatherUpdateLastTimestamp = Date().time
 
         val locationFormattedId = inputData.getString(KEY_LOCATION)
         addLocationToQueue(locationFormattedId)
 
         return withIOContext {
             try {
-                updateWeatherData()
+                val updatedWeather = updateWeatherData()
+                if (updatedWeather) {
+                    SettingsManager.getInstance(context).weatherUpdateLastTimestamp = Date().time
+                    WeatherUpdateEventLog.append(context, "WEATHER_UPDATED")
+                } else {
+                    WeatherUpdateEventLog.append(context, "WEATHER_NO_UPDATE", "locations=${locationsToUpdate.size}")
+                }
                 Result.success()
             } catch (e: Exception) {
                 if (e is CancellationException) {
@@ -124,6 +138,7 @@ class WeatherUpdateJob @AssistedInject constructor(
                     Result.success()
                 } else {
                     e.printStackTrace()
+                    WeatherUpdateEventLog.append(context, "JOB_ERROR", "ex=${e.javaClass.simpleName}")
                     Result.failure()
                 }
             } finally {
@@ -213,9 +228,9 @@ class WeatherUpdateJob @AssistedInject constructor(
      * For each weather it calls [updateLocation] and updates the notification showing the current
      * progress.
      *
-     * @return an observable delivering the progress of each update.
+     * @return true when at least one location completed a weather refresh path.
      */
-    private suspend fun updateWeatherData() {
+    private suspend fun updateWeatherData(): Boolean {
         val progressCount = AtomicInteger(0)
         val currentlyUpdatingLocation = CopyOnWriteArrayList<Location>()
         val newUpdates = CopyOnWriteArrayList<Pair<Location, Location>>()
@@ -348,6 +363,8 @@ class WeatherUpdateJob @AssistedInject constructor(
         /*if (skippedUpdates.isNotEmpty()) {
             notifier.showUpdateSkippedNotification(skippedUpdates.size)
         }*/
+
+        return newUpdates.isNotEmpty()
     }
 
     /**
@@ -498,8 +515,17 @@ class WeatherUpdateJob @AssistedInject constructor(
             location: Location? = null,
         ): Boolean {
             val wm = context.workManager
-            if (wm.isRunning(TAG)) {
-                // Already running either as a scheduled or manual job
+            val pendingManualWorkQuery = WorkQuery.Builder
+                .fromUniqueWorkNames(listOf(WORK_NAME_MANUAL))
+                .addStates(listOf(WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED))
+                .build()
+            val enqueuePlan = decideImmediateRefreshEnqueuePlan(
+                hasRunningWork = wm.isRunning(TAG),
+                hasPendingManualWork = wm.getWorkInfos(pendingManualWorkQuery).get().isNotEmpty(),
+            )
+
+            if (enqueuePlan == ImmediateRefreshEnqueuePlan.ALREADY_RUNNING) {
+                // Already running either as a scheduled or manual job.
                 return false
             }
 
@@ -511,9 +537,28 @@ class WeatherUpdateJob @AssistedInject constructor(
                 .addTag(WORK_NAME_MANUAL)
                 .setInputData(inputData)
                 .build()
-            wm.enqueueUniqueWork(WORK_NAME_MANUAL, ExistingWorkPolicy.KEEP, request)
+            wm.enqueueUniqueWork(
+                WORK_NAME_MANUAL,
+                when (enqueuePlan) {
+                    ImmediateRefreshEnqueuePlan.ENQUEUE_NEW -> ExistingWorkPolicy.KEEP
+                    ImmediateRefreshEnqueuePlan.REPLACE_PENDING -> ExistingWorkPolicy.REPLACE
+                    ImmediateRefreshEnqueuePlan.ALREADY_RUNNING -> error("handled above")
+                },
+                request
+            )
 
             return true
+        }
+
+        internal fun decideImmediateRefreshEnqueuePlan(
+            hasRunningWork: Boolean,
+            hasPendingManualWork: Boolean,
+        ): ImmediateRefreshEnqueuePlan {
+            return when {
+                hasRunningWork -> ImmediateRefreshEnqueuePlan.ALREADY_RUNNING
+                hasPendingManualWork -> ImmediateRefreshEnqueuePlan.REPLACE_PENDING
+                else -> ImmediateRefreshEnqueuePlan.ENQUEUE_NEW
+            }
         }
 
         fun stop(context: Context) {

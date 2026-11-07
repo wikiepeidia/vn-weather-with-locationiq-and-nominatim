@@ -47,3 +47,6 @@ bin/
 /captures
 /local.properties
 .gitnexus
+
+# Graphify output
+graphify-out/
