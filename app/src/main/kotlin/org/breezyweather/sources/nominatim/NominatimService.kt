@@ -35,6 +35,7 @@ import org.breezyweather.common.source.HttpSource
 import org.breezyweather.common.source.LocationSearchSource
 import org.breezyweather.common.source.ReverseGeocodingSource
 import org.breezyweather.domain.settings.SourceConfigStore
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.breezyweather.sources.nominatim.json.NominatimAddress
 import org.breezyweather.sources.nominatim.json.NominatimLocationResult
 import retrofit2.HttpException
@@ -111,6 +112,8 @@ class NominatimService @Inject constructor(
                     userAgent = BreezyWeather.instance.userAgent,
                     q = query,
                     limit = 20,
+                    // LocationIQ rejects jsonv2 with HTTP 400
+                    format = "json",
                     key = key
                 )
             }.onErrorResumeNext { error: Throwable ->
@@ -126,8 +129,15 @@ class NominatimService @Inject constructor(
         }
 
         return searchRequest.map { results ->
-            results.mapNotNull {
-                convertLocation(it)
+            results.mapNotNull { result ->
+                convertLocation(result)?.let { info ->
+                    // LocationIQ sends no top-level name, so a city-level result (Hà Nội) would be unlabelled
+                    if (info.city.isNullOrEmpty() && info.district.isNullOrEmpty()) {
+                        info.copy(city = result.address?.city ?: result.address?.state)
+                    } else {
+                        info
+                    }
+                }
             }
         }
     }
@@ -191,9 +201,13 @@ class NominatimService @Inject constructor(
                 val liqInfo = convertLocation(liqResult, isLocationIQSource = true)
                 val isVN = liqInfo?.countryCode?.equals("vn", ignoreCase = true) == true
 
-                if (!isVN || isCleanVnCity(liqInfo?.city)) {
-                    // Non-VN or clean VN — LocationIQ result is authoritative; Nominatim never called
-                    Observable.just(if (liqInfo != null) listOf(liqInfo) else emptyList())
+                if (!isVN) {
+                    // No ward concept here, so Nominatim is asked as with a VN result that has no ward.
+                    // Its upstream-mapped answer wins; LocationIQ keeps the address alive if it has none.
+                    nominatimFetch.map { nomList -> mergeOtherCountryResults(liqInfo, nomList) }
+                } else if (isCleanVnCity(liqInfo?.city)) {
+                    // Clean VN — LocationIQ result is authoritative; Nominatim never called
+                    Observable.just(listOf(liqInfo!!))
                 } else {
                     // VN but dirty — lazy-fetch Nominatim for potential rescue
                     nominatimFetch.map { nomList ->
@@ -249,8 +263,8 @@ class NominatimService @Inject constructor(
             val countryCode = getNonAmbiguousCountryCode(locationResult.address)
             
             // Vietnam Special Parsing
-            var city = locationResult.address.town ?: locationResult.name
-            var district = locationResult.address.village
+            var city = initialCity(locationResult, countryCode)
+            var district = initialDistrict(locationResult.address, countryCode)
 
             if (countryCode.equals("vn", ignoreCase = true)) {
                 // 1. display_name regex FIRST — lastOrNull gives the innermost clean ward token
@@ -625,7 +639,33 @@ class NominatimService @Inject constructor(
             if (trimmed.isEmpty()) return NOMINATIM_BASE_URL
             if (isLocationIqKey(trimmed)) return NOMINATIM_BASE_URL
             if (normalizeLegacyLocationIqOverride(trimmed) != null) return NOMINATIM_BASE_URL
-            return trimmed
+            // Retrofit throws on anything else, which would fail every lookup
+            val url = trimmed.toHttpUrlOrNull() ?: return NOMINATIM_BASE_URL
+            return if (url.pathSegments.last().isEmpty()) trimmed else "$trimmed/"
+        }
+
+        // Vietnam is unchanged (ward parsing then overrides this); elsewhere this is upstream's mapping
+        internal fun initialCity(result: NominatimLocationResult, countryCode: String): String? {
+            val address = result.address
+            if (!countryCode.equals("vn", ignoreCase = true)) {
+                return address?.village ?: address?.town ?: address?.city
+            }
+            return address?.town ?: result.name
+        }
+
+        internal fun initialDistrict(address: NominatimAddress, countryCode: String): String? {
+            if (countryCode.equals("vn", ignoreCase = true)) return address.village
+            return address.neighbourhood
+                ?: address.allotments
+                ?: address.quarter
+                ?: address.hamlet
+                ?: address.croft
+                ?: address.isolatedDwelling
+                ?: address.cityDistrict
+                ?: address.district
+                ?: address.borough
+                ?: address.suburb
+                ?: address.subdivision
         }
 
         private fun isLocationIqHost(value: String): Boolean {
@@ -721,6 +761,15 @@ class NominatimService @Inject constructor(
          * Cross-validation merge: given a (potentially dirty) LIQ result and the Nominatim result list,
          * returns the best list — preferring Nominatim when it has a clean city token.
          */
+        internal fun mergeOtherCountryResults(
+            liqInfo: LocationAddressInfo?,
+            nomList: List<LocationAddressInfo>,
+        ): List<LocationAddressInfo> = when {
+            !nomList.firstOrNull()?.city.isNullOrEmpty() -> nomList
+            liqInfo != null -> listOf(liqInfo)
+            else -> nomList
+        }
+
         internal fun mergeVnResults(
             liqInfo: LocationAddressInfo?,
             nomList: List<LocationAddressInfo>,

@@ -1,0 +1,1575 @@
+{
+ "reverse": [
+  {
+   "label": "buon-ma-thuot",
+   "expected": "Phường Buôn Ma Thuột",
+   "response": {
+    "place_id": "256501242",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "851354261",
+    "lat": "12.6663781",
+    "lon": "108.0502796",
+    "display_name": "Hẻm 131 Trần Qúy Cáp, Tổ dân phố 4, Buôn Ma Thuột, Phường Buôn Ma Thuột, Tỉnh Đắk Lắk, 63107, Việt Nam",
+    "address": {
+     "road": "Hẻm 131 Trần Qúy Cáp",
+     "suburb": "Tổ dân phố 4",
+     "city": "Buôn Ma Thuột",
+     "county": "Phường Buôn Ma Thuột",
+     "state": "Tỉnh Đắk Lắk",
+     "postcode": "63107",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "12.6653758",
+     "12.6663781",
+     "108.0502796",
+     "108.0506046"
+    ]
+   }
+  },
+  {
+   "label": "can-tho",
+   "expected": "Phường Long Tuyền",
+   "response": {
+    "place_id": "256952414",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "830857382",
+    "lat": "10.0443778",
+    "lon": "105.7473382",
+    "display_name": "Phường Long Tuyền, Thành phố Cần Thơ, 94108, Việt Nam",
+    "address": {
+     "city_district": "Phường Long Tuyền",
+     "city": "Thành phố Cần Thơ",
+     "postcode": "94108",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.0431944",
+     "10.0443843",
+     "105.7462688",
+     "105.7473980"
+    ]
+   }
+  },
+  {
+   "label": "da-lat",
+   "expected": "Phường Xuân Hương - Đà Lạt",
+   "response": {
+    "place_id": "256579163",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "563656760",
+    "lat": "11.9404060",
+    "lon": "108.4582958",
+    "display_name": "QL.20, Đà Lạt, Phường Xuân Hương - Đà Lạt, Tỉnh Lâm Đồng, 66117, Việt Nam",
+    "address": {
+     "road": "QL.20",
+     "city": "Đà Lạt",
+     "county": "Phường Xuân Hương - Đà Lạt",
+     "state": "Tỉnh Lâm Đồng",
+     "postcode": "66117",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "11.9402692",
+     "11.9405356",
+     "108.4581037",
+     "108.4584778"
+    ]
+   }
+  },
+  {
+   "label": "da-nang",
+   "expected": "Phường Hải Châu",
+   "response": {
+    "place_id": "237463939",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "5793917955",
+    "lat": "16.0672510",
+    "lon": "108.2209029",
+    "display_name": "Goom Vegan, 144, Đường Nguyễn Chí Thanh, Phước Ninh, Phường Hải Châu, Thành phố Đà Nẵng, 50207, Việt Nam",
+    "address": {
+     "restaurant": "Goom Vegan",
+     "house_number": "144",
+     "road": "Đường Nguyễn Chí Thanh",
+     "quarter": "Phước Ninh",
+     "city": "Phường Hải Châu",
+     "postcode": "50207",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "16.0672010",
+     "16.0673010",
+     "108.2208529",
+     "108.2209529"
+    ]
+   }
+  },
+  {
+   "label": "dien-bien",
+   "expected": "Phường Điện Biên Phủ",
+   "response": {
+    "place_id": "238654498",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "532688444",
+    "lat": "21.3861152",
+    "lon": "103.0229976",
+    "display_name": "Đường Hoàng Công Chất, Mường Thanh, Điện Biên Phủ, Phường Điện Biên Phủ, Tỉnh Điện Biên, Việt Nam",
+    "address": {
+     "road": "Đường Hoàng Công Chất",
+     "suburb": "Mường Thanh",
+     "city": "Điện Biên Phủ",
+     "county": "Phường Điện Biên Phủ",
+     "state": "Tỉnh Điện Biên",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.3834128",
+     "21.3861296",
+     "103.0158007",
+     "103.0242783"
+    ]
+   }
+  },
+  {
+   "label": "dk-bach-long-vi",
+   "expected": "Đặc khu Bạch Long Vĩ",
+   "response": {
+    "place_id": "237150161",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "702428416",
+    "lat": "20.1361699",
+    "lon": "107.7307219",
+    "display_name": "Đặc khu Bạch Long Vĩ, Thành phố Hải Phòng, Việt Nam",
+    "address": {
+     "town": "Đặc khu Bạch Long Vĩ",
+     "city": "Thành phố Hải Phòng",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "20.1284909",
+     "20.1438699",
+     "107.7176280",
+     "107.7388741"
+    ]
+   }
+  },
+  {
+   "label": "dk-cat-hai",
+   "expected": "Đặc khu Cát Hải",
+   "response": {
+    "place_id": "237173635",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "4576672289",
+    "lat": "20.7272701",
+    "lon": "107.0472387",
+    "display_name": "Hiệu thuốc TUỆ SAN, 148, Phố Cát Bà, Đặc khu Cát Hải, Thành phố Hải Phòng, Việt Nam",
+    "address": {
+     "doctors": "Hiệu thuốc TUỆ SAN",
+     "house_number": "148",
+     "road": "Phố Cát Bà",
+     "municipality": "Đặc khu Cát Hải",
+     "city": "Thành phố Hải Phòng",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "20.7272201",
+     "20.7273201",
+     "107.0471887",
+     "107.0472887"
+    ]
+   }
+  },
+  {
+   "label": "dk-co-to",
+   "expected": "Đặc khu Cô Tô",
+   "response": {
+    "place_id": "237332434",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "751883784",
+    "lat": "20.9690687",
+    "lon": "107.7659909",
+    "display_name": "Đặc khu Cô Tô, Tỉnh Quảng Ninh, Việt Nam",
+    "address": {
+     "town": "Đặc khu Cô Tô",
+     "county": "Đặc khu Cô Tô",
+     "state": "Tỉnh Quảng Ninh",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "20.9690687",
+     "20.9696173",
+     "107.7649288",
+     "107.7660499"
+    ]
+   }
+  },
+  {
+   "label": "dk-con-dao",
+   "expected": "Đặc khu Côn Đảo",
+   "response": {
+    "place_id": "257321175",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "61900795",
+    "lat": "8.6829644",
+    "lon": "106.6090168",
+    "display_name": "Lê Văn Việt, Khu 8, Đặc khu Côn Đảo, Thành phố Hồ Chí Minh, 78400, Việt Nam",
+    "address": {
+     "road": "Lê Văn Việt",
+     "neighbourhood": "Khu 8",
+     "quarter": "Đặc khu Côn Đảo",
+     "city": "Thành phố Hồ Chí Minh",
+     "postcode": "78400",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "8.6828859",
+     "8.6837664",
+     "106.6088507",
+     "106.6107140"
+    ]
+   }
+  },
+  {
+   "label": "dk-kien-hai",
+   "expected": "Đặc khu Kiên Hải",
+   "response": {
+    "place_id": "257256067",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "762371769",
+    "lat": "9.8183186",
+    "lon": "104.6279501",
+    "display_name": "Bãi Bấc, Đặc khu Kiên Hải, Tỉnh An Giang, Việt Nam",
+    "address": {
+     "village": "Bãi Bấc",
+     "county": "Đặc khu Kiên Hải",
+     "state": "Tỉnh An Giang",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "9.7963971",
+     "9.8222449",
+     "104.6138554",
+     "104.6581111"
+    ]
+   }
+  },
+  {
+   "label": "dk-ly-son",
+   "expected": "Đặc khu Lý Sơn",
+   "response": {
+    "place_id": "256407301",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "479927066",
+    "lat": "15.3814685",
+    "lon": "109.1187020",
+    "display_name": "Đồng Hộ An Hải, Đặc khu Lý Sơn, Tỉnh Quảng Ngãi, 54400, Việt Nam",
+    "address": {
+     "village": "Đồng Hộ An Hải",
+     "county": "Đặc khu Lý Sơn",
+     "state": "Tỉnh Quảng Ngãi",
+     "postcode": "54400",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "15.3806538",
+     "15.3850417",
+     "109.1077876",
+     "109.1203295"
+    ]
+   }
+  },
+  {
+   "label": "dk-phu-quoc",
+   "expected": "Đặc khu Phú Quốc",
+   "response": {
+    "place_id": "254972604",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "852210406",
+    "lat": "10.2897858",
+    "lon": "103.9838936",
+    "display_name": "Khu Tượng Cửa Dương, Đặc khu Phú Quốc, Tỉnh An Giang, Việt Nam",
+    "address": {
+     "quarter": "Khu Tượng Cửa Dương",
+     "city": "Đặc khu Phú Quốc",
+     "state": "Tỉnh An Giang",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.2895192",
+     "10.2909338",
+     "103.9814065",
+     "103.9854187"
+    ]
+   }
+  },
+  {
+   "label": "dk-phu-quy",
+   "expected": "Đặc khu Phú Quý",
+   "response": {
+    "place_id": "256527591",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "454966078",
+    "lat": "10.5281802",
+    "lon": "108.9393340",
+    "display_name": "Hoàng Hoa Thám, Đặc khu Phú Quý, Tỉnh Lâm Đồng, Việt Nam",
+    "address": {
+     "road": "Hoàng Hoa Thám",
+     "county": "Đặc khu Phú Quý",
+     "state": "Tỉnh Lâm Đồng",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.5276289",
+     "10.5310900",
+     "108.9285874",
+     "108.9411491"
+    ]
+   }
+  },
+  {
+   "label": "dk-van-don",
+   "expected": "Đặc khu Vân Đồn",
+   "response": {
+    "place_id": "236560575",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "963550925",
+    "lat": "21.0701468",
+    "lon": "107.4198237",
+    "display_name": "Đặc khu Vân Đồn, Tỉnh Quảng Ninh, Việt Nam",
+    "address": {
+     "town": "Đặc khu Vân Đồn",
+     "county": "Đặc khu Vân Đồn",
+     "state": "Tỉnh Quảng Ninh",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.0699457",
+     "21.0706586",
+     "107.4188474",
+     "107.4206163"
+    ]
+   }
+  },
+  {
+   "label": "ha-giang",
+   "expected": "Phường Hà Giang 1",
+   "response": {
+    "place_id": "236313992",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "840369863",
+    "lat": "22.8233113",
+    "lon": "104.9835731",
+    "display_name": "Đường Nguyễn Trãi, Phường Hà Giang 1, Tỉnh Tuyên Quang, 20152, Việt Nam",
+    "address": {
+     "road": "Đường Nguyễn Trãi",
+     "suburb": "Phường Hà Giang 1",
+     "yes": "Tỉnh Tuyên Quang",
+     "postcode": "20152",
+     "country": "Việt Nam",
+     "country_code": "vn",
+     "town": "Phường Hà Giang 1"
+    },
+    "boundingbox": [
+     "22.8189707",
+     "22.8279427",
+     "104.9812782",
+     "104.9840266"
+    ]
+   }
+  },
+  {
+   "label": "hai-phong",
+   "expected": "Phường Lê Chân",
+   "response": {
+    "place_id": "237132527",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "399899216",
+    "lat": "20.8448751",
+    "lon": "106.6881792",
+    "display_name": "Ngõ Đình Đông, Đông Hải, Phường Lê Chân, Thành phố Hải Phòng, 18000, Việt Nam",
+    "address": {
+     "road": "Ngõ Đình Đông",
+     "quarter": "Đông Hải",
+     "city": "Phường Lê Chân",
+     "postcode": "18000",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "20.8441571",
+     "20.8468855",
+     "106.6880248",
+     "106.6897207"
+    ]
+   }
+  },
+  {
+   "label": "hcm-ben-thanh",
+   "expected": "Phường Bến Thành",
+   "response": {
+    "place_id": "256999021",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "12485938001",
+    "lat": "10.7725434",
+    "lon": "106.6971552",
+    "display_name": "Soo Kafe Bến Thành, 35, Phan Chu Trinh, Khu phố 6, Phường Bến Thành, Thành phố Thủ Đức, Thành phố Hồ Chí Minh, 71009, Việt Nam",
+    "address": {
+     "cafe": "Soo Kafe Bến Thành",
+     "house_number": "35",
+     "road": "Phan Chu Trinh",
+     "neighbourhood": "Khu phố 6",
+     "suburb": "Phường Bến Thành",
+     "city": "Thành phố Thủ Đức",
+     "postcode": "71009",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.7724934",
+     "10.7725934",
+     "106.6971052",
+     "106.6972052"
+    ]
+   }
+  },
+  {
+   "label": "hcm-can-gio",
+   "expected": "Xã Cần Giờ",
+   "response": {
+    "place_id": "256892390",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "754264538",
+    "lat": "10.4111940",
+    "lon": "106.9552319",
+    "display_name": "Ủy ban nhân dân xã Cần Giờ, 48, Đường Lương Văn Nho, Xã Cần Giờ, Thành phố Hồ Chí Minh, Việt Nam",
+    "address": {
+     "government": "Ủy ban nhân dân xã Cần Giờ",
+     "house_number": "48",
+     "road": "Đường Lương Văn Nho",
+     "town": "Xã Cần Giờ",
+     "city": "Thành phố Hồ Chí Minh",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.4109376",
+     "10.4115208",
+     "106.9545383",
+     "106.9553095"
+    ]
+   }
+  },
+  {
+   "label": "hcm-cu-chi",
+   "expected": "Xã Tân An Hội",
+   "response": {
+    "place_id": "257328070",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "907749097",
+    "lat": "10.9732745",
+    "lon": "106.4941505",
+    "display_name": "Ủy ban nhân dân xã Tân An Hội, 77, Tỉnh lộ 8, Xã Tân An Hội, Thành phố Hồ Chí Minh, 75500, Việt Nam",
+    "address": {
+     "government": "Ủy ban nhân dân xã Tân An Hội",
+     "house_number": "77",
+     "road": "Tỉnh lộ 8",
+     "city_district": "Xã Tân An Hội",
+     "city": "Thành phố Hồ Chí Minh",
+     "postcode": "75500",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.9731137",
+     "10.9734349",
+     "106.4939015",
+     "106.4942799"
+    ]
+   }
+  },
+  {
+   "label": "hcm-thu-duc",
+   "expected": "Phường Thủ Đức",
+   "response": {
+    "place_id": "257161944",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "336067388",
+    "lat": "10.8494085",
+    "lon": "106.7537040",
+    "display_name": "Hẻm 942 Kha Vạn Cân, Khu phố 1, Phường Thủ Đức, Thành phố Thủ Đức, Thành phố Hồ Chí Minh, 71221, Việt Nam",
+    "address": {
+     "road": "Hẻm 942 Kha Vạn Cân",
+     "neighbourhood": "Khu phố 1",
+     "suburb": "Phường Thủ Đức",
+     "city": "Thành phố Thủ Đức",
+     "postcode": "71221",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.8492016",
+     "10.8494237",
+     "106.7536721",
+     "106.7539114"
+    ]
+   }
+  },
+  {
+   "label": "hcm-ubnd",
+   "expected": "Phường Sài Gòn",
+   "response": {
+    "place_id": "257073100",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "341504305",
+    "lat": "10.7765867",
+    "lon": "106.7009177",
+    "display_name": "Trụ sở Ủy ban Nhân dân Thành phố Hồ Chí Minh, 86, Lê Thánh Tôn, Khu phố 3, Phường Sài Gòn, Thành phố Thủ Đức, Thành phố Hồ Chí Minh, 71006, Việt Nam",
+    "address": {
+     "townhall": "Trụ sở Ủy ban Nhân dân Thành phố Hồ Chí Minh",
+     "house_number": "86",
+     "road": "Lê Thánh Tôn",
+     "neighbourhood": "Khu phố 3",
+     "suburb": "Phường Sài Gòn",
+     "city": "Thành phố Thủ Đức",
+     "postcode": "71006",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.7758544",
+     "10.7773374",
+     "106.7002996",
+     "106.7016113"
+    ]
+   }
+  },
+  {
+   "label": "hcm-vung-tau",
+   "expected": "Phường Vũng Tàu",
+   "response": {
+    "place_id": "257270981",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "4768959528",
+    "lat": "10.3462680",
+    "lon": "107.0842753",
+    "display_name": "89, Nam Kỳ Khởi Nghĩa, Khu phố 13, Phường Vũng Tàu, Thành phố Hồ Chí Minh, 78207, Việt Nam",
+    "address": {
+     "house_number": "89",
+     "road": "Nam Kỳ Khởi Nghĩa",
+     "neighbourhood": "Khu phố 13",
+     "city_district": "Phường Vũng Tàu",
+     "city": "Thành phố Hồ Chí Minh",
+     "postcode": "78207",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.3462180",
+     "10.3463180",
+     "107.0842253",
+     "107.0843253"
+    ]
+   }
+  },
+  {
+   "label": "hn-ba-dinh",
+   "expected": "Phường Ba Đình",
+   "response": {
+    "place_id": "236782421",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "37625751",
+    "lat": "21.0367831",
+    "lon": "105.8346888",
+    "display_name": "Lăng Chủ tịch Hồ Chí Minh, 1, Đường Hùng Vương, Phường Ba Đình, Hà Nội, 11120, Việt Nam",
+    "address": {
+     "address29": "Lăng Chủ tịch Hồ Chí Minh",
+     "house_number": "1",
+     "road": "Đường Hùng Vương",
+     "city_district": "Phường Ba Đình",
+     "city": "Hà Nội",
+     "postcode": "11120",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.0365651",
+     "21.0369582",
+     "105.8344855",
+     "105.8348983"
+    ]
+   }
+  },
+  {
+   "label": "hn-cau-giay",
+   "expected": "Phường Cầu Giấy",
+   "response": {
+    "place_id": "236833751",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "615426395",
+    "lat": "21.0362262",
+    "lon": "105.7906082",
+    "display_name": "Đường Cầu Giấy, Dịch Vọng Trung, Phường Cầu Giấy, Hà Nội, 11314, Việt Nam",
+    "address": {
+     "road": "Đường Cầu Giấy",
+     "neighbourhood": "Dịch Vọng Trung",
+     "city_district": "Phường Cầu Giấy",
+     "city": "Hà Nội",
+     "postcode": "11314",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.0352736",
+     "21.0362388",
+     "105.7905682",
+     "105.7935472"
+    ]
+   }
+  },
+  {
+   "label": "hn-ha-dong",
+   "expected": "Phường Hà Đông",
+   "response": {
+    "place_id": "236804151",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "4973895421",
+    "lat": "20.9711030",
+    "lon": "105.7791325",
+    "display_name": "Cà Phê 555 Trưng Trắc, Số 5, Phố Hoàng Văn Thụ, Phường Hà Đông, Hà Nội, 12100, Việt Nam",
+    "address": {
+     "cafe": "Cà Phê 555 Trưng Trắc",
+     "house_number": "Số 5",
+     "road": "Phố Hoàng Văn Thụ",
+     "city_district": "Phường Hà Đông",
+     "city": "Hà Nội",
+     "postcode": "12100",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "20.9710530",
+     "20.9711530",
+     "105.7790825",
+     "105.7791825"
+    ]
+   }
+  },
+  {
+   "label": "hn-hoan-kiem",
+   "expected": "Phường Hoàn Kiếm",
+   "response": {
+    "place_id": "236748456",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "37458882",
+    "lat": "21.0287850",
+    "lon": "105.8513951",
+    "display_name": "Phố Lê Thái Tổ, Phường Hoàn Kiếm, Hà Nội, 11024, Việt Nam",
+    "address": {
+     "road": "Phố Lê Thái Tổ",
+     "city_district": "Phường Hoàn Kiếm",
+     "city": "Hà Nội",
+     "postcode": "11024",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.0282514",
+     "21.0314055",
+     "105.8509385",
+     "105.8514013"
+    ]
+   }
+  },
+  {
+   "label": "hn-todo-1",
+   "expected": "Xã Vĩnh Thanh",
+   "response": {
+    "place_id": "236777046",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "264853189",
+    "lat": "21.1112075",
+    "lon": "105.7911790",
+    "display_name": "Xã Vĩnh Thanh, Hà Nội, 11909, Việt Nam",
+    "address": {
+     "city_district": "Xã Vĩnh Thanh",
+     "city": "Hà Nội",
+     "postcode": "11909",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.1109734",
+     "21.1113342",
+     "105.7897103",
+     "105.7939180"
+    ]
+   }
+  },
+  {
+   "label": "hn-todo-2",
+   "expected": "Xã Ô Diên",
+   "response": {
+    "place_id": "236779237",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "928699427",
+    "lat": "21.1091248",
+    "lon": "105.7042060",
+    "display_name": "Xã Ô Diên, Hà Nội, Việt Nam",
+    "address": {
+     "city_district": "Xã Ô Diên",
+     "city": "Hà Nội",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.1091248",
+     "21.1098697",
+     "105.7002130",
+     "105.7042060"
+    ]
+   }
+  },
+  {
+   "label": "hn-todo-3",
+   "expected": "Xã Đan Phượng",
+   "response": {
+    "place_id": "236702633",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "489008247",
+    "lat": "21.0988625",
+    "lon": "105.6787354",
+    "display_name": "Đường Ô Diên, Xã Đan Phượng, Hà Nội, Việt Nam",
+    "address": {
+     "road": "Đường Ô Diên",
+     "city_district": "Xã Đan Phượng",
+     "city": "Hà Nội",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.0848687",
+     "21.1081513",
+     "105.6692904",
+     "105.6929777"
+    ]
+   }
+  },
+  {
+   "label": "hn-todo-4",
+   "expected": "Phường Tây Hồ",
+   "response": {
+    "place_id": "236748420",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "6601113117",
+    "lat": "21.0508508",
+    "lon": "105.8071268",
+    "display_name": "191, Ngõ 89 Đường Lạc Long Quân, Bài An, Phường Tây Hồ, Hà Nội, 11214, Việt Nam",
+    "address": {
+     "house_number": "191",
+     "road": "Ngõ 89 Đường Lạc Long Quân",
+     "neighbourhood": "Bài An",
+     "city_district": "Phường Tây Hồ",
+     "city": "Hà Nội",
+     "postcode": "11214",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.0508008",
+     "21.0509008",
+     "105.8070768",
+     "105.8071768"
+    ]
+   }
+  },
+  {
+   "label": "hoi-an",
+   "expected": "Phường Hội An",
+   "response": {
+    "place_id": "256489977",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "208007836",
+    "lat": "15.8800842",
+    "lon": "108.3379240",
+    "display_name": "Sơn Phong, Phường Hội An, Thành phố Đà Nẵng, 64000, Việt Nam",
+    "address": {
+     "suburb": "Sơn Phong",
+     "city": "Phường Hội An",
+     "postcode": "64000",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "15.8799540",
+     "15.8814220",
+     "108.3378854",
+     "108.3379545"
+    ]
+   }
+  },
+  {
+   "label": "hue",
+   "expected": "Phường Thuận Hoá",
+   "response": {
+    "place_id": "237414565",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "39419741",
+    "lat": "16.4637254",
+    "lon": "107.5909013",
+    "display_name": "Hà Nội, Phú Nhuận, Phường Thuận Hoá, Thành phố Huế, 54000, Việt Nam",
+    "address": {
+     "road": "Hà Nội",
+     "quarter": "Phú Nhuận",
+     "city": "Phường Thuận Hoá",
+     "postcode": "54000",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "16.4634366",
+     "16.4639342",
+     "107.5866524",
+     "107.5948408"
+    ]
+   }
+  },
+  {
+   "label": "lang-son-todo-5",
+   "expected": "Phường Đông Kinh",
+   "response": {
+    "place_id": "236510992",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "905643182",
+    "lat": "21.8258903",
+    "lon": "106.7659672",
+    "display_name": "Xã Mai Pha, Phường Đông Kinh, Lạng Sơn, Tỉnh Lạng Sơn, 00251, Việt Nam",
+    "address": {
+     "suburb": "Xã Mai Pha",
+     "city": "Lạng Sơn",
+     "state": "Tỉnh Lạng Sơn",
+     "postcode": "00251",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.8187980",
+     "21.8288308",
+     "106.7647290",
+     "106.7672454"
+    ]
+   }
+  },
+  {
+   "label": "nha-trang",
+   "expected": "Phường Nha Trang",
+   "response": {
+    "place_id": "256634732",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "818322826",
+    "lat": "12.2387990",
+    "lon": "109.1966914",
+    "display_name": "Trần Phú, Phước Hòa, Phường Nha Trang, Khánh Hòa, 57106, Việt Nam",
+    "address": {
+     "road": "Trần Phú",
+     "suburb": "Phước Hòa",
+     "city": "Phường Nha Trang",
+     "state": "Khánh Hòa",
+     "postcode": "57106",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "12.2387435",
+     "12.2397254",
+     "109.1965846",
+     "109.1966978"
+    ]
+   }
+  },
+  {
+   "label": "outlier-paris",
+   "expected": "Paris",
+   "response": {
+    "place_id": "98184725",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "2871963325",
+    "lat": "48.8565592",
+    "lon": "2.3519706",
+    "display_name": "6, Place de l'Hôtel-de-Ville - Esplanade de la Libération, Quartier Saint-Merri, Paris 4e Arrondissement, Paris, Île-de-France, Chính quốc Pháp, 75004, Pháp",
+    "address": {
+     "house_number": "6",
+     "road": "Place de l'Hôtel-de-Ville - Esplanade de la Libération",
+     "city_block": "Quartier Saint-Merri",
+     "suburb": "Paris 4e Arrondissement",
+     "city_district": "Paris",
+     "city": "Paris",
+     "state": "Île-de-France",
+     "region": "Chính quốc Pháp",
+     "postcode": "75004",
+     "country": "Pháp",
+     "country_code": "fr"
+    },
+    "boundingbox": [
+     "48.8565092",
+     "48.8566092",
+     "2.3519206",
+     "2.3520206"
+    ]
+   }
+  },
+  {
+   "label": "outlier-truong-sa",
+   "expected": "Đặc khu Trường Sa",
+   "response": {
+    "place_id": "257287052",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "5127953791",
+    "lat": "8.6445796",
+    "lon": "111.9197985",
+    "display_name": "Trường Sa, Đặc khu Trường Sa, Khánh Hòa, Việt Nam",
+    "address": {
+     "town": "Trường Sa",
+     "county": "Đặc khu Trường Sa",
+     "state": "Khánh Hòa",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "8.6045796",
+     "8.6845796",
+     "111.8797985",
+     "111.9597985"
+    ]
+   }
+  },
+  {
+   "label": "rural-dong-thap",
+   "expected": "Phường Cao Lãnh",
+   "response": {
+    "place_id": "256826034",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "169416946",
+    "lat": "10.4597928",
+    "lon": "105.6295167",
+    "display_name": "Nguyễn Thái Học, Cao Lãnh, Phường Cao Lãnh, Tỉnh Đồng Tháp, Việt Nam",
+    "address": {
+     "road": "Nguyễn Thái Học",
+     "city": "Cao Lãnh",
+     "county": "Phường Cao Lãnh",
+     "state": "Tỉnh Đồng Tháp",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "10.4568046",
+     "10.4624977",
+     "105.6283296",
+     "105.6309008"
+    ]
+   }
+  },
+  {
+   "label": "rural-son-la",
+   "expected": "Phường Tô Hiệu",
+   "response": {
+    "place_id": "238666775",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "768695448",
+    "lat": "21.3268768",
+    "lon": "103.9140315",
+    "display_name": "Đường Điện Biên, Sơn La, Phường Tô Hiệu, Tỉnh Sơn La, Việt Nam",
+    "address": {
+     "road": "Đường Điện Biên",
+     "city": "Sơn La",
+     "county": "Phường Tô Hiệu",
+     "state": "Tỉnh Sơn La",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "21.3268428",
+     "21.3269675",
+     "103.9138153",
+     "103.9143855"
+    ]
+   }
+  },
+  {
+   "label": "sa-pa",
+   "expected": "Phường Sa Pa",
+   "response": {
+    "place_id": "238713790",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "node",
+    "osm_id": "5473299421",
+    "lat": "22.3362156",
+    "lon": "103.8437809",
+    "display_name": "Linh trang hotel, 01, Xuân Viên, Sapa, Sa Pa, Phường Sa Pa, Tỉnh Lào Cai, 33300, Việt Nam",
+    "address": {
+     "hotel": "Linh trang hotel",
+     "house_number": "01",
+     "road": "Xuân Viên",
+     "residential": "Sapa",
+     "suburb": "Sa Pa",
+     "town": "Phường Sa Pa",
+     "state": "Tỉnh Lào Cai",
+     "postcode": "33300",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "22.3361656",
+     "22.3362656",
+     "103.8437309",
+     "103.8438309"
+    ]
+   }
+  },
+  {
+   "label": "vinh",
+   "expected": "Phường Thành Vinh",
+   "response": {
+    "place_id": "237547051",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "way",
+    "osm_id": "208980573",
+    "lat": "18.6796021",
+    "lon": "105.6812558",
+    "display_name": "Nguyễn Đức Cảnh, Phường Thành Vinh, Tỉnh Nghệ An, Việt Nam",
+    "address": {
+     "road": "Nguyễn Đức Cảnh",
+     "city": "Phường Thành Vinh",
+     "state": "Tỉnh Nghệ An",
+     "country": "Việt Nam",
+     "country_code": "vn"
+    },
+    "boundingbox": [
+     "18.6763182",
+     "18.6842162",
+     "105.6811648",
+     "105.6824927"
+    ]
+   }
+  }
+ ],
+ "search": [
+  {
+   "label": "search-liq-1",
+   "expected": "Phường Sài Gòn",
+   "response": [
+    {
+     "place_id": "257019505",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "19260504",
+     "lat": "10.7791966",
+     "lon": "106.6999282",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.24006703364614326,
+     "display_name": "Phường Sài Gòn, Thành phố Hồ Chí Minh, 71006, Việt Nam",
+     "address": {
+      "suburb": "Phường Sài Gòn",
+      "city": "Thành phố Hồ Chí Minh",
+      "postcode": "71006",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "10.7672270",
+      "10.7926920",
+      "106.6950078",
+      "106.7151954"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-10",
+   "expected": "Phường Sa Pa",
+   "response": [
+    {
+     "place_id": "238738778",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "19428217",
+     "lat": "22.3359172",
+     "lon": "103.8423664",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.24632300460320036,
+     "display_name": "Phường Sa Pa, Tỉnh Lào Cai, Việt Nam",
+     "address": {
+      "town": "Phường Sa Pa",
+      "state": "Tỉnh Lào Cai",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "22.3073182",
+      "22.3799342",
+      "103.7664604",
+      "103.8979626"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-11",
+   "expected": "Thành phố Đà Nẵng",
+   "response": [
+    {
+     "place_id": "256447896",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "1891418",
+     "lat": "16.0680000",
+     "lon": "108.2120000",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.6000236262033695,
+     "display_name": "Thành phố Đà Nẵng, Việt Nam",
+     "address": {
+      "city": "Thành phố Đà Nẵng",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "14.9513535",
+      "16.3340091",
+      "107.2109165",
+      "109.0235567"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-12",
+   "expected": "Hà Nội",
+   "response": [
+    {
+     "place_id": "236816828",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "1903516",
+     "lat": "21.0283334",
+     "lon": "105.8540410",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.6887246755750441,
+     "display_name": "Hà Nội, Việt Nam",
+     "address": {
+      "city": "Hà Nội",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "20.5645154",
+      "21.3854176",
+      "105.2889615",
+      "106.0200725"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-2",
+   "expected": "Hà Nội",
+   "response": [
+    {
+     "place_id": "236816828",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "1903516",
+     "lat": "21.0283334",
+     "lon": "105.8540410",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.6887246755750441,
+     "display_name": "Hà Nội, Việt Nam",
+     "address": {
+      "city": "Hà Nội",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "20.5645154",
+      "21.3854176",
+      "105.2889615",
+      "106.0200725"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-3",
+   "expected": "Thành phố Hồ Chí Minh",
+   "response": [
+    {
+     "place_id": "257314901",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "1973756",
+     "lat": "10.7755254",
+     "lon": "106.7021047",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.6722466955683091,
+     "display_name": "Thành phố Hồ Chí Minh, Việt Nam",
+     "address": {
+      "city": "Thành phố Hồ Chí Minh",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "8.3456879",
+      "11.5015885",
+      "105.9769387",
+      "108.4311207"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-4",
+   "expected": "Đặc khu Phú Quốc",
+   "response": [
+    {
+     "place_id": "255052044",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "12852607",
+     "lat": "10.2170911",
+     "lon": "103.9590544",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.5162417230909017,
+     "display_name": "Đặc khu Phú Quốc, Tỉnh An Giang, Việt Nam",
+     "address": {
+      "city": "Đặc khu Phú Quốc",
+      "state": "Tỉnh An Giang",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "9.8016080",
+      "10.4525966",
+      "103.8080897",
+      "104.0984858"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-5",
+   "expected": "Đặc khu Côn Đảo",
+   "response": [
+    {
+     "place_id": "257464082",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "3612628",
+     "lat": "8.6855081",
+     "lon": "106.6067254",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.46932258647151875,
+     "display_name": "Đặc khu Côn Đảo, Thành phố Hồ Chí Minh, 78400, Việt Nam",
+     "address": {
+      "archipelago": "Đặc khu Côn Đảo",
+      "city": "Thành phố Hồ Chí Minh",
+      "postcode": "78400",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "8.5774685",
+      "8.7795525",
+      "106.0879607",
+      "106.7437139"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-6",
+   "expected": "Xã Ô Diên",
+   "response": [
+    {
+     "place_id": "236785114",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "19437093",
+     "lat": "21.1057078",
+     "lon": "105.7102051",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.24007283054856182,
+     "display_name": "Xã Ô Diên, Hà Nội, Việt Nam",
+     "address": {
+      "city_district": "Xã Ô Diên",
+      "city": "Hà Nội",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "21.0692751",
+      "21.1433478",
+      "105.6722210",
+      "105.7366620"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-7",
+   "expected": "Phường Hoàn Kiếm",
+   "response": [
+    {
+     "place_id": "236743775",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "19331651",
+     "lat": "21.0325344",
+     "lon": "105.8497143",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.24007283054856182,
+     "display_name": "Phường Hoàn Kiếm, Hà Nội, 11024, Việt Nam",
+     "address": {
+      "city_district": "Phường Hoàn Kiếm",
+      "city": "Hà Nội",
+      "postcode": "11024",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "21.0244069",
+      "21.0408299",
+      "105.8425565",
+      "105.8601913"
+     ]
+    },
+    {
+     "place_id": "256642382",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "node",
+     "osm_id": "11715262116",
+     "lat": "11.8373616",
+     "lon": "108.3032790",
+     "class": "place",
+     "type": "village",
+     "importance": 0.14671166781109327,
+     "display_name": "Hoàn Kiếm 2, Xã Nam Hà Lâm Hà, Tỉnh Lâm Đồng, 66000, Việt Nam",
+     "address": {
+      "village": "Hoàn Kiếm 2",
+      "county": "Xã Nam Hà Lâm Hà",
+      "state": "Tỉnh Lâm Đồng",
+      "postcode": "66000",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "11.8173616",
+      "11.8573616",
+      "108.2832790",
+      "108.3232790"
+     ]
+    },
+    {
+     "place_id": "256655401",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "node",
+     "osm_id": "11715262117",
+     "lat": "11.8323720",
+     "lon": "108.2990898",
+     "class": "place",
+     "type": "village",
+     "importance": 0.14671166781109327,
+     "display_name": "Hoàn Kiếm 1, Xã Nam Hà Lâm Hà, Tỉnh Lâm Đồng, 66000, Việt Nam",
+     "address": {
+      "village": "Hoàn Kiếm 1",
+      "county": "Xã Nam Hà Lâm Hà",
+      "state": "Tỉnh Lâm Đồng",
+      "postcode": "66000",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "11.8123720",
+      "11.8523720",
+      "108.2790898",
+      "108.3190898"
+     ]
+    },
+    {
+     "place_id": "261836570",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "node",
+     "osm_id": "11715262115",
+     "lat": "11.8422966",
+     "lon": "108.2945911",
+     "class": "place",
+     "type": "village",
+     "importance": 0.14671166781109327,
+     "display_name": "Hoàn Kiếm 3, Xã Nam Hà Lâm Hà, Tỉnh Lâm Đồng, 66000, Việt Nam",
+     "address": {
+      "village": "Hoàn Kiếm 3",
+      "county": "Xã Nam Hà Lâm Hà",
+      "state": "Tỉnh Lâm Đồng",
+      "postcode": "66000",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "11.8222966",
+      "11.8622966",
+      "108.2745911",
+      "108.3145911"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-8",
+   "expected": "Phường Cầu Giấy",
+   "response": [
+    {
+     "place_id": "236913170",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "relation",
+     "osm_id": "19335053",
+     "lat": "21.0296730",
+     "lon": "105.7901417",
+     "class": "boundary",
+     "type": "administrative",
+     "importance": 0.2521482229732802,
+     "display_name": "Phường Cầu Giấy, Hà Nội, 11314, Việt Nam",
+     "address": {
+      "city_district": "Phường Cầu Giấy",
+      "city": "Hà Nội",
+      "postcode": "11314",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "21.0176697",
+      "21.0418452",
+      "105.7786326",
+      "105.8013534"
+     ]
+    }
+   ]
+  },
+  {
+   "label": "search-liq-9",
+   "expected": "Phường Tịnh Biên",
+   "response": [
+    {
+     "place_id": "256796933",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "node",
+     "osm_id": "2639446470",
+     "lat": "10.6072814",
+     "lon": "104.9486450",
+     "class": "place",
+     "type": "town",
+     "importance": 0.24930035976498935,
+     "display_name": "Tịnh Biên, Phường Tịnh Biên, Tỉnh An Giang, Việt Nam",
+     "address": {
+      "town": "Tịnh Biên",
+      "county": "Phường Tịnh Biên",
+      "state": "Tỉnh An Giang",
+      "country": "Việt Nam",
+      "country_code": "vn"
+     },
+     "boundingbox": [
+      "10.5672814",
+      "10.6472814",
+      "104.9086450",
+      "104.9886450"
+     ]
+    },
+    {
+     "place_id": "223835006",
+     "licence": "https://locationiq.com/attribution",
+     "osm_type": "node",
+     "osm_id": "3014447006",
+     "lat": "28.8634245",
+     "lon": "115.3564822",
+     "class": "place",
+     "type": "city",
+     "importance": 0.4330260991602173,
+     "display_name": "Tĩnh An, 双溪镇, Tĩnh An, Nghi Xuân, Giang Tây, Trung Quốc",
+     "address": {
+      "city": "Tĩnh An",
+      "town": "双溪镇",
+      "county": "Tĩnh An",
+      "region": "Nghi Xuân",
+      "state": "Giang Tây",
+      "country": "Trung Quốc",
+      "country_code": "cn"
+     },
+     "boundingbox": [
+      "28.7034245",
+      "29.0234245",
+      "115.1964822",
+      "115.5164822"
+     ]
+    }
+   ]
+  }
+ ]
+}

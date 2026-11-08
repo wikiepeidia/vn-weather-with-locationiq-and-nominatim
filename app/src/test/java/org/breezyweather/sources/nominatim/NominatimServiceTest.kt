@@ -500,4 +500,41 @@ class NominatimServiceTest {
         result.address?.suburb shouldBe "Phường Cầu Giấy"
         result.address?.suburb?.let { NominatimService.isCleanVnCity(it) } shouldBe true
     }
+
+    @Test
+    fun `resolveNominatimBaseUrl - invalid value falls back instead of failing every lookup`() {
+        NominatimService.resolveNominatimBaseUrl("abc123") shouldBe "https://nominatim.openstreetmap.org/"
+    }
+
+    @Test
+    fun `resolveNominatimBaseUrl - custom path gets the trailing slash Retrofit requires`() {
+        NominatimService.resolveNominatimBaseUrl("https://host.example/nominatim") shouldBe
+            "https://host.example/nominatim/"
+        NominatimService.resolveNominatimBaseUrl("https://host.example") shouldBe "https://host.example"
+    }
+
+    private fun resultWith(name: String?, address: String): NominatimLocationResult {
+        val nameField = name?.let { "\"name\": \"$it\"," }.orEmpty()
+        return json.decodeFromString(
+            """{ "lat": "1", "lon": "2", $nameField "address": { $address } }"""
+        )
+    }
+
+    @Test
+    fun `initialCity - Vietnam keeps ignoring address city`() {
+        val result = resultWith("Name", "\"country_code\": \"vn\", \"city\": \"Ha Noi\"")
+        NominatimService.initialCity(result, "VN") shouldBe "Name"
+        val withTown = resultWith("Name", "\"country_code\": \"vn\", \"town\": \"Town\", \"city\": \"Ha Noi\"")
+        NominatimService.initialCity(withTown, "VN") shouldBe "Town"
+    }
+
+    @Test
+    fun `initialCity - elsewhere uses upstream's mapping and ignores the result name`() {
+        val result = resultWith("Some Street", "\"country_code\": \"fr\", \"city\": \"Paris\"")
+        NominatimService.initialCity(result, "FR") shouldBe "Paris"
+        val withTown = resultWith(null, "\"country_code\": \"fr\", \"town\": \"Town\", \"city\": \"Paris\"")
+        NominatimService.initialCity(withTown, "FR") shouldBe "Town"
+        val nameOnly = resultWith("Some Street", "\"country_code\": \"fr\"")
+        NominatimService.initialCity(nameOnly, "FR") shouldBe null
+    }
 }
