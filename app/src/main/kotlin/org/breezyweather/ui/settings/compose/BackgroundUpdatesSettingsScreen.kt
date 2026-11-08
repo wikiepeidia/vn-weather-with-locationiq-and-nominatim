@@ -58,6 +58,7 @@ import androidx.core.net.toUri
 import kotlinx.coroutines.delay
 import org.breezyweather.R
 import org.breezyweather.background.watchdog.WatchdogService
+import org.breezyweather.background.watchdog.WatchdogWeatherUpdateHealth
 import org.breezyweather.background.weather.WeatherUpdateJob
 import org.breezyweather.common.extensions.currentLocale
 import org.breezyweather.common.extensions.formatTime
@@ -90,6 +91,29 @@ import org.breezyweather.unit.formatting.format
 import java.util.Date
 import kotlin.time.DurationUnit
 
+private fun openSamsungNeverSleeping(context: Context) {
+    val intents = listOf(
+        Intent("com.samsung.android.sm.ACTION_OPEN_CHECKABLE_LISTACTIVITY")
+            .setPackage("com.samsung.android.lool")
+            .putExtra("activity_type", 2), // Samsung's documented value for Never sleeping apps
+        Intent().setClassName("com.samsung.android.lool", "com.samsung.android.sm.ui.battery.BatteryActivity"),
+        Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+    )
+    for (intent in intents) {
+        try {
+            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        } catch (_: ActivityNotFoundException) {
+            // Try the next one: these screens vary across One UI versions
+        } catch (_: SecurityException) {
+            // Same: not exported on this version
+        }
+    }
+    SnackbarHelper.showSnackbar(
+        context.getString(R.string.settings_background_updates_watchdog_samsung_sleep_not_found)
+    )
+}
+
 @Composable
 fun BackgroundSettingsScreen(
     context: Context,
@@ -99,6 +123,7 @@ fun BackgroundSettingsScreen(
 ) {
     val uriHandler = LocalUriHandler.current
     val scrollBehavior = generateCollapsedScrollBehavior()
+    var watchdogEnabled by remember { mutableStateOf(SettingsManager.getInstance(context).watchdogEnabled) }
 
     Material3Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -146,6 +171,7 @@ fun BackgroundSettingsScreen(
                                 .getInstance(context)
                                 .updateInterval = UpdateInterval.getInstance(it)
                             WeatherUpdateJob.setupTask(context)
+                            if (watchdogEnabled) WatchdogService.start(context)
                         }
                     }
                 )
@@ -194,6 +220,7 @@ fun BackgroundSettingsScreen(
                                         .getInstance(context)
                                         .updateInterval = UpdateInterval.INTERVAL_NEVER
                                     WeatherUpdateJob.setupTask(context)
+                                    if (watchdogEnabled) WatchdogService.start(context)
                                 },
                                 enabled = timeLeft == 0
                             ) {
@@ -246,10 +273,11 @@ fun BackgroundSettingsScreen(
 
             largeSeparatorItem()
 
-            // Watchdog Mode section — persistent foreground service for HyperOS/MIUI keepalive
+            // Watchdog Mode section — alarm heartbeat on HyperOS/MIUI, periodic worker elsewhere
             sectionHeaderItem(R.string.settings_background_updates_section_watchdog)
 
-            val isXiaomiDevice = Build.MANUFACTURER.equals("xiaomi", ignoreCase = true)
+            val isXiaomiDevice = WatchdogService.isXiaomiDevice()
+            val isSamsungDevice = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
 
             switchPreferenceItem(R.string.settings_background_updates_watchdog_switch) { id ->
                 val dialogBatteryOptState = remember { mutableStateOf(false) }
@@ -258,14 +286,17 @@ fun BackgroundSettingsScreen(
                     titleId = id,
                     summaryOnId = R.string.settings_enabled,
                     summaryOffId = R.string.settings_disabled,
-                    checked = SettingsManager.getInstance(context).watchdogEnabled,
+                    checked = watchdogEnabled,
                     isFirst = true,
-                    isLast = false,
+                    isLast = !isXiaomiDevice && !isSamsungDevice,
                     onValueChanged = { enabled ->
                         SettingsManager.getInstance(context).watchdogEnabled = enabled
+                        watchdogEnabled = enabled
                         if (enabled) {
                             WatchdogService.start(context)
-                            if (!context.powerManager.isIgnoringBatteryOptimizations(context.packageName)) {
+                            if (isXiaomiDevice &&
+                                !context.powerManager.isIgnoringBatteryOptimizations(context.packageName)
+                            ) {
                                 dialogBatteryOptState.value = true
                             }
                         } else {
@@ -330,62 +361,62 @@ fun BackgroundSettingsScreen(
                 }
             }
 
-            smallSeparatorItem()
-            item {
-                val settingsManager = SettingsManager.getInstance(context)
-                val watchdogOn = settingsManager.watchdogEnabled
-                var sliderValue by remember {
-                    mutableFloatStateOf(settingsManager.watchdogHeartbeatInterval.toFloat())
-                }
+            if (isXiaomiDevice) {
+                smallSeparatorItem()
+                item {
+                    val settingsManager = SettingsManager.getInstance(context)
+                    val watchdogOn = watchdogEnabled
+                    var sliderValue by remember {
+                        mutableFloatStateOf(settingsManager.watchdogHeartbeatInterval.toFloat())
+                    }
 
-                Material3ExpressiveCardListItem(
-                    elevation = if (watchdogOn) defaultCardListItemElevation else 0.dp,
-                    isFirst = false,
-                    isLast = !isXiaomiDevice
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .alpha(if (watchdogOn) 1f else 0.5f)
-                            .padding(PaddingValues(horizontal = 16.dp, vertical = 8.dp))
+                    Material3ExpressiveCardListItem(
+                        elevation = if (watchdogOn) defaultCardListItemElevation else 0.dp,
+                        isFirst = false,
+                        isLast = false
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .alpha(if (watchdogOn) 1f else 0.5f)
+                                .padding(PaddingValues(horizontal = 16.dp, vertical = 8.dp))
                         ) {
-                            Text(
-                                text = stringResource(R.string.settings_background_updates_watchdog_heartbeat_interval),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(
-                                    R.string.settings_background_updates_watchdog_heartbeat_interval_summary,
-                                    sliderValue.toInt()
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_background_updates_watchdog_heartbeat_interval),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(
+                                        R.string.settings_background_updates_watchdog_heartbeat_interval_summary,
+                                        sliderValue.toInt()
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Slider(
+                                value = sliderValue,
+                                onValueChange = { sliderValue = it },
+                                onValueChangeFinished = {
+                                    val newInterval = sliderValue.toInt()
+                                    settingsManager.watchdogHeartbeatInterval = newInterval
+                                    if (watchdogOn) {
+                                        WatchdogService.start(context)
+                                    }
+                                },
+                                valueRange = 10f..30f,
+                                steps = 3,
+                                enabled = watchdogOn
                             )
                         }
-                        Slider(
-                            value = sliderValue,
-                            onValueChange = { sliderValue = it },
-                            onValueChangeFinished = {
-                                val newInterval = sliderValue.toInt()
-                                settingsManager.watchdogHeartbeatInterval = newInterval
-                                if (watchdogOn) {
-                                    WatchdogService.start(context)
-                                }
-                            },
-                            valueRange = 10f..30f,
-                            steps = 3,
-                            enabled = watchdogOn
-                        )
                     }
                 }
-            }
 
-            if (isXiaomiDevice) {
                 smallSeparatorItem()
                 clickablePreferenceItem(R.string.settings_background_updates_watchdog_hyperios_autostart) { id ->
                     PreferenceViewWithCard(
@@ -420,10 +451,24 @@ fun BackgroundSettingsScreen(
                 }
             }
 
+            if (isSamsungDevice) {
+                smallSeparatorItem()
+                clickablePreferenceItem(R.string.settings_background_updates_watchdog_samsung_sleep) { id ->
+                    PreferenceViewWithCard(
+                        titleId = id,
+                        summaryId = R.string.settings_background_updates_watchdog_samsung_sleep_summary,
+                        isFirst = false,
+                        isLast = true
+                    ) {
+                        openSamsungNeverSleeping(context)
+                    }
+                }
+            }
+
             sectionFooterItem(R.string.settings_background_updates_section_watchdog)
 
             // HEALTH-01/02/03: Watchdog health dashboard (visible only when watchdog is enabled)
-            if (SettingsManager.getInstance(context).watchdogEnabled) {
+            if (watchdogEnabled) {
                 largeSeparatorItem()
                 sectionHeaderItem(R.string.settings_background_updates_section_watchdog_health)
 
@@ -434,6 +479,7 @@ fun BackgroundSettingsScreen(
                     var restartCount by remember { mutableIntStateOf(prefs.getInt("restart_count", 0)) }
                     var lastRestart by remember { mutableLongStateOf(prefs.getLong("last_restart_timestamp", 0L)) }
                     var nextAlarmTimestamp by remember { mutableLongStateOf(prefs.getLong("next_alarm_timestamp", 0L)) }
+                    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
                     // HEALTH-02: Periodic poll every 5s for live refresh
                     LaunchedEffect(Unit) {
@@ -444,17 +490,22 @@ fun BackgroundSettingsScreen(
                             restartCount = prefs.getInt("restart_count", 0)
                             lastRestart = prefs.getLong("last_restart_timestamp", 0L)
                             nextAlarmTimestamp = prefs.getLong("next_alarm_timestamp", 0L)
+                            now = System.currentTimeMillis()
                         }
                     }
 
                     // Status derived from next alarm timestamp — isRunning is unreliable in ephemeral model
                     // (WatchdogService exits after each heartbeat, so isRunning is almost always false)
-                    val now = System.currentTimeMillis()
-                    val gracePeriodMs = 5 * 60 * 1000L // 5 min grace for ROM scheduling delays
+                    val usesChain = WatchdogService.usesAlarmChain(context)
+                    val updatesOff = updateInterval.interval == null
                     val statusText = when {
+                        updatesOff -> stringResource(R.string.watchdog_health_status_paused)
                         nextAlarmTimestamp == 0L -> stringResource(R.string.watchdog_health_status_starting)
-                        now <= nextAlarmTimestamp + gracePeriodMs -> stringResource(R.string.watchdog_health_status_scheduled)
-                        else -> stringResource(R.string.watchdog_health_status_overdue)
+                        !WatchdogWeatherUpdateHealth.isCheckOverdue(now, nextAlarmTimestamp, usesChain) -> {
+                            stringResource(R.string.watchdog_health_status_scheduled)
+                        }
+                        usesChain -> stringResource(R.string.watchdog_health_status_overdue)
+                        else -> stringResource(R.string.watchdog_health_status_delayed)
                     }
 
                     val heartbeatText = if (lastHeartbeat > 0L) {
@@ -468,15 +519,16 @@ fun BackgroundSettingsScreen(
                         stringResource(R.string.watchdog_health_never)
                     }
 
-                    val nextRefreshText = if (nextAlarmTimestamp > 0L) {
-                        android.text.format.DateUtils.getRelativeTimeSpanString(
+                    val nextRefreshText = when {
+                        updatesOff -> stringResource(R.string.watchdog_health_never)
+                        nextAlarmTimestamp > now -> android.text.format.DateUtils.getRelativeTimeSpanString(
                             nextAlarmTimestamp,
                             now,
                             android.text.format.DateUtils.MINUTE_IN_MILLIS,
                             android.text.format.DateUtils.FORMAT_ABBREV_RELATIVE
                         ).toString()
-                    } else {
-                        stringResource(R.string.watchdog_health_never)
+                        nextAlarmTimestamp > 0L -> stringResource(R.string.watchdog_health_next_pending)
+                        else -> stringResource(R.string.watchdog_health_never)
                     }
 
                     val restartText = if (lastRestart > 0L) {
@@ -536,7 +588,6 @@ fun BackgroundSettingsScreen(
                             .putInt("heartbeat_count", 0)
                             .putInt("restart_count", 0)
                             .putLong("last_restart_timestamp", 0L)
-                            .putLong("last_heartbeat_timestamp", 0L)
                             .remove("last_diagnostic")
                             .remove("last_restart_source")
                             .apply()

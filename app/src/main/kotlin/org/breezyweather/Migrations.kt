@@ -25,6 +25,7 @@ import breezyweather.domain.source.SourceFeature
 import kotlinx.coroutines.runBlocking
 import org.breezyweather.background.forecast.TodayForecastNotificationJob
 import org.breezyweather.background.forecast.TomorrowForecastNotificationJob
+import org.breezyweather.background.watchdog.WatchdogService
 import org.breezyweather.background.weather.WeatherUpdateJob
 import org.breezyweather.common.options.appearance.DailyTrendDisplay
 import org.breezyweather.common.options.appearance.HourlyTrendDisplay
@@ -298,6 +299,9 @@ object Migrations {
             WeatherUpdateJob.setupTask(context) // This will also refresh data immediately
             TodayForecastNotificationJob.setupTask(context, false)
             TomorrowForecastNotificationJob.setupTask(context, false)
+            if (SettingsManager.getInstance(context).watchdogEnabled) {
+                WatchdogService.start(context, "upgrade")
+            }
 
             return oldVersion != 0
         }

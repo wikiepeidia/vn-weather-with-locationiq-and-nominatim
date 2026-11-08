@@ -34,12 +34,11 @@ import org.breezyweather.common.extensions.workManager
 import org.breezyweather.domain.settings.SettingsManager
 import org.breezyweather.remoteviews.Notifications
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 
 /**
- * RESTART-01: Redundant restart vector via WorkManager.
- * Runs every 30 minutes independently of AlarmManager.
- * If WatchdogService is not running (e.g., AlarmManager failed to fire),
- * this worker restarts it.
+ * The only watchdog mechanism on most devices, and the backup for the alarm chain on Xiaomi family
+ * devices, where it also re-arms a dead chain. Checks WeatherUpdateJob health on each run.
  */
 class WatchdogRestartWorker(
     context: Context,
@@ -52,10 +51,29 @@ class WatchdogRestartWorker(
             return Result.success()
         }
 
-        // Promote to foreground for the brief execution window so HyperOS doesn't kill us mid-check
-        setForegroundSafely()
+        val context = applicationContext
+        val prefs = context.getSharedPreferences(WatchdogWeatherUpdateHealth.PREFS_NAME, Context.MODE_PRIVATE)
+        val now = System.currentTimeMillis()
 
-        val jobStatus = WatchdogWeatherUpdateHealth.ensureHealthy(applicationContext)
+        // Promote to foreground for the brief execution window so HyperOS doesn't kill us mid-check
+        if (WatchdogService.isXiaomiDevice()) setForegroundSafely()
+
+        if (WatchdogService.usesAlarmChain(context)) {
+            // A dead chain otherwise stays dead until reboot. The flag covers a chain that only
+            // just became usable, such as after the battery exemption is granted.
+            if (!prefs.getBoolean("alarm_armed", false) ||
+                WatchdogWeatherUpdateHealth.isCheckOverdue(now, prefs.getLong("next_alarm_timestamp", 0L), true)
+            ) {
+                WatchdogService.scheduleNextAlarm(context)
+            }
+        } else {
+            prefs.edit()
+                .putLong("next_alarm_timestamp", now + periodMinutes().minutes.inWholeMilliseconds)
+                .putBoolean("alarm_armed", false)
+                .apply()
+        }
+
+        val jobStatus = WatchdogWeatherUpdateHealth.ensureHealthy(context)
         Log.d(TAG, "Watchdog weather health result: $jobStatus")
 
         return Result.success()
@@ -90,16 +108,19 @@ class WatchdogRestartWorker(
         private const val TAG = "WatchdogRestart"
         const val WORK_NAME = "WatchdogRestart"
 
+        internal fun periodMinutes(): Long = if (WatchdogService.isXiaomiDevice()) 30L else 60L
+
         fun enqueue(context: Context) {
             val request = PeriodicWorkRequestBuilder<WatchdogRestartWorker>(
-                30, TimeUnit.MINUTES
+                periodMinutes(), TimeUnit.MINUTES
             ).build()
             context.workManager.enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                // UPDATE moves upgraded installs off the old 30-minute period
+                if (WatchdogService.isXiaomiDevice()) ExistingPeriodicWorkPolicy.KEEP else ExistingPeriodicWorkPolicy.UPDATE,
                 request
             )
-            Log.d(TAG, "Enqueued periodic restart check (30min)")
+            Log.d(TAG, "Enqueued periodic restart check (${periodMinutes()}min)")
         }
 
         fun cancel(context: Context) {

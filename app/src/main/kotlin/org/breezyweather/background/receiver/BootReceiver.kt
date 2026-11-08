@@ -64,8 +64,8 @@ class BootReceiver : BroadcastReceiver() {
                 }
 
                 // BOOT-01: Resume WatchdogService if user had it enabled before reboot.
-                // WatchdogService.onStartCommand performs an immediate heartbeat (BOOT-02)
-                // which re-enqueues WeatherUpdateJob if not already scheduled.
+                // On Xiaomi family devices this runs an immediate heartbeat (BOOT-02) which
+                // re-enqueues WeatherUpdateJob if needed; elsewhere the worker does it on its next run.
                 if (SettingsManager.getInstance(context).watchdogEnabled) {
                     WatchdogService.start(context, "boot")
                 }

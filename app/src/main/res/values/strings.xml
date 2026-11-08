@@ -687,6 +687,9 @@
     <string name="settings_background_updates_watchdog_hyperios_autostart">Enable HyperOS/MIUI Autostart</string>
     <string name="settings_background_updates_watchdog_hyperios_autostart_summary">Required on Xiaomi/Redmi/POCO devices to prevent the app from being killed</string>
     <string name="settings_background_updates_watchdog_hyperios_autostart_not_found">Could not open Autostart settings. Go to Security app - Permissions - Autostart manually.</string>
+    <string name="settings_background_updates_watchdog_samsung_sleep">Keep out of Sleeping apps</string>
+    <string name="settings_background_updates_watchdog_samsung_sleep_summary">Add this app to Never sleeping apps in Samsung\'s battery settings</string>
+    <string name="settings_background_updates_watchdog_samsung_sleep_not_found">Could not open battery settings. Look for Never sleeping apps in your device settings.</string>
     <string name="settings_background_updates_watchdog_heartbeat_interval">Heartbeat interval</string>
     <string name="settings_background_updates_watchdog_heartbeat_interval_summary">Every %d minutes</string>
     <string name="settings_background_updates_section_watchdog_health">Watchdog health</string>
@@ -700,10 +703,13 @@
     <string name="watchdog_health_reset_stats">Reset stats</string>
     <string name="watchdog_health_reset_stats_summary">Clear heartbeat and restart counters</string>
     <string name="watchdog_health_never">Never</string>
-    <string name="watchdog_health_next_refresh">Next scheduled refresh</string>
+    <string name="watchdog_health_next_refresh">Next check</string>
     <string name="watchdog_health_status_scheduled">Scheduled</string>
     <string name="watchdog_health_status_overdue">Alarm overdue</string>
     <string name="watchdog_health_status_starting">Starting up</string>
+    <string name="watchdog_health_status_delayed">Check delayed</string>
+    <string name="watchdog_health_status_paused">Paused while background updates are off</string>
+    <string name="watchdog_health_next_pending">Waiting for Android to run it</string>
     <!-- “Location” here means “Locating you”, check your Android settings to know the correct word -->
     <string name="settings_location">Location</string>
     <string name="settings_location_summary">Location services settings</string>
