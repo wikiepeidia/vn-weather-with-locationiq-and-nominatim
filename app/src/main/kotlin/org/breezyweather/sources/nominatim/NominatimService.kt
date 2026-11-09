@@ -25,6 +25,7 @@ import breezyweather.domain.source.SourceFeature
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.rxjava3.core.Observable
 import org.breezyweather.BreezyWeather
+import org.breezyweather.BuildConfig
 import org.breezyweather.R
 import org.breezyweather.common.exceptions.InvalidLocationException
 import org.breezyweather.common.extensions.currentLocale
@@ -489,7 +490,9 @@ class NominatimService @Inject constructor(
 
     // CONFIG
     private val config = SourceConfigStore(context, id)
-    override val isConfigured = true  // Nominatim requires no API key
+    // Nominatim's usage policy needs a contact in the User-Agent: stay off when the build has none,
+    // as upstream does, instead of calling with an empty or borrowed identity
+    override val isConfigured = BuildConfig.REPORT_ISSUE.isNotEmpty() && BreezyWeather.instance.userAgent.isNotEmpty()
     override val isRestricted = false
     private var instance: String?
         set(value) {

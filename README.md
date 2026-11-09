@@ -14,6 +14,7 @@
 - Misrepresentation of the origin of that material is prohibited, and modified versions of such material must be marked in reasonable ways as different from the original version.
 
 - The upstream project (Breezy Weather) is available at <https://github.com/breezy-weather/breezy-weather> and is licensed under LGPL-3.0.
+- Weather VN is an independent, modified fork. It is **not** affiliated with, endorsed by or supported by the Breezy Weather project: please report problems of this app here and not to Breezy Weather. Modified files keep their original license headers.
 - Reclarify to the devs: Hobby project for fun, powered ® by Claude
 - remove Releases to incoperate with LICENSE and reduce my stress and giggles
 
@@ -21,8 +22,10 @@
 
 - LocationIQ + Nominatim dual geocoding with regex-based VN token extraction , heavily finetuned for almost all kind of JSON responses from both APIs, with smart cross-validation
 
-### xiaomi stuff related
+### Watchdog (background updates)
 
+- Samsung and most other phones: a light hourly check that repairs stalled weather updates (no alarm, no foreground service, no notification). Add the app to Samsung's *Never sleeping apps* for the best results, there is a shortcut in the settings
+- Xiaomi/Redmi/POCO: on top of that, an exact-alarm heartbeat because HyperOS/MIUI kills background work (the commands below help too)
 - hyperos goofyahh ưatchdog because i hate it when it kill my app
 - command to get weather app prisority has to be on the ADB shell (CMD)
 
